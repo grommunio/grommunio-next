@@ -1,0 +1,110 @@
+/* || General styles */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #000000;
+  font-weight: 300;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.rd3t-link {
+	stroke: inherit !important;
+}
+
+pre {
+  margin:0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+pre code {
+  display: block;
+  padding: 16px 20px 16px 20px;
+  border-radius: 6px;
+  font-family: 'Courier', monospace;
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 24px;
+  background: #232427;
+  color: #fff;
+}
+
+/* || etc */
+#root {
+  height: 100%;
+  display: flex;
+}
+
+#font-preloader {
+  position: absolute;
+  top: -600px;
+  font-weight: 300;
+  color: #000000;
+  font-family: "Roboto", "Arial", "Helvetica", sans-serif;
+}
+
+#font-preloader > span {
+  font-weight: 300;
+}
+
+#bg {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: auto 30%;
+  color: black;
+}
+
+#loader {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  font-weight: 500;
+  font-family: "Arial", "Helvetica", sans-serif;
+  color: black;
+  transform: translate(-50%, -50%);
+}
+
+/* Scrollbar width */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* Scrollbar Track */
+::-webkit-scrollbar-track {
+  background: #2d323b;
+}
+
+/* Scrollbar Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+/* Scrollbar-Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
+
+.apexcharts-tooltip {
+  color: black;
+}
