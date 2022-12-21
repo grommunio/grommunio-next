@@ -3,9 +3,9 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { TodoTask, TodoTaskList } from "microsoft-graph";
-import { deleteTask, getUserTaskLists, getUserTasks } from "../api/tasks";
+import { deleteTask, getUserTaskLists, getUserTasks, patchTask } from "../api/tasks";
 import { AppContext } from "../azure/AppContext";
-import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA } from "./types";
+import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, PATCH_TASK_DATA } from "./types";
 
 export const fetchTaskListsData = createAsyncThunk<
   TodoTaskList[],
@@ -70,6 +70,32 @@ export const deleteTaskData = createAsyncThunk<
         const error = err as Error;
         app.displayError!(error.message);
         return false;
+      }
+    }
+    return false;
+  }
+);
+
+type patchTaskDataParams = {
+  app: AppContext,
+  taskListId: string,
+  task: TodoTask,
+}
+
+export const patchTaskData = createAsyncThunk<
+  TodoTask | false,
+  patchTaskDataParams
+  >(
+  PATCH_TASK_DATA,
+  async ({ taskListId, task, app }: patchTaskDataParams) => {
+    if (app.user) {
+      try {
+        const res = await patchTask(app.authProvider!, taskListId, task);
+        return res;
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+        return false
       }
     }
     return false;

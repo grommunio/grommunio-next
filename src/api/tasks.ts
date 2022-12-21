@@ -53,3 +53,12 @@ export async function deleteTask(authProvider: AuthCodeMSALBrowserAuthentication
     .api('/me/todo/lists/' + tasklistID + '/tasks/' + taskId)
     .delete();
 }
+
+export async function patchTask(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  tasklistID: string, task: TodoTask): Promise<TodoTask> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/todo/lists/' + tasklistID + '/tasks/' + task.id)
+    .patch(task);
+}

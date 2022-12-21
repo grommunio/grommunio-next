@@ -7,7 +7,7 @@ import { useAppContext } from '../azure/AppContext';
 import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { deleteTaskData, fetchTaskListsData, fetchTasksData } from '../actions/tasks';
+import { deleteTaskData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
 import { Button, IconButton, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
@@ -15,6 +15,7 @@ import AddTask from '../components/dialogs/AddTask';
 import { Delete } from '@mui/icons-material';
 import theme from '../theme';
 import AddTaskList from '../components/dialogs/AddTaskList';
+import { withTranslation } from 'react-i18next';
 
 const styles: any = {
   root: {
@@ -44,12 +45,18 @@ const styles: any = {
     display: 'flex',
     justifyContent: 'center',
   },
+  buttonRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    margin: 8,
+  },
 };
 
-function Tasks({ classes }: any) {
+function Tasks({ t, classes }: any) {
   const app = useAppContext();
-  const editorRef = useRef({});
+  const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
+  const [ dirty, setDirty ] = useState<boolean>(false);
   const { taskLists, tasks } = useTypeSelector(state => state.tasks);
   const [addingTaskList, setAddingTaskList] = useState<boolean>(false);
   const [addingTask, setAddingTask] = useState<boolean>(false);
@@ -64,10 +71,14 @@ function Tasks({ classes }: any) {
   const handleTaskListClick = (taskList: TodoTaskList) => () => {
     setSelectedTaskList(taskList);
     setSelectedTask(null);
+    setDirty(false);
     dispatch(fetchTasksData({taskList, app}));
   }
 
-  const handleTaskClick = (task: TodoTask) => () => setSelectedTask(task);
+  const handleTaskClick = (task: TodoTask) => () => {
+    setSelectedTask(task);
+    setDirty(false);
+  }
 
   const handleAddingTask = (val: boolean) => () => setAddingTask(val || false);
   const handleAddingTaskList = (val: boolean) => () => setAddingTaskList(val || false);
@@ -79,6 +90,24 @@ function Tasks({ classes }: any) {
       taskId,
       taskListId: (selectedTaskList as TodoTaskList)?.id || ''
     }));
+  }
+
+  const handleSave = () => {
+    const mergedTask: TodoTask = {
+      ...selectedTask,
+      body: {
+        ...selectedTask?.body,
+        ...(editorRef.current ? {
+          content: editorRef.current.getContent()
+         } : {}),
+      }
+    }
+    dispatch(patchTaskData({
+      app,
+      taskListId: selectedTaskList?.id || '',
+      task: mergedTask
+    }))
+      .then(() => setDirty(false));
   }
 
   return (
@@ -138,21 +167,27 @@ function Tasks({ classes }: any) {
               )}
             </List>
           </Paper>
-          <Paper elevation={8} id="readonlyDiv" className={classes.tinyMceContainer}>
+          <Paper elevation={8} className={classes.tinyMceContainer}>
             {selectedTask?.body?.content && <Editor
               tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
               onInit={(evt, editor) => editorRef.current = editor}
               initialValue={selectedTask?.body?.content}
-              disabled
+              onDirty={() => setDirty(true)}
               init={{
-                disabled: true,
-                height: '100%',
-                menubar: false,
-                readonly: true,
-                toolbar: '',
+                height: 400,
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
               }}
             />}
+            {selectedTask &&
+            <div className={classes.buttonRow}>
+              <Button
+                disabled={!dirty}
+                onClick={handleSave}
+                variant="contained"
+              >
+                {t("Save")}
+              </Button>
+            </div>}
           </Paper>
         </div>
       </div>
@@ -168,4 +203,4 @@ function Tasks({ classes }: any) {
   );
 }
 
-export default withStyles(styles)(Tasks);
+export default withTranslation()(withStyles(styles)(Tasks));
