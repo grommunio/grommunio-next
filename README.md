@@ -42,7 +42,7 @@ grommunio Next is the first open source Graph API web application ([https://lear
 ### Roadmap
 
 - Multiple Account support (multiple Graph API endpoints)
-- Feature-list on-par with grommunio-Web
+- Feature-list on-par with grommunio Web
 - Plugin architecture
 - Native integration with extensions integrating grommunio Meet, Chat, Archive and more
 - Mobile enhancements
@@ -58,16 +58,16 @@ grommunio Next is the first open source Graph API web application ([https://lear
 ## Support
 
 - Support is available through [grommunio GmbH](https://grommunio.com) and its partners.
-- grommunio Web community is available here: [grommunio Community](https://community.grommunio.com)
+- grommunio Next community is available here: [grommunio Community](https://community.grommunio.com)
 
 For direct contact to the maintainers (for example to supply information about a security-related responsible disclosure), you can contact grommunio directly at [dev@grommunio.com](mailto:dev@grommunio.com)
 
 ## Project assistance
 
-If you want to say thank you or/and support active development of grommunio Web:
+If you want to say thank you or/and support active development of grommunio Next:
 
 - Add a [GitHub Star](https://github.com/grommunio/grommunio-next) to the project.
-- Tweet about grommunio Web.
+- Tweet about grommunio Next.
 - Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/), your personal blog or any medium you feel comfortable with.
 
 Together, we can make grommunio Next better!

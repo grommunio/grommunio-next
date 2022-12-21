@@ -21,7 +21,7 @@ function Menu() {
   return (
     <div>
       <Container>
-        <h1>grommunio Web Next Generation</h1>
+        <h1>grommunio Next</h1>
         <p className="lead">
           This app uses the Microsoft Graph API
         </p>
