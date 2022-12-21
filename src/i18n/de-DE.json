@@ -1,1 +1,4 @@
-{}
+{
+  "addHeadline": "$t({{item}}) hinzufügen",
+  "Contact": "Kontakt"
+}

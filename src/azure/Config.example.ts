@@ -12,7 +12,7 @@ const config = {
     'calendars.readwrite',
     'mail.readwrite',
     'tasks.read',
-    'contacts.read',
+    'contacts.readwrite',
     'mail.send'
   ],
   baseUrl: "https://graph.microsoft.com/",

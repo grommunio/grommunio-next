@@ -16,3 +16,11 @@ export async function getContacts(authProvider: AuthCodeMSALBrowserAuthenticatio
   return response.value;
 }
 
+export async function postContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  contact: Contact): Promise<Contact> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/contacts')
+    .post(contact);
+}
