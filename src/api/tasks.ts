@@ -35,3 +35,12 @@ export async function postTask(authProvider: AuthCodeMSALBrowserAuthenticationPr
     .api('/me/todo/lists/' + tasklistID + '/tasks')
     .post(task);
 }
+
+export async function deleteTask(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  tasklistID: string, taskId: string): Promise<TodoTask> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/todo/lists/' + tasklistID + '/tasks/' + taskId)
+    .delete();
+}

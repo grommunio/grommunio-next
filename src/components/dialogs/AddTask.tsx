@@ -72,7 +72,6 @@ function AddTask(props: any) {
   }
 
   const handleTaskList = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.value);
     setSelectedTaskList(e.target.value);
   }
   

@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { useEffect, useRef, useState } from 'react';
+import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { fetchTaskListsData, fetchTasksData } from '../actions/tasks';
-import { Button, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { deleteTaskData, fetchTaskListsData, fetchTasksData } from '../actions/tasks';
+import { Button, IconButton, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
+import { Delete } from '@mui/icons-material';
 
 const styles: any = {
   root: {
@@ -44,6 +45,7 @@ function Tasks({ classes }: any) {
   const dispatch = useTypeDispatch();
   const { taskLists, tasks } = useTypeSelector(state => state.tasks);
   const [adding, setAdding] = useState<boolean>(false);
+  const [selectedTaskList, setSelectedTaskList] = useState<TodoTaskList | null>(null);
   const [selectedTask, setSelectedTask] = useState<TodoTask | null>(null);
 
   // componentDidMount()
@@ -52,6 +54,7 @@ function Tasks({ classes }: any) {
   }, []);
 
   const handleTaskListClick = (taskList: TodoTaskList) => () => {
+    setSelectedTaskList(taskList);
     setSelectedTask(null);
     dispatch(fetchTasksData({taskList, app}));
   }
@@ -59,6 +62,15 @@ function Tasks({ classes }: any) {
   const handleTaskClick = (task: TodoTask) => () => setSelectedTask(task);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);
+
+  const handleTaskDelete = (taskId: string) => (e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    dispatch(deleteTaskData({
+      app,
+      taskId,
+      taskListId: (selectedTaskList as TodoTaskList)?.id || ''
+    }));
+  }
 
   return (
     <AuthenticatedTemplate>
@@ -94,6 +106,9 @@ function Tasks({ classes }: any) {
                   <ListItemText
                     primary={task.title}
                   />
+                  <IconButton onClick={handleTaskDelete(task.id || '')}>
+                    <Delete color="error"/>
+                  </IconButton>
                 </ListItemButton>
               )}
             </List>

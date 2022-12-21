@@ -4,6 +4,8 @@
 export const AUTH_LOGIN = 'AUTH_LOGIN';
 export const AUTH_URL = 'AUTH_URL';
 
+export const DELETE_TASKS_DATA = 'DELETE_TASKS_DATA';
+
 export const FETCH_CONTACTS_DATA = 'FETCH_CONTACTS_DATA';
 
 export const FETCH_EVENTS_DATA = 'FETCH_EVENTS_DATA';
