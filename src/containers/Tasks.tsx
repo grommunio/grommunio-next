@@ -13,6 +13,8 @@ import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
 import { Delete } from '@mui/icons-material';
+import theme from '../theme';
+import AddTaskList from '../components/dialogs/AddTaskList';
 
 const styles: any = {
   root: {
@@ -37,6 +39,11 @@ const styles: any = {
   tinyMceContainer: {
     flex: 1,
   },
+  action: {
+    margin: theme.spacing(1),
+    display: 'flex',
+    justifyContent: 'center',
+  },
 };
 
 function Tasks({ classes }: any) {
@@ -44,7 +51,8 @@ function Tasks({ classes }: any) {
   const editorRef = useRef({});
   const dispatch = useTypeDispatch();
   const { taskLists, tasks } = useTypeSelector(state => state.tasks);
-  const [adding, setAdding] = useState<boolean>(false);
+  const [addingTaskList, setAddingTaskList] = useState<boolean>(false);
+  const [addingTask, setAddingTask] = useState<boolean>(false);
   const [selectedTaskList, setSelectedTaskList] = useState<TodoTaskList | null>(null);
   const [selectedTask, setSelectedTask] = useState<TodoTask | null>(null);
 
@@ -61,7 +69,8 @@ function Tasks({ classes }: any) {
 
   const handleTaskClick = (task: TodoTask) => () => setSelectedTask(task);
 
-  const handleAdding = (val: boolean) => () => setAdding(val || false);
+  const handleAddingTask = (val: boolean) => () => setAddingTask(val || false);
+  const handleAddingTaskList = (val: boolean) => () => setAddingTaskList(val || false);
 
   const handleTaskDelete = (taskId: string) => (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -76,11 +85,18 @@ function Tasks({ classes }: any) {
     <AuthenticatedTemplate>
       <div className={classes.root}>
         <Typography variant="h4">Tasks</Typography>
-        <div>
-         <Button onClick={handleAdding(true)} variant='contained' color="primary">New Task</Button>
-        </div>
+        
         <div className={classes.content}>
           <Paper>
+            <div className={classes.action}>
+              <Button
+                onClick={handleAddingTaskList(true)}
+                variant='contained'
+                color="primary"
+              >
+                New Task List
+              </Button>
+            </div>
             <List className={classes.mailList}>
               {taskLists.map((taskList: TodoTaskList) =>
                 <ListItemButton
@@ -96,6 +112,15 @@ function Tasks({ classes }: any) {
             </List>
           </Paper>
           <Paper elevation={4}>
+            <div className={classes.action}>
+              <Button
+                onClick={handleAddingTask(true)}
+                variant='contained'
+                color="primary"
+              >
+                New Task
+              </Button>
+            </div>
             <List className={classes.mailList}>
               {tasks.map((task: TodoTask) =>
                 <ListItemButton
@@ -132,8 +157,12 @@ function Tasks({ classes }: any) {
         </div>
       </div>
       <AddTask
-        open={adding}
-        onClose={handleAdding(false)}
+        open={addingTask}
+        onClose={handleAddingTask(false)}
+      />
+      <AddTaskList
+        open={addingTaskList}
+        onClose={handleAddingTaskList(false)}
       />
     </AuthenticatedTemplate>
   );
