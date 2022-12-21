@@ -26,3 +26,12 @@ export async function getUserTasks(authProvider: AuthCodeMSALBrowserAuthenticati
 
   return response.value;
 }
+
+export async function postTask(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  tasklistID: string, task: TodoTask): Promise<TodoTask> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/todo/lists/' + tasklistID + '/tasks')
+    .post(task);
+}

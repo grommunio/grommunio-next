@@ -8,9 +8,10 @@ import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchTaskListsData, fetchTasksData } from '../actions/tasks';
-import { List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { Button, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
+import AddTask from '../components/dialogs/AddTask';
 
 const styles: any = {
   root: {
@@ -42,6 +43,7 @@ function Tasks({ classes }: any) {
   const editorRef = useRef({});
   const dispatch = useTypeDispatch();
   const { taskLists, tasks } = useTypeSelector(state => state.tasks);
+  const [adding, setAdding] = useState<boolean>(false);
   const [selectedTask, setSelectedTask] = useState<TodoTask | null>(null);
 
   // componentDidMount()
@@ -56,10 +58,15 @@ function Tasks({ classes }: any) {
 
   const handleTaskClick = (task: TodoTask) => () => setSelectedTask(task);
 
+  const handleAdding = (val: boolean) => () => setAdding(val || false);
+
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
         <Typography variant="h4">Tasks</Typography>
+        <div>
+         <Button onClick={handleAdding(true)} variant='contained' color="primary">New Task</Button>
+        </div>
         <div className={classes.content}>
           <Paper>
             <List className={classes.mailList}>
@@ -109,6 +116,10 @@ function Tasks({ classes }: any) {
           </Paper>
         </div>
       </div>
+      <AddTask
+        open={adding}
+        onClose={handleAdding(false)}
+      />
     </AuthenticatedTemplate>
   );
 }

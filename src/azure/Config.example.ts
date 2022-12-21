@@ -11,7 +11,7 @@ const config = {
     'mailboxsettings.read',
     'calendars.readwrite',
     'mail.readwrite',
-    'tasks.read',
+    'tasks.readwrite',
     'contacts.readwrite',
     'mail.send'
   ],
