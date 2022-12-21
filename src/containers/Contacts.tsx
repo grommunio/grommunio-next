@@ -8,10 +8,11 @@ import { useAppContext } from '../azure/AppContext';
 import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { Button, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Button, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { Contact, EmailAddress } from 'microsoft-graph';
-import { fetchContactsData } from '../actions/contacts';
+import { deleteContactData, fetchContactsData } from '../actions/contacts';
 import AddContact from '../components/dialogs/AddContact';
+import { Delete } from '@mui/icons-material';
 
 const styles: any = {
   root: {
@@ -43,6 +44,10 @@ function Contacts({ classes }: any) {
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);
 
+  const handleDelete = (contactId: string) => () => {
+    dispatch(deleteContactData({app, contactId}));
+  }
+
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
@@ -56,6 +61,7 @@ function Contacts({ classes }: any) {
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>E-Mail Addresses</TableCell>
+                <TableCell padding='checkbox'></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -66,6 +72,11 @@ function Contacts({ classes }: any) {
                   </TableCell>
                   <TableCell>
                     {contact.emailAddresses?.map((obj: EmailAddress) => obj.address).join(', ')}
+                  </TableCell>
+                  <TableCell padding='checkbox'>
+                    <IconButton onClick={handleDelete(contact.id || '')}>
+                      <Delete color="error" />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               )}

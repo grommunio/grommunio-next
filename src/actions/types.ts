@@ -5,6 +5,7 @@ export const AUTH_LOGIN = 'AUTH_LOGIN';
 export const AUTH_URL = 'AUTH_URL';
 
 export const DELETE_TASKS_DATA = 'DELETE_TASKS_DATA';
+export const DELETE_CONTACTS_DATA = 'DELETE_CONTACTS_DATA';
 
 export const FETCH_CONTACTS_DATA = 'FETCH_CONTACTS_DATA';
 

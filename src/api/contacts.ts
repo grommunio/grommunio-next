@@ -24,3 +24,12 @@ export async function postContact(authProvider: AuthCodeMSALBrowserAuthenticatio
     .api('/me/contacts')
     .post(contact);
 }
+
+export async function deleteContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  contactId: string): Promise<void> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/contacts/' + contactId)
+    .delete();
+}
