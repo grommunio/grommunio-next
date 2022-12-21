@@ -1,13 +1,13 @@
-# grommunio Web 2.0
+# grommunio Next
 
 ![project license](https://img.shields.io/badge/license-AGPL--3.0-orange)
-[![latest version](https://shields.io/github/v/tag/grommunio/grommunio-web-2.0)](https://github.com/grommunio/grommunio-web-2.0/tags)
-[![code size](https://img.shields.io/github/languages/code-size/grommunio/grommunio-web-2.0)](https://github.com/grommunio/grommunio-web-2.0)
+[![latest version](https://shields.io/github/v/tag/grommunio/grommunio-next)](https://github.com/grommunio/grommunio-next/tags)
+[![code size](https://img.shields.io/github/languages/code-size/grommunio/grommunio-next)](https://github.com/grommunio/grommunio-next)
 [![twitter](https://img.shields.io/twitter/follow/grommunio?style=social)](https://twitter.com/grommunio)
 
-grommunio Web 2.0 is the first open source Graph API web application ([https://learn.microsoft.com/en-us/graph/overview](https://learn.microsoft.com/en-us/graph/overview)) to provide all the familiar email, advanced calendaring and contact features you need to be productive. It is the future main web application for access to your productivity workspace, including email, calendar, contacts, tasks, notes and more.
+grommunio Next is the first open source Graph API web application ([https://learn.microsoft.com/en-us/graph/overview](https://learn.microsoft.com/en-us/graph/overview)) to provide all the familiar email, advanced calendaring and contact features you need to be productive. It is the future main web application for access to your productivity workspace, including email, calendar, contacts, tasks, notes and more.
 
-**Important: grommunio Web 2.0 is still under heavy development - it is planned for production release in 2023.**
+**Important: grommunio Next is still under heavy development - it is planned for production release in 2023.**
 
 <details open="open">
 <summary>Overview</summary>
@@ -26,7 +26,7 @@ grommunio Web 2.0 is the first open source Graph API web application ([https://l
 
 ---
 
-## About grommunio Web 2.0
+## About grommunio Next
 
 - Provides modern web-based groupware (emails, contacts, calendar, tasks and notes) connectivity
 - Authentication based on OAuth 2.0
@@ -51,9 +51,9 @@ grommunio Web 2.0 is the first open source Graph API web application ([https://l
 
 ## Status
 
-- [Top Feature Requests](https://github.com/grommunio/grommunio-web-2.0/issues?q=label%3Aenhancement+is%3Aopen+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
-- [Top Bugs](https://github.com/grommunio/grommunio-web-2.0/issues?q=is%3Aissue+is%3Aopen+label%3Abug+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
-- [Newest Bugs](https://github.com/grommunio/grommunio-web-2.0/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
+- [Top Feature Requests](https://github.com/grommunio/grommunio-next/issues?q=label%3Aenhancement+is%3Aopen+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
+- [Top Bugs](https://github.com/grommunio/grommunio-next/issues?q=is%3Aissue+is%3Aopen+label%3Abug+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
+- [Newest Bugs](https://github.com/grommunio/grommunio-next/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Support
 
@@ -66,11 +66,11 @@ For direct contact to the maintainers (for example to supply information about a
 
 If you want to say thank you or/and support active development of grommunio Web:
 
-- Add a [GitHub Star](https://github.com/grommunio/grommunio-web-2.0) to the project.
+- Add a [GitHub Star](https://github.com/grommunio/grommunio-next) to the project.
 - Tweet about grommunio Web.
 - Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/), your personal blog or any medium you feel comfortable with.
 
-Together, we can make grommunio Web 2.0 better!
+Together, we can make grommunio Next better!
 
 ## Development
 
@@ -88,7 +88,7 @@ Together, we can make grommunio Web 2.0 better!
 
 ## Translators
 
-The translations are managed by [Weblate](https://hosted.weblate.org/projects/grommunio/grommunio-web-2.0/). Contributions are regularly monitored and integrated in the release cycles of grommunio Web 2.0.
+The translations are managed by [Weblate](https://hosted.weblate.org/projects/grommunio/grommunio-next/). Contributions are regularly monitored and integrated in the release cycles of grommunio Next.
 
 ## License
 
@@ -96,4 +96,4 @@ This project is licensed under the GNU Affero General Public License v3.
 
 See [LICENSE](LICENSE) for more information.
 
-grommunio Web 2.0 uses several components with different licensing and bundles them within the build process. Please see the respective [package-lock.json](package-lock.json) for detailed information.
+grommunio Next uses several components with different licensing and bundles them within the build process. Please see the respective [package-lock.json](package-lock.json) for detailed information.
