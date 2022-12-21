@@ -11,11 +11,13 @@ import authReducer from './reducers/auth';
 import calendarReducer from './reducers/calendar';
 import messagesReducer from './reducers/messages';
 import tasksReducer from './reducers/tasks';
+import contactsReducer from './reducers/contacts';
 import { userReducer as meatGrinder } from './reducers/user';
 
 const rootReducer = combineReducers({
   auth: authReducer,
   calendar: calendarReducer,
+  contacts: contactsReducer,
   messages: messagesReducer,
   tasks: tasksReducer,
   user: meatGrinder

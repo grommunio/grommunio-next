@@ -10,7 +10,7 @@ import { withStyles } from '@mui/styles';
 import { withRouter } from './hocs/withRouter';
 import logo from '../res/grommunio_logo_light.svg';
 import { NavLink } from 'react-router-dom';
-import { CalendarMonth, Mail, People, TaskSharp } from '@mui/icons-material';
+import { CalendarMonth, Mail, ContactMail, TaskSharp } from '@mui/icons-material';
 
 const drawerWidth = 260;
 
@@ -137,11 +137,11 @@ function ResponsiveDrawer(props) {
           <ListItem disablePadding>
             <ListItemButton
               className={classes.li}
-              onClick={handleNavigation('people')}
+              onClick={handleNavigation('contacts')}
             >
               <Grid container alignItems="center">
-                <People className={classes.icon} />
-                <ListItemText primary={"People"} />
+                <ContactMail className={classes.icon} />
+                <ListItemText primary={"Contacts"} />
               </Grid>
             </ListItemButton>
           </ListItem>
