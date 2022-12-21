@@ -25,4 +25,3 @@ yarn-error.log*
 # development
 src/azure/Config.ts
 *.code-workspace
-/public/tinymce/
