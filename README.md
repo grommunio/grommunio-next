@@ -77,7 +77,7 @@ Together, we can make grommunio Next better!
 ### Setup development environment
 
 1. Clone this repository
-2. Move to root folderl
+2. Move to root folder
 3. `yarn install && npm run postinstall`
 4. `cp src/azure/Config.example.ts src/azure/Config.ts`
 5. Follow the app registration tutorial at https://learn.microsoft.com/en-us/graph/tutorials/typescript?tabs=aad&tutorial-step=1

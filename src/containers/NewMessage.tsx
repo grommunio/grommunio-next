@@ -10,6 +10,7 @@ import { Button, Paper, TextField, Typography } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Message } from 'microsoft-graph';
+import { useTranslation } from 'react-i18next';
 
 const styles: any = (theme: any) => ({
   root: {
@@ -51,6 +52,7 @@ type MessagesProps = {
 
 function NewMessage({ classes }: MessagesProps) {
   const app = useAppContext();
+  const { t } = useTranslation();
   const editorRef = useRef<any>(null);
   const [toRecipients, setToRecipients] = useState('');
   const [subject, setSubject] = useState('');
@@ -82,14 +84,14 @@ function NewMessage({ classes }: MessagesProps) {
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-      <Typography variant="h4">New Message</Typography>
+      <Typography variant="h4">{t("New message")}</Typography>
         <div>
           <Button
             onClick={handleSend(false)}
             variant='contained'
             color="primary"
           >
-            Save
+            {t("Save")}
           </Button>
           <Button
             className={classes.button}
@@ -97,21 +99,21 @@ function NewMessage({ classes }: MessagesProps) {
             variant='contained'
             color="primary"
           >
-            Send
+            {t("Send")}
           </Button>
         </div>
         <div className={classes.content}>
           <Paper className={classes.tinyMceContainer}>
             <TextField
               className={classes.input}
-              label="Subject"
+              label={t("Subject")}
               onChange={handleInput('setSubject')}
               value={subject}
               fullWidth
             />
             <TextField
               className={classes.input}
-              label="Recipients"
+              label={t("Recipients")}
               onChange={handleInput('setToRecipients')}
               value={toRecipients}
               fullWidth

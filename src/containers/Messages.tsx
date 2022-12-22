@@ -12,6 +12,7 @@ import { Button, List, ListItemButton, ListItemText, Paper, Typography } from '@
 import { Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const styles: any = {
   root: {
@@ -45,6 +46,7 @@ type MessagesProps = {
 
 function Messages({ classes }: MessagesProps) {
   const app = useAppContext();
+  const { t } = useTranslation();
   const editorRef = useRef({});
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const dispatch = useTypeDispatch();
@@ -63,9 +65,11 @@ function Messages({ classes }: MessagesProps) {
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <Typography variant="h4">Messages</Typography>
+        <Typography variant="h4">{t("Messages")}</Typography>
         <div>
-         <Button onClick={handleNewMessage} variant='contained' color="primary">New Message</Button>
+          <Button onClick={handleNewMessage} variant='contained' color="primary">
+            {t("New message")}
+          </Button>
         </div>
         <div className={classes.content}>
           <List className={classes.mailList}>

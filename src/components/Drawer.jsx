@@ -73,7 +73,7 @@ const styles = theme => ({
 });
 
 function ResponsiveDrawer(props) {
-  const { classes } = props;
+  const { classes, t } = props;
   
   const handleNavigation = path => event => {
     const { router } = props;
@@ -108,7 +108,7 @@ function ResponsiveDrawer(props) {
             >
               <Grid container alignItems="center">
                 <Mail className={classes.icon} />
-                <ListItemText primary={"Messages"} />
+                <ListItemText primary={t("Messages")} />
               </Grid>
             </ListItemButton>
           </ListItem>
@@ -119,7 +119,7 @@ function ResponsiveDrawer(props) {
             >
               <Grid container alignItems="center">
                 <CalendarMonth className={classes.icon} />
-                <ListItemText primary={"Calendar"} />
+                <ListItemText primary={t("Calendar")} />
               </Grid>
             </ListItemButton>
           </ListItem>
@@ -130,7 +130,7 @@ function ResponsiveDrawer(props) {
             >
               <Grid container alignItems="center">
                 <TaskSharp className={classes.icon} />
-                <ListItemText primary={"Tasks"} />
+                <ListItemText primary={t("Tasks")} />
               </Grid>
             </ListItemButton>
           </ListItem>
@@ -141,7 +141,7 @@ function ResponsiveDrawer(props) {
             >
               <Grid container alignItems="center">
                 <ContactMail className={classes.icon} />
-                <ListItemText primary={"Contacts"} />
+                <ListItemText primary={t("Contacts")} />
               </Grid>
             </ListItemButton>
           </ListItem>

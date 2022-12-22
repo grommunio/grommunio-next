@@ -51,7 +51,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "postinstall": "node ./postinstall.js"
+    "postinstall": "node ./postinstall.js",
+    "translate": "python3 scripts/fillTranslations.py 'src/i18n/'"
   },
   "eslintConfig": {
     "extends": [

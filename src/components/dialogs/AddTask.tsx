@@ -82,7 +82,7 @@ function AddTask(props: any) {
       maxWidth="lg"
       fullWidth
     >
-      <DialogTitle>{t('addHeadline', { item: 'Contact' })}</DialogTitle>
+      <DialogTitle>{t('addHeadline', { item: 'Task' })}</DialogTitle>
       <DialogContent>
         <Grid container>
           <Grid item xs={12} className={classes.gridItem}>

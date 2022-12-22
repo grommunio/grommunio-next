@@ -5,10 +5,12 @@
 
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
 import { Button, Container } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useAppContext } from "../azure/AppContext";
 
 function Menu() {
   const app = useAppContext();
+  const { t } = useTranslation();
 
   const handleLogin = () => {
     app.signIn();
@@ -35,7 +37,7 @@ function Menu() {
               color="inherit"
               style={{ backgroundColor: 'grey' }}
             >
-              Sign out
+              {t("Sign out")}
             </Button>
           </div>
         </AuthenticatedTemplate>
@@ -45,7 +47,7 @@ function Menu() {
             onClick={handleLogin}
             variant="contained"
           >
-            Sign in
+            {t("Sign in")}
           </Button>
         </UnauthenticatedTemplate>
       </Container>

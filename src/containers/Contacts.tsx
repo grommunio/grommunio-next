@@ -13,6 +13,7 @@ import { Contact, EmailAddress } from 'microsoft-graph';
 import { deleteContactData, fetchContactsData } from '../actions/contacts';
 import AddContact from '../components/dialogs/AddContact';
 import { Delete } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 const styles: any = {
   root: {
@@ -33,6 +34,7 @@ const styles: any = {
 
 function Contacts({ classes }: any) {
   const app = useAppContext();
+  const { t } = useTranslation();
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
   const [adding, setAdding] = useState<boolean>(false);
@@ -51,17 +53,19 @@ function Contacts({ classes }: any) {
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <Typography variant='h4'>Contacts</Typography>
+        <Typography variant='h4'>{t('Contacts')}</Typography>
         <div>
-         <Button onClick={handleAdding(true)} variant='contained' color="primary">New Contact</Button>
+          <Button onClick={handleAdding(true)} variant='contained' color="primary">
+            {t("New contact")}
+          </Button>
         </div>
         <Paper className={classes.paper}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>E-Mail Addresses</TableCell>
-                <TableCell padding='checkbox'></TableCell>
+                <TableCell>{t("Name")}</TableCell>
+                <TableCell>{t("E-Mail Addresses")}</TableCell>
+                <TableCell padding='checkbox' />
               </TableRow>
             </TableHead>
             <TableBody>

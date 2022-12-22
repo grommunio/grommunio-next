@@ -113,7 +113,7 @@ function Tasks({ t, classes }: any) {
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <Typography variant="h4">Tasks</Typography>
+        <Typography variant="h4">{t("Tasks")}</Typography>
         
         <div className={classes.content}>
           <Paper>
@@ -123,7 +123,7 @@ function Tasks({ t, classes }: any) {
                 variant='contained'
                 color="primary"
               >
-                New Task List
+                {t("New task list")}
               </Button>
             </div>
             <List className={classes.mailList}>
@@ -147,7 +147,7 @@ function Tasks({ t, classes }: any) {
                 variant='contained'
                 color="primary"
               >
-                New Task
+                {t("New task")}
               </Button>
             </div>
             <List className={classes.mailList}>
