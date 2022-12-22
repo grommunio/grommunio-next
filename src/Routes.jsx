@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import React, { Suspense } from "react";
+import React from "react";
 
 import { Route, Routes } from "react-router-dom";
 import RequireAuth from "./components/RequireAuth";
-
-
- function makeLoadableComponent(loader) {
-  const AsyncComponent = React.lazy(loader);
-  const LoadableCompoenent = () => ( // TODO: Create loader component
-    <Suspense fallback={<div>Loading...</div>}>
-      <AsyncComponent />
-    </Suspense>
-  );
-  return LoadableCompoenent;
-}
+import makeLoadableComponent from "./lazy";
 
 function makeAuthenticatedElement(AsyncComponent, childProps) {
   return <RequireAuth>

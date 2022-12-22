@@ -11,18 +11,17 @@ import { withRouter } from './hocs/withRouter';
 import logo from '../res/grommunio_logo_light.svg';
 import { NavLink } from 'react-router-dom';
 import { CalendarMonth, Mail, ContactMail, TaskSharp } from '@mui/icons-material';
-
-const drawerWidth = 260;
+import { DRAWER_WIDTH } from '../constants';
 
 const styles = theme => ({
   /* || Side Bar */
   drawerExpanded: {
     [theme.breakpoints.up('lg')]: {
-      width: drawerWidth,
+      width: DRAWER_WIDTH,
     },
   },
   drawerPaper: {
-    width: drawerWidth,
+    width: DRAWER_WIDTH,
     backgroundColor: '#121315',
     // eslint-disable-next-line max-len
     boxShadow: 'rgba(0, 0, 0, 0.06) 0px 5px 5px -3px, rgba(0, 0, 0, 0.043) 0px 8px 10px 1px, rgba(0, 0, 0, 0.035) 0px 3px 14px 2px',

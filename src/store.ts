@@ -9,9 +9,10 @@ import logger from 'redux-logger';
 // Keep alphabetically ordered
 import authReducer from './reducers/auth';
 import calendarReducer from './reducers/calendar';
-import messagesReducer from './reducers/messages';
-import tasksReducer from './reducers/tasks';
 import contactsReducer from './reducers/contacts';
+import messagesReducer from './reducers/messages';
+import settingsReducer from './reducers/settings';
+import tasksReducer from './reducers/tasks';
 import { userReducer as meatGrinder } from './reducers/user';
 
 const rootReducer = combineReducers({
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   calendar: calendarReducer,
   contacts: contactsReducer,
   messages: messagesReducer,
+  settings: settingsReducer,
   tasks: tasksReducer,
   user: meatGrinder
 });

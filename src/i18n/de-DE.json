@@ -27,5 +27,6 @@
     "Task list": "Aufgabenliste",
     "Tasks": "Aufgaben",
     "Title": "Titel",
-    "addHeadline": "$t({{item}}) hinzufügen"
+    "addHeadline": "$t({{item}}) hinzufügen",
+    "Language": "Sprache"
 }

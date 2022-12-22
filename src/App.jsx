@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { PureComponent } from 'react';
+import { PureComponent, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './App.css';
-import { parseParams } from './utils';
 import { MsalProvider } from '@azure/msal-react';
 import config from './azure/Config';
 import { EventType, PublicClientApplication } from '@azure/msal-browser';
 import ProvideAppContext from './azure/AppContext';
 import { withStyles } from '@mui/styles';
-import MainView from './components/MainView';
 import { connect } from 'react-redux';
+import makeLoadableComponent from './lazy';
+import TopBar from './components/TopBar';
+import { useTranslation } from 'react-i18next';
+import { useTypeDispatch } from './store';
+import { changeSettings } from './actions/settings';
 
 const styles = {
   root: {
     display: "flex",
+    flexDirection: 'column',
     flex: 1,
     overflow: "hidden",
     backgroundColor: "#fafafa",
@@ -61,35 +65,38 @@ msalInstance.addEventCallback((event) => {
 });
 // </MsalInstanceSnippet>
 
-class App extends PureComponent {
+// Create async component
+const AsyncMainView = makeLoadableComponent(() => import("./components/MainView"));
 
-  async componentDidMount() {
-    const query = parseParams(window.location.search.substr(1));
-    const redirect = query.redirect;
-    if(redirect) {
-      //window.localStorage.setItem("pathname", redirect);
+function App(props) {
+  const { classes, authenticated } = props;
+  const { i18n } = useTranslation();
+  const dispatch = useTypeDispatch();
+
+  useEffect(() => {
+    const lang = localStorage.getItem("lang");
+    if (lang) {
+      i18n.changeLanguage(lang);
+      dispatch(changeSettings("language", lang));
     }
-  }
+  }, [])
 
-  render() {
-    const { classes, authenticated } = this.props;
-    const routesProps = {
-      authenticated,
-    };
-
-    return (
-      <MsalProvider instance={msalInstance}>
-        <ProvideAppContext>
-          <div className={classes.root}>
-            <MainView
-              classes={classes}
-              routesProps={routesProps}
-            />
-          </div>
-        </ProvideAppContext>
-      </MsalProvider>
-    );
-  }
+  const routesProps = {
+    authenticated,
+  };
+  return (
+    <MsalProvider instance={msalInstance}>
+      <ProvideAppContext>
+        <div className={classes.root}>
+          <TopBar />
+          <AsyncMainView
+            classes={classes}
+            routesProps={routesProps}
+          />
+        </div>
+      </ProvideAppContext>
+    </MsalProvider>
+  );
 }
 
 App.propTypes = {
