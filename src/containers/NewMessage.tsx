@@ -4,7 +4,6 @@
 import { ChangeEvent, useRef, useState } from 'react';
 import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
-import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { Button, Paper, TextField, Typography } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';

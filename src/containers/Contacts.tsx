@@ -3,9 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { AuthenticatedTemplate } from '@azure/msal-react';
-
 import { useAppContext } from '../azure/AppContext';
-import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { Button, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';

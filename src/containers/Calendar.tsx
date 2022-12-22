@@ -5,9 +5,7 @@
 
 import { useEffect } from 'react';
 import { AuthenticatedTemplate } from '@azure/msal-react';
-
 import { useAppContext } from '../azure/AppContext';
-import './Calendar.css';
 import { withStyles } from '@mui/styles';
 import { fetchEventsData } from '../actions/calendar';
 import { useTypeDispatch } from '../store';
