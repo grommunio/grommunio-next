@@ -108,3 +108,12 @@ pre code {
 .apexcharts-tooltip {
   color: black;
 }
+
+/* OVERWRITES */
+
+.css-gyiown .VerticalAppointment-textContainer {
+	line-height: 2;
+	white-space: pre-wrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

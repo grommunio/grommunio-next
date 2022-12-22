@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { useState, MouseEvent } from 'react';
-import PropTypes from 'prop-types';
 import { withStyles } from '@mui/styles';
 import { AppBar, Button, IconButton, Menu, MenuItem, Toolbar, Tooltip} from '@mui/material';
 import { DRAWER_WIDTH } from '../constants';
@@ -80,10 +79,5 @@ function TopBar(props: any) {
     </AppBar>
   );
 }
-
-TopBar.propTypes = {
-  router: PropTypes.object.isRequired,
-};
-
 
 export default withStyles(styles)(TopBar);

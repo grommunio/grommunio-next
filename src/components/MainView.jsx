@@ -6,7 +6,6 @@ import Drawer from './Drawer';
 import AppRoutes from '../Routes';
 
 export default function MainView(props) {
-  console.log(props);
   const { classes, routesProps } = props;
   return (
     <div className={classes.mainView}>
