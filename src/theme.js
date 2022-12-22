@@ -7,7 +7,7 @@ import { createTheme } from '@mui/material/styles';
 import grommunioTheme from './themes/grommunio';
 
 // Define material-ui theme
-const theme = createTheme(grommunioTheme);
+const theme = createTheme(grommunioTheme('light'));
 
 
 export default theme;

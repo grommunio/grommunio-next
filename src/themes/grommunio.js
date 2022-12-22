@@ -9,22 +9,6 @@ import defaultStyles from "./defaultStyles";
 const grommunioTheme = mode => ({
   components: {
     ...defaultStyles(mode),
-    MuiAppBar: {
-      styleOverrides: {
-        colorPrimary: {
-          backgroundColor: mode === 'light' ? '#fff' : blue[600],
-          color: mode === 'light' ? '#333' : '#fff',
-          boxShadow: '0px 5px 5px -3px rgba(0, 0, 0, 0.06),0px 8px 10px 1px rgba(0, 0, 0, 0.042),0px 3px 14px 2px rgba(0, 0, 0, 0.036)',
-        },
-      },
-    },
-    MuiToolbar: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'linear-gradient(150deg, rgb(0, 159, 253), rgb(42, 42, 114))',
-        },
-      },
-    },
     MuiChip: {
       styleOverrides: {
         colorSecondary: {
