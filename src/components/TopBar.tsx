@@ -18,12 +18,26 @@ const styles = {
   },
   toolbar: {
     marginLeft: DRAWER_WIDTH,
+    background: 'linear-gradient(150deg, rgb(0, 159, 253), rgb(42, 42, 114))',
+    color: '#000',
   },
   flexEndContainer: {
     display: 'flex',
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
+  },
+  tabs: {
+    '& .MuiTabs-indicator': {
+      backgroundColor: '#000',
+    },
+  },
+  tab: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  trans: {
+    color: '#fff',
   },
 };
 
@@ -54,20 +68,21 @@ function TopBar(props: any) {
     <AppBar color='primary' position='relative' className={classes.appbar}>
       <Toolbar className={classes.toolbar}>
         <Tabs
+          className={classes.tabs}
           value={tab}
           onChange={handleTab}
           textColor="inherit"
           indicatorColor="secondary"
         >
-          <Tab value={'messages'} label={t("Messages")} />
-          <Tab value={'calendar'} label={t("Calendar")} />
-          <Tab value={'contacts'} label={t("Contacts")} />
-          <Tab value={'tasks'} label={t("Tasks")} />
+          <Tab className={classes.tab} value={'messages'} label={t("Messages")} />
+          <Tab className={classes.tab} value={'calendar'} label={t("Calendar")} />
+          <Tab className={classes.tab} value={'contacts'} label={t("Contacts")} />
+          <Tab className={classes.tab} value={'tasks'} label={t("Tasks")} />
         </Tabs>
         <div className={classes.flexEndContainer}>
           <Tooltip title={t("Language")}>
-            <IconButton className={classes.langButton} onClick={handleMenu(true)}>
-              <Translate color="inherit" className={classes.username}/>
+            <IconButton onClick={handleMenu(true)}>
+              <Translate color="inherit" className={classes.trans}/>
             </IconButton>
           </Tooltip>
           <Menu
