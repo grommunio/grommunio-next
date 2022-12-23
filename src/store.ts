@@ -11,6 +11,7 @@ import authReducer from './reducers/auth';
 import calendarReducer from './reducers/calendar';
 import contactsReducer from './reducers/contacts';
 import messagesReducer from './reducers/messages';
+import notesReducer from './reducers/notes';
 import settingsReducer from './reducers/settings';
 import tasksReducer from './reducers/tasks';
 import { userReducer as meatGrinder } from './reducers/user';
@@ -20,6 +21,7 @@ const rootReducer = combineReducers({
   calendar: calendarReducer,
   contacts: contactsReducer,
   messages: messagesReducer,
+  notes: notesReducer,
   settings: settingsReducer,
   tasks: tasksReducer,
   user: meatGrinder

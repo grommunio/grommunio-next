@@ -78,6 +78,7 @@ function TopBar(props: any) {
           <Tab className={classes.tab} value={'calendar'} label={t("Calendar")} />
           <Tab className={classes.tab} value={'contacts'} label={t("Contacts")} />
           <Tab className={classes.tab} value={'tasks'} label={t("Tasks")} />
+          <Tab className={classes.tab} value={'notes'} label={t("Notes")} />
         </Tabs>
         <div className={classes.flexEndContainer}>
           <Tooltip title={t("Language")}>
