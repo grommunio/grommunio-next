@@ -9,13 +9,17 @@
     "E-Mail Addresses": "E-Mail Adressen",
     "First name": "Vorname",
     "Initials": "Initialien",
+    "Language": "Sprache",
     "Messages": "Nachrichten",
     "Name": "Name",
     "New contact": "Neuer Kontakt",
     "New message": "Neue Nachricht",
+    "New note": "Neue Notiz",
     "New task": "Neue Aufgabe",
     "New task list": "Neue Aufgabenliste",
     "Nickname": "Nickname",
+    "Note": "Notiz",
+    "Notes": "Notizen",
     "Recipients": "Empfänger",
     "Save": "Speichern",
     "Send": "Senden",
@@ -27,6 +31,5 @@
     "Task list": "Aufgabenliste",
     "Tasks": "Aufgaben",
     "Title": "Titel",
-    "addHeadline": "$t({{item}}) hinzufügen",
-    "Language": "Sprache"
+    "addHeadline": "$t({{item}}) hinzufügen"
 }

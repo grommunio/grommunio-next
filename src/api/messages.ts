@@ -10,7 +10,7 @@ export async function getUserMessages(authProvider: AuthCodeMSALBrowserAuthentic
   ensureClient(authProvider);
   
   const response: PageCollection = await graphClient!
-    .api('/me/messages')
+    .api('/me/mailFolders/inbox/messages')
     .get();
 
   return response.value;
