@@ -3,14 +3,14 @@
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
-import { Message } from "microsoft-graph";
+import { MailFolder, Message } from "microsoft-graph";
 import { ensureClient, graphClient } from "./utils";
 
-export async function getUserMessages(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Message[]> {
+export async function getUserMessages(authProvider: AuthCodeMSALBrowserAuthenticationProvider, folderid = 'inbox'): Promise<Message[]> {
   ensureClient(authProvider);
   
   const response: PageCollection = await graphClient!
-    .api('/me/mailFolders/inbox/messages')
+    .api(`/me/mailFolders/${folderid}/messages`)
     .get();
 
   return response.value;
@@ -24,4 +24,15 @@ export async function postMessage(authProvider: AuthCodeMSALBrowserAuthenticatio
   return await graphClient!
     .api('/me/' + (send ? 'sendMail' : 'messages'))
     .post(send ? { message } : message);
+}
+
+
+export async function getMailFolders(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<MailFolder[]> {
+  ensureClient(authProvider);
+  
+  const response: PageCollection = await graphClient!
+    .api('/me/mailFolders')
+    .get();
+
+  return response.value;
 }

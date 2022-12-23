@@ -4,14 +4,14 @@
 import PropTypes from 'prop-types';
 import { withTranslation } from 'react-i18next';
 import {
-  Drawer, Grid, List, ListItem, ListItemButton, ListItemText,
+  Badge, Drawer, List, ListItem, ListItemButton,
 } from '@mui/material';
 import { withStyles } from '@mui/styles';
-import { withRouter } from './hocs/withRouter';
 import logo from '../res/grommunio_logo_light.svg';
 import { NavLink } from 'react-router-dom';
-import { CalendarMonth, Mail, ContactMail, TaskSharp } from '@mui/icons-material';
 import { DRAWER_WIDTH } from '../constants';
+import { useTypeSelector } from '../store';
+import { getStringAfterFirstSlash } from '../utils';
 
 const styles = theme => ({
   /* || Side Bar */
@@ -69,15 +69,23 @@ const styles = theme => ({
     textAlign: 'center',
     verticalAlign: 'middle',
   },
+  badgeAnchor: {
+    width: 16,
+    height: 12,
+  },
 });
 
 function ResponsiveDrawer(props) {
-  const { classes, t } = props;
-  
-  const handleNavigation = path => event => {
-    const { router } = props;
-    event.preventDefault();
-    router.navigate(`/${path}`);
+  const { classes } = props;
+  const { messages, tasks } = useTypeSelector(state => state);
+
+  const getHierarchy = () => {
+    console.log(getStringAfterFirstSlash(), window.location.pathname);
+    switch(getStringAfterFirstSlash()) {
+    case 'messages': return messages.mailFolders;
+    case 'tasks': return tasks.taskLists;
+    default: return [];
+    }
   }
 
   return (
@@ -100,50 +108,23 @@ function ResponsiveDrawer(props) {
           </NavLink>
         </div>
         <List className={classes.list}>
-          <ListItem disablePadding>
-            <ListItemButton
-              className={classes.li}
-              onClick={handleNavigation('messages')}
-            >
-              <Grid container alignItems="center">
-                <Mail className={classes.icon} />
-                <ListItemText primary={t("Messages")} />
-              </Grid>
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton
-              className={classes.li}
-              onClick={handleNavigation('calendar')}
-            >
-              <Grid container alignItems="center">
-                <CalendarMonth className={classes.icon} />
-                <ListItemText primary={t("Calendar")} />
-              </Grid>
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton
-              className={classes.li}
-              onClick={handleNavigation('tasks')}
-            >
-              <Grid container alignItems="center">
-                <TaskSharp className={classes.icon} />
-                <ListItemText primary={t("Tasks")} />
-              </Grid>
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton
-              className={classes.li}
-              onClick={handleNavigation('contacts')}
-            >
-              <Grid container alignItems="center">
-                <ContactMail className={classes.icon} />
-                <ListItemText primary={t("Contacts")} />
-              </Grid>
-            </ListItemButton>
-          </ListItem>
+          {getHierarchy().map((item, idx) => 
+            <ListItem disablePadding key={idx}>
+              <ListItemButton
+                className={classes.li}
+                //onClick={handleNavigation('messages')}
+              >
+                {item.displayName}
+                <Badge
+                  className={classes.badge}
+                  badgeContent={item.unreadItemCount}
+                  color="primary"
+                >
+                  <div className={classes.badgeAnchor}></div>
+                </Badge>
+              </ListItemButton>
+            </ListItem>
+          )}
         </List>
       </Drawer>
     </nav>
@@ -155,4 +136,4 @@ ResponsiveDrawer.propTypes = {
   t: PropTypes.func.isRequired,
 };
 
-export default withRouter(withTranslation()(withStyles(styles)(ResponsiveDrawer)));
+export default withTranslation()(withStyles(styles)(ResponsiveDrawer));

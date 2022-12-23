@@ -6,7 +6,7 @@ import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { fetchMessagesData } from '../actions/messages';
+import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
 import { Button, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
@@ -55,6 +55,7 @@ function Messages({ classes }: MessagesProps) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchMessagesData(app));
+    dispatch(fetchMailFoldersData(app));
   }, [app.authProvider]);
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);

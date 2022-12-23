@@ -49,3 +49,7 @@ export function getLangs() {
     { key: 'zh-TW', value: 'zh_TW: 繁體中文' },
   ];
 }
+
+export function getStringAfterFirstSlash(): string {
+  return window.location.pathname.split('/')[1] || '';
+}
