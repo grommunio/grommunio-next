@@ -40,7 +40,7 @@ function Contacts({ classes }: any) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchContactsData(app));
-  }, []);
+  }, [app.authProvider]);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);
 

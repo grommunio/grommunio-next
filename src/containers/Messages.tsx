@@ -55,7 +55,7 @@ function Messages({ classes }: MessagesProps) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchMessagesData(app));
-  }, []);
+  }, [app.authProvider]);
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
 

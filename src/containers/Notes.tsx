@@ -63,7 +63,7 @@ function Notes({ t, classes }: any) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchNotesData(app));
-  }, []);
+  }, [app.authProvider]);
 
   const handleNoteClick = (note: Message) => () => {
     setSelectedNote(note);

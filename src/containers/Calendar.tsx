@@ -32,7 +32,7 @@ function Calendar({ classes }: any) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchEventsData(app));
-  }, []);
+  }, [app.authProvider]);
 
 
   return (
