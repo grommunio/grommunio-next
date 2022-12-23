@@ -4,12 +4,12 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { useEffect } from 'react';
-import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { fetchEventsData } from '../actions/calendar';
 import { useTypeDispatch } from '../store';
 import ScheduleCalendar from './calendar/Scheduler';
+import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = {
   root: {
@@ -36,11 +36,9 @@ function Calendar({ classes }: any) {
 
 
   return (
-    <AuthenticatedTemplate>
-      <div className={classes.root}>
-        <ScheduleCalendar />
-      </div>
-    </AuthenticatedTemplate>
+    <AuthenticatedView rootClass={classes.root}>
+      <ScheduleCalendar />
+    </AuthenticatedView>
   );
   // </ReturnSnippet>
 }

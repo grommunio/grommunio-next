@@ -7,16 +7,20 @@ import { getMailFolders, getUserMessages } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
 import { FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA } from "./types";
 
+type fetchMessagesDataArgTypes = {
+  app: AppContext,
+  folderid?: string,
+};
 
 export const fetchMessagesData = createAsyncThunk<
   Message[],
-  AppContext
+  fetchMessagesDataArgTypes
 >(
   FETCH_MAILS_DATA,
-  async (app: AppContext) => {
+  async ({app, folderid}: fetchMessagesDataArgTypes) => {
     if (app.user) {
       try {
-        const mails = await getUserMessages(app.authProvider!);
+        const mails = await getUserMessages(app.authProvider!, folderid);
         return mails;
       } catch (err) {
         const error = err as Error;

@@ -47,7 +47,7 @@ function TopBar(props: any) {
   const dispatch = useTypeDispatch();
   const { language } = useTypeSelector(state => state.settings);
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
-  const [ tab, setTab ] = useState<string>('messages'); // TODO: In the future, the default will be part of the user settings
+  const [ tab, setTab ] = useState<string>(''); // TODO: In the future, the default will be part of the user settings
   const navigate = useNavigate();
 
   const handleMenu = (open: boolean) => (e: MouseEvent<HTMLElement>) => setMenuAnchor(open ? e.currentTarget : null);
@@ -74,6 +74,7 @@ function TopBar(props: any) {
           textColor="inherit"
           indicatorColor="secondary"
         >
+          <Tab className={classes.tab} value={''} label={t("Account")} />
           <Tab className={classes.tab} value={'messages'} label={t("Messages")} />
           <Tab className={classes.tab} value={'calendar'} label={t("Calendar")} />
           <Tab className={classes.tab} value={'contacts'} label={t("Contacts")} />

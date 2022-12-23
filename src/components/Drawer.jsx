@@ -4,14 +4,12 @@
 import PropTypes from 'prop-types';
 import { withTranslation } from 'react-i18next';
 import {
-  Badge, Drawer, List, ListItem, ListItemButton,
+  Drawer, List,
 } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import logo from '../res/grommunio_logo_light.svg';
 import { NavLink } from 'react-router-dom';
 import { DRAWER_WIDTH } from '../constants';
-import { useTypeSelector } from '../store';
-import { getStringAfterFirstSlash } from '../utils';
 
 const styles = theme => ({
   /* || Side Bar */
@@ -69,24 +67,9 @@ const styles = theme => ({
     textAlign: 'center',
     verticalAlign: 'middle',
   },
-  badgeAnchor: {
-    width: 16,
-    height: 12,
-  },
 });
 
-function ResponsiveDrawer(props) {
-  const { classes } = props;
-  const { messages, tasks } = useTypeSelector(state => state);
-
-  const getHierarchy = () => {
-    console.log(getStringAfterFirstSlash(), window.location.pathname);
-    switch(getStringAfterFirstSlash()) {
-    case 'messages': return messages.mailFolders;
-    case 'tasks': return tasks.taskLists;
-    default: return [];
-    }
-  }
+function ResponsiveDrawer({ classes, listElements }) {
 
   return (
     <nav className={classes.drawerExpanded} aria-label="navigation">
@@ -108,23 +91,7 @@ function ResponsiveDrawer(props) {
           </NavLink>
         </div>
         <List className={classes.list}>
-          {getHierarchy().map((item, idx) => 
-            <ListItem disablePadding key={idx}>
-              <ListItemButton
-                className={classes.li}
-                //onClick={handleNavigation('messages')}
-              >
-                {item.displayName}
-                <Badge
-                  className={classes.badge}
-                  badgeContent={item.unreadItemCount}
-                  color="primary"
-                >
-                  <div className={classes.badgeAnchor}></div>
-                </Badge>
-              </ListItemButton>
-            </ListItem>
-          )}
+          {listElements}
         </List>
       </Drawer>
     </nav>

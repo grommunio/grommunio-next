@@ -2,12 +2,11 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { MouseEvent, useEffect, useRef, useState } from 'react';
-import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { deleteTaskData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
-import { Button, IconButton, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
@@ -15,6 +14,7 @@ import { Delete } from '@mui/icons-material';
 import theme from '../theme';
 import AddTaskList from '../components/dialogs/AddTaskList';
 import { withTranslation } from 'react-i18next';
+import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = {
   root: {
@@ -48,6 +48,20 @@ const styles: any = {
     display: 'flex',
     justifyContent: 'flex-end',
     margin: 8,
+  },
+  drawerLi: {
+    width: 'auto',
+    margin: '6px 12px 6px',
+    borderRadius: '3px',
+    position: 'relative',
+    display: 'flex',
+    padding: '9px 14px',
+    transition: 'all 200ms linear',
+    '&:hover': {
+      backgroundColor: 'transparent',
+      textShadow: '0px 0px 1px white',
+      color: 'white',
+    },
   },
 };
 
@@ -109,96 +123,79 @@ function Tasks({ t, classes }: any) {
       .then(() => setDirty(false));
   }
 
+  const drawerListElements = taskLists.map((taskList: TodoTaskList, idx: number) => 
+    <ListItem disablePadding key={idx}>
+      <ListItemButton
+        className={classes.drawerLi}
+        onClick={handleTaskListClick(taskList)}
+      >
+        {taskList.displayName}
+      </ListItemButton>
+    </ListItem>);
+
   return (
-    <AuthenticatedTemplate>
-      <div className={classes.root}>
-        <Typography variant="h4">{t("Tasks")}</Typography>
-        
-        <div className={classes.content}>
-          <Paper>
-            <div className={classes.action}>
-              <Button
-                onClick={handleAddingTaskList(true)}
-                variant='contained'
-                color="primary"
+    <AuthenticatedView rootClass={classes.root} drawerProps={{ listElements: drawerListElements }}>
+      <Typography variant="h4">{t("Tasks")}</Typography>
+      <div className={classes.content}>
+        <Paper elevation={1}>
+          <div className={classes.action}>
+            <Button
+              onClick={handleAddingTask(true)}
+              variant='contained'
+              color="primary"
+            >
+              {t("New task")}
+            </Button>
+          </div>
+          <List className={classes.mailList}>
+            {tasks.map((task: TodoTask) =>
+              <ListItemButton
+                key={task.id}
+                onClick={handleTaskClick(task)}
+                divider
               >
-                {t("New task list")}
-              </Button>
-            </div>
-            <List className={classes.mailList}>
-              {taskLists.map((taskList: TodoTaskList) =>
-                <ListItemButton
-                  key={taskList.id}
-                  onClick={handleTaskListClick(taskList)}
-                  divider
-                >
-                  <ListItemText
-                    primary={taskList.displayName}
-                  />
-                </ListItemButton>
-              )}
-            </List>
-          </Paper>
-          <Paper elevation={4}>
-            <div className={classes.action}>
-              <Button
-                onClick={handleAddingTask(true)}
-                variant='contained'
-                color="primary"
-              >
-                {t("New task")}
-              </Button>
-            </div>
-            <List className={classes.mailList}>
-              {tasks.map((task: TodoTask) =>
-                <ListItemButton
-                  key={task.id}
-                  onClick={handleTaskClick(task)}
-                  divider
-                >
-                  <ListItemText
-                    primary={task.title}
-                  />
-                  <IconButton onClick={handleTaskDelete(task.id || '')}>
-                    <Delete color="error"/>
-                  </IconButton>
-                </ListItemButton>
-              )}
-            </List>
-          </Paper>
-          <Paper elevation={8} className={classes.tinyMceContainer}>
-            {selectedTask?.body?.content && <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-              onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={selectedTask?.body?.content}
-              onDirty={() => setDirty(true)}
-              init={{
-                height: 400,
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-              }}
-            />}
-            {selectedTask &&
-            <div className={classes.buttonRow}>
-              <Button
-                disabled={!dirty}
-                onClick={handleSave}
-                variant="contained"
-              >
-                {t("Save")}
-              </Button>
-            </div>}
-          </Paper>
-        </div>
+                <ListItemText
+                  primary={task.title}
+                />
+                <IconButton onClick={handleTaskDelete(task.id || '')}>
+                  <Delete color="error"/>
+                </IconButton>
+              </ListItemButton>
+            )}
+          </List>
+        </Paper>
+        <Paper elevation={4} className={classes.tinyMceContainer}>
+          {selectedTask?.body?.content && <Editor
+            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+            onInit={(evt, editor) => editorRef.current = editor}
+            initialValue={selectedTask?.body?.content}
+            onDirty={() => setDirty(true)}
+            init={{
+              height: 400,
+              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+            }}
+          />}
+          {selectedTask &&
+          <div className={classes.buttonRow}>
+            <Button
+              disabled={!dirty}
+              onClick={handleSave}
+              variant="contained"
+            >
+              {t("Save")}
+            </Button>
+          </div>}
+        </Paper>
       </div>
-      <AddTask
-        open={addingTask}
-        onClose={handleAddingTask(false)}
-      />
-      <AddTaskList
-        open={addingTaskList}
-        onClose={handleAddingTaskList(false)}
-      />
-    </AuthenticatedTemplate>
+    <AddTask
+      open={addingTask}
+      onClose={handleAddingTask(false)}
+    />
+    <AddTaskList
+      open={addingTaskList}
+      onClose={handleAddingTaskList(false)}
+    />
+    </AuthenticatedView>
   );
 }
 

@@ -4,9 +4,10 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
-import { Button, Container } from "@mui/material";
+import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useAppContext } from "../azure/AppContext";
+import Drawer from "../components/Drawer";
 
 function Menu() {
   const app = useAppContext();
@@ -22,7 +23,8 @@ function Menu() {
 
   return (
     <div>
-      <Container>
+      <Drawer />
+      <div style={{ marginLeft: 276 }}>
         <h1>grommunio Next</h1>
         <p className="lead">
           This app uses the Microsoft Graph API
@@ -50,7 +52,7 @@ function Menu() {
             {t("Sign in")}
           </Button>
         </UnauthenticatedTemplate>
-      </Container>
+      </div>
     </div>
   );
 }

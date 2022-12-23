@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { MouseEvent, useEffect, useRef, useState } from 'react';
-import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -15,6 +14,7 @@ import { withTranslation } from 'react-i18next';
 import { deleteNoteData, fetchNotesData } from '../actions/notes';
 import AddNote from '../components/dialogs/AddNote';
 import { patchNote } from '../api/notes';
+import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = {
   root: {
@@ -95,67 +95,64 @@ function Notes({ t, classes }: any) {
   }
 
   return (
-    <AuthenticatedTemplate>
-      <div className={classes.root}>
-        <Typography variant="h4">{t("Notes")}</Typography>
-        
-        <div className={classes.content}>
-          <Paper>
-            <div className={classes.action}>
-              <Button
-                onClick={handleAddNote(true)}
-                variant='contained'
-                color="primary"
+    <AuthenticatedView rootClass={classes.root}>
+      <Typography variant="h4">{t("Notes")}</Typography>
+      <div className={classes.content}>
+        <Paper>
+          <div className={classes.action}>
+            <Button
+              onClick={handleAddNote(true)}
+              variant='contained'
+              color="primary"
+            >
+              {t("New note")}
+            </Button>
+          </div>
+          <List className={classes.mailList}>
+            {notes.map((note: Message) =>
+              <ListItemButton
+                key={note.id}
+                onClick={handleNoteClick(note)}
+                divider
               >
-                {t("New note")}
-              </Button>
-            </div>
-            <List className={classes.mailList}>
-              {notes.map((note: Message) =>
-                <ListItemButton
-                  key={note.id}
-                  onClick={handleNoteClick(note)}
-                  divider
-                >
-                  <ListItemText
-                    primary={note.subject}
-                  />
-                  <IconButton onClick={handleNoteDelete(note.id || '')}>
-                    <Delete color="error"/>
-                  </IconButton>
-                </ListItemButton>
-              )}
-            </List>
-          </Paper>
-          <Paper elevation={8} className={classes.tinyMceContainer}>
-            {selectedNote?.body?.content && <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-              onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={selectedNote?.body?.content}
-              onDirty={() => setDirty(true)}
-              init={{
-                height: 400,
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-              }}
-            />}
-            {selectedNote &&
-            <div className={classes.buttonRow}>
-              <Button
-                disabled={!dirty}
-                onClick={handleSave}
-                variant="contained"
-              >
-                {t("Save")}
-              </Button>
-            </div>}
-          </Paper>
-        </div>
+                <ListItemText
+                  primary={note.subject}
+                />
+                <IconButton onClick={handleNoteDelete(note.id || '')}>
+                  <Delete color="error"/>
+                </IconButton>
+              </ListItemButton>
+            )}
+          </List>
+        </Paper>
+        <Paper elevation={8} className={classes.tinyMceContainer}>
+          {selectedNote?.body?.content && <Editor
+            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+            onInit={(evt, editor) => editorRef.current = editor}
+            initialValue={selectedNote?.body?.content}
+            onDirty={() => setDirty(true)}
+            init={{
+              height: 400,
+              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+            }}
+          />}
+          {selectedNote &&
+          <div className={classes.buttonRow}>
+            <Button
+              disabled={!dirty}
+              onClick={handleSave}
+              variant="contained"
+            >
+              {t("Save")}
+            </Button>
+          </div>}
+        </Paper>
       </div>
-      <AddNote
-        onClose={handleAddNote(false)}
-        open={addingNote}
-      />
-    </AuthenticatedTemplate>
+    <AddNote
+      onClose={handleAddNote(false)}
+      open={addingNote}
+    />
+    </AuthenticatedView>
   );
 }
 

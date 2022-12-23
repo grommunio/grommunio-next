@@ -2,17 +2,11 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import PropTypes from 'prop-types';
-import Drawer from './Drawer';
 import AppRoutes from '../Routes';
 
-export default function MainView(props) {
-  const { classes, routesProps } = props;
+export default function MainView() {
   return (
-    <div className={classes.mainView}>
-      {routesProps?.authenticated &&
-        <Drawer />}
-      <AppRoutes childProps={{ authenticated: false }}/>
-    </div>
+    <AppRoutes childProps={{ authenticated: false }}/>
   );
 }
 

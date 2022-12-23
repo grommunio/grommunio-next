@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { useEffect, useState } from 'react';
-import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -12,6 +11,7 @@ import { deleteContactData, fetchContactsData } from '../actions/contacts';
 import AddContact from '../components/dialogs/AddContact';
 import { Delete } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = {
   root: {
@@ -49,48 +49,46 @@ function Contacts({ classes }: any) {
   }
 
   return (
-    <AuthenticatedTemplate>
-      <div className={classes.root}>
-        <Typography variant='h4'>{t('Contacts')}</Typography>
-        <div>
-          <Button onClick={handleAdding(true)} variant='contained' color="primary">
-            {t("New contact")}
-          </Button>
-        </div>
-        <Paper className={classes.paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t("Name")}</TableCell>
-                <TableCell>{t("E-Mail Addresses")}</TableCell>
-                <TableCell padding='checkbox' />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {contacts.map((contact: Contact, idx: number) =>
-                <TableRow key={idx}>
-                  <TableCell>
-                    {contact.displayName}
-                  </TableCell>
-                  <TableCell>
-                    {contact.emailAddresses?.map((obj: EmailAddress) => obj.address).join(', ')}
-                  </TableCell>
-                  <TableCell padding='checkbox'>
-                    <IconButton onClick={handleDelete(contact.id || '')}>
-                      <Delete color="error" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Paper>
+    <AuthenticatedView rootClass={classes.root}>
+      <Typography variant='h4'>{t('Contacts')}</Typography>
+      <div>
+        <Button onClick={handleAdding(true)} variant='contained' color="primary">
+          {t("New contact")}
+        </Button>
       </div>
+      <Paper className={classes.paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>{t("Name")}</TableCell>
+              <TableCell>{t("E-Mail Addresses")}</TableCell>
+              <TableCell padding='checkbox' />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {contacts.map((contact: Contact, idx: number) =>
+              <TableRow key={idx}>
+                <TableCell>
+                  {contact.displayName}
+                </TableCell>
+                <TableCell>
+                  {contact.emailAddresses?.map((obj: EmailAddress) => obj.address).join(', ')}
+                </TableCell>
+                <TableCell padding='checkbox'>
+                  <IconButton onClick={handleDelete(contact.id || '')}>
+                    <Delete color="error" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Paper>
       <AddContact
         open={adding}
         onClose={handleAdding(false)}
       />
-    </AuthenticatedTemplate>
+    </AuthenticatedView>
   );
   // </ReturnSnippet>
 }
