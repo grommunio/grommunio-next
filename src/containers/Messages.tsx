@@ -18,10 +18,11 @@ const styles: any = {
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
-    padding: 16,
+    margin: 16,
   },
   content: {
     flex: 1,
+    height: '100%',
     display: 'flex',
   },
   centerRow: {
@@ -31,12 +32,16 @@ const styles: any = {
   },
   mailList: {
     width: 400,
-    height: '100%',
     overflowY: 'auto',
+    height: 0, // Used to get inside-div scrolling
+    minHeight: '100%',
+    padding: 0,
   },
   tinyMceContainer: {
     flex: 1,
     padding: 16,
+    display: 'flex',
+    flexDirection: 'column',
   },
   drawerLi: {
     width: 'auto',
@@ -55,6 +60,16 @@ const styles: any = {
   badgeAnchor: {
     width: 16,
     height: 12,
+  },
+  flexRow: {
+    display: 'flex',
+    flex: 1,
+  },
+  header: {
+    margin: 8,
+  },
+  addButton: {
+    marginLeft: 8,
   },
 };
 
@@ -108,45 +123,49 @@ function Messages({ classes }: MessagesProps) {
       }}
       rootClass={classes.root}
     >
-      <Typography variant="h4">{t("Messages")}</Typography>
-      <div>
+      <Typography variant="h4" className={classes.header}>{t("Messages")}</Typography>
+      <div className={classes.addButton}>
         <Button onClick={handleNewMessage} variant='contained' color="primary">
           {t("New message")}
         </Button>
       </div>
       <div className={classes.content}>
-        <List className={classes.mailList}>
-          {messages.map((message: Message) =>
-            <ListItemButton
-              key={message.id}
-              onClick={handleMailClick(message)}
-            >
-              <ListItemText
-                primary={message.subject}
-                secondary={message.bodyPreview}
-              />
-            </ListItemButton>
-          )}
-        </List>
+        <Paper>
+          <List className={classes.mailList}>
+            {messages.map((message: Message) =>
+              <ListItemButton
+                key={message.id}
+                onClick={handleMailClick(message)}
+              >
+                <ListItemText
+                  primary={message.subject}
+                  secondary={message.bodyPreview}
+                />
+              </ListItemButton>
+            )}
+          </List>
+        </Paper>
         <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
           {selectedMsg?.from?.emailAddress &&
-          <Typography variant="h4">
-            {selectedMsg.from.emailAddress.name || ''} &lt;{selectedMsg.from.emailAddress.address || ''}&gt;
-          </Typography>}
-          {selectedMsg?.body?.content && <Editor
-            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-            onInit={(evt, editor) => editorRef.current = editor}
-            initialValue={selectedMsg?.body?.content}
-            disabled
-            init={{
-              disabled: true,
-              height: '100%',
-              menubar: false,
-              readonly: true,
-              toolbar: '',
-              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-            }}
-          />}
+            <Typography variant="h4">
+              {selectedMsg.from.emailAddress.name || ''} &lt;{selectedMsg.from.emailAddress.address || ''}&gt;
+            </Typography>}
+          {selectedMsg?.body?.content && <div className={classes.flexRow}>
+            <Editor
+              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+              onInit={(evt, editor) => editorRef.current = editor}
+              initialValue={selectedMsg?.body?.content}
+              disabled
+              init={{
+                disabled: true,
+                menubar: false,
+                readonly: true,
+                toolbar: '',
+                plugins: ['wordcount'],
+                width: '100%',
+                height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
+              }}
+            /></div>}
         </Paper>
       </div>
     </AuthenticatedView>

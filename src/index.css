@@ -117,3 +117,7 @@ pre code {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
+.tox-tinymce {
+  flex: 1 !important;
+}
