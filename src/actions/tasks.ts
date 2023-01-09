@@ -60,21 +60,21 @@ export const deleteTaskData = createAsyncThunk<
   string | boolean,
   deleteTaskDataParams
   >(
-  DELETE_TASKS_DATA,
-  async ({ taskListId, taskId, app }: deleteTaskDataParams) => {
-    if (app.user) {
-      try {
-        await deleteTask(app.authProvider!, taskListId, taskId);
-        return taskId;
-      } catch (err) {
-        const error = err as Error;
+    DELETE_TASKS_DATA,
+    async ({ taskListId, taskId, app }: deleteTaskDataParams) => {
+      if (app.user) {
+        try {
+          await deleteTask(app.authProvider!, taskListId, taskId);
+          return taskId;
+        } catch (err) {
+          const error = err as Error;
         app.displayError!(error.message);
         return false;
+        }
       }
+      return false;
     }
-    return false;
-  }
-);
+  );
 
 type patchTaskDataParams = {
   app: AppContext,
@@ -86,18 +86,18 @@ export const patchTaskData = createAsyncThunk<
   TodoTask | false,
   patchTaskDataParams
   >(
-  PATCH_TASK_DATA,
-  async ({ taskListId, task, app }: patchTaskDataParams) => {
-    if (app.user) {
-      try {
-        const res = await patchTask(app.authProvider!, taskListId, task);
-        return res;
-      } catch (err) {
-        const error = err as Error;
+    PATCH_TASK_DATA,
+    async ({ taskListId, task, app }: patchTaskDataParams) => {
+      if (app.user) {
+        try {
+          const res = await patchTask(app.authProvider!, taskListId, task);
+          return res;
+        } catch (err) {
+          const error = err as Error;
         app.displayError!(error.message);
         return false
+        }
       }
+      return false;
     }
-    return false;
-  }
-);
+  );

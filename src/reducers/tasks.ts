@@ -3,9 +3,9 @@
 import { TodoTask } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
-    FETCH_TASK_LISTS_DATA,
-    FETCH_TASKS_DATA,
-    DELETE_TASKS_DATA
+  FETCH_TASK_LISTS_DATA,
+  FETCH_TASKS_DATA,
+  DELETE_TASKS_DATA
 } from '../actions/types';
 
 const defaultState = {

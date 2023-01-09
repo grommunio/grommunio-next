@@ -35,18 +35,18 @@ export const deleteNoteData = createAsyncThunk<
   string | boolean,
   deleteNoteDataParams
   >(
-  DELETE_NOTES_DATA,
-  async ({ noteId, app }: deleteNoteDataParams) => {
-    if (app.user) {
-      try {
-        await deleteNote(app.authProvider!, noteId);
-        return noteId;
-      } catch (err) {
-        const error = err as Error;
+    DELETE_NOTES_DATA,
+    async ({ noteId, app }: deleteNoteDataParams) => {
+      if (app.user) {
+        try {
+          await deleteNote(app.authProvider!, noteId);
+          return noteId;
+        } catch (err) {
+          const error = err as Error;
         app.displayError!(error.message);
         return false;
+        }
       }
+      return false;
     }
-    return false;
-  }
-);
+  );

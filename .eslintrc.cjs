@@ -9,6 +9,7 @@ module.exports = {
     "jasmine": true
   },
   rules: {
+    'indent': ["error", 2],
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-non-null-asserted-optional-chain': 'off'

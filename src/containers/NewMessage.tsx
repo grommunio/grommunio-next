@@ -83,7 +83,7 @@ function NewMessage({ classes }: MessagesProps) {
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-      <Typography variant="h4">{t("New message")}</Typography>
+        <Typography variant="h4">{t("New message")}</Typography>
         <div>
           <Button
             onClick={handleSend(false)}

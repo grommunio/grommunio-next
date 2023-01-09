@@ -112,7 +112,7 @@ function Tasks({ t, classes }: any) {
         ...selectedTask?.body,
         ...(editorRef.current ? {
           content: editorRef.current.getContent()
-         } : {}),
+        } : {}),
       }
     }
     dispatch(patchTaskData({
@@ -187,14 +187,14 @@ function Tasks({ t, classes }: any) {
           </div>}
         </Paper>
       </div>
-    <AddTask
-      open={addingTask}
-      onClose={handleAddingTask(false)}
-    />
-    <AddTaskList
-      open={addingTaskList}
-      onClose={handleAddingTaskList(false)}
-    />
+      <AddTask
+        open={addingTask}
+        onClose={handleAddingTask(false)}
+      />
+      <AddTaskList
+        open={addingTaskList}
+        onClose={handleAddingTaskList(false)}
+      />
     </AuthenticatedView>
   );
 }

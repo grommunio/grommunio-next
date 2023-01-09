@@ -87,7 +87,7 @@ function Notes({ t, classes }: any) {
         ...selectedNote?.body,
         ...(editorRef.current ? {
           content: editorRef.current.getContent()
-         } : {}),
+        } : {}),
       },
       subject: editorRef.current ? editorRef.current.getContent({ format: 'text' }) : '',
     }
@@ -148,10 +148,10 @@ function Notes({ t, classes }: any) {
           </div>}
         </Paper>
       </div>
-    <AddNote
-      onClose={handleAddNote(false)}
-      open={addingNote}
-    />
+      <AddNote
+        onClose={handleAddNote(false)}
+        open={addingNote}
+      />
     </AuthenticatedView>
   );
 }
