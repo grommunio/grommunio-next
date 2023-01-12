@@ -81,6 +81,7 @@ function Messages({ classes }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
   const editorRef = useRef({});
+  const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const dispatch = useTypeDispatch();
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
@@ -92,8 +93,9 @@ function Messages({ classes }: MessagesProps) {
     dispatch(fetchMailFoldersData(app));
   }, [app.authProvider]);
 
-  const handleMailFolderClick = (folderid: string) => () => {
-    dispatch(fetchMessagesData({app, folderid}));
+  const handleMailFolderClick = (folder: MailFolder) => () => {
+    dispatch(fetchMessagesData({app, folderid: folder.id}));
+    setSelectedFolder(folder);
   }
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
@@ -104,7 +106,8 @@ function Messages({ classes }: MessagesProps) {
     <ListItem disablePadding key={idx}>
       <ListItemButton
         className={classes.drawerLi}
-        onClick={handleMailFolderClick(folder.id || '')}
+        onClick={handleMailFolderClick(folder)}
+        selected={selectedFolder?.id === folder.id}
       >
         {folder.displayName}
         <Badge

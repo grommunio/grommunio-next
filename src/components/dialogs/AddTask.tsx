@@ -72,7 +72,7 @@ function AddTask(props: any) {
           onClose();
           setTask({});
         }
-      }); // TODO: Update table view after successful add. (Maybe create action?)
+      });
   }
 
   
