@@ -23,6 +23,12 @@ export function parseParams(s: string): URLParams {
   return data;
 }
 
+export function addItem(arr: Array<any>, item: any): Array<any> {
+  const copy = [...arr];
+  copy.push(item);
+  return copy;
+}
+
 export function getLangs() {
   return [
     { key: 'ca-ES', value: 'ca_ES: català' },

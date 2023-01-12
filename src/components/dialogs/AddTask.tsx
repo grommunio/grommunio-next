@@ -4,14 +4,14 @@
 import { ChangeEvent, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { Dialog, DialogTitle, DialogContent, TextField,
-  Button, DialogActions, Grid, MenuItem,
+  Button, DialogActions, Grid,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
-import { TodoTask, TodoTaskList } from 'microsoft-graph';
+import { TodoTask } from 'microsoft-graph';
 import { useAppContext } from '../../azure/AppContext';
-import { postTask } from '../../api/tasks';
-import { useTypeSelector } from '../../store';
 import { Editor } from '@tinymce/tinymce-react';
+import { postTaskData } from '../../actions/tasks';
+import { useTypeDispatch } from '../../store';
 
 const styles = (theme: any) => ({
   form: {
@@ -42,11 +42,10 @@ const styles = (theme: any) => ({
 function AddTask(props: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
-  const { taskLists } = useTypeSelector(state => state.tasks);
-  const { classes, t, open, onClose } = props;
+  const { classes, t, open, onClose, taskListId } = props;
   const [ task, setTask ] = useState<TodoTask>({});
-  const [ selectedTaskList, setSelectedTaskList ] = useState<string>('');
   const { title } = task;
+  const dispatch = useTypeDispatch();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -67,13 +66,15 @@ function AddTask(props: any) {
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
     }
-    postTask(app.authProvider!, selectedTaskList || '', mergedTask)
-      .then(resp => resp.id ? onClose() : null); // TODO: Update table view after successful add. (Maybe create action?)
+    dispatch(postTaskData({app, taskListId, task: mergedTask}))
+      .then(resp => {
+        if(resp) {
+          onClose();
+          setTask({});
+        }
+      }); // TODO: Update table view after successful add. (Maybe create action?)
   }
 
-  const handleTaskList = (e: ChangeEvent<HTMLInputElement>) => {
-    setSelectedTaskList(e.target.value);
-  }
   
   return (
     <Dialog
@@ -85,20 +86,6 @@ function AddTask(props: any) {
       <DialogTitle>{t('addHeadline', { item: 'Task' })}</DialogTitle>
       <DialogContent>
         <Grid container>
-          <Grid item xs={12} className={classes.gridItem}>
-            <TextField
-              className={classes.propertyInput}
-              fullWidth
-              label={t("Task list")}
-              value={selectedTaskList || ''}
-              onChange={handleTaskList}
-              select
-            >
-              {taskLists.map((taskList: TodoTaskList) =>
-                <MenuItem key={taskList.id} value={taskList.id}>{taskList.displayName}</MenuItem>
-              )}
-            </TextField>
-          </Grid>
           <Grid item xs={12} className={classes.gridItem}>
             <TextField
               name="title"
@@ -134,6 +121,7 @@ function AddTask(props: any) {
           onClick={handleAdd}
           variant="contained"
           color="primary"
+          disabled={!title || !taskListId}
         >
           {t('Add')}
         </Button>

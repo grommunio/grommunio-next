@@ -9,7 +9,8 @@ import { Dialog, DialogTitle, DialogContent, TextField,
 import { withTranslation } from 'react-i18next';
 import { TodoTaskList } from 'microsoft-graph';
 import { useAppContext } from '../../azure/AppContext';
-import { postTaskList } from '../../api/tasks';
+import { postTaskListData } from '../../actions/tasks';
+import { useTypeDispatch } from '../../store';
 
 const styles = (theme: any) => ({
   form: {
@@ -42,6 +43,7 @@ function AddTaskList(props: any) {
   const { classes, t, open, onClose } = props;
   const [ taskList, setTaskList ] = useState<TodoTaskList>({});
   const { displayName } = taskList;
+  const dispatch = useTypeDispatch();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -55,8 +57,13 @@ function AddTaskList(props: any) {
   }
 
   const handleAdd = () => {
-    postTaskList(app.authProvider!, taskList)
-      .then(resp => resp.id ? onClose() : null); // TODO: Update table view after successful add. (Maybe create action?)
+    dispatch(postTaskListData({app, taskList}))
+      .then(resp => {
+        if(resp) {
+          setTaskList({});
+          onClose();
+        }
+      });
   }
   
   return (

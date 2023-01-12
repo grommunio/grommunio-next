@@ -63,6 +63,9 @@ const styles: any = {
       color: 'white',
     },
   },
+  addTaskList: {
+    margin: '0 8px',
+  },
 };
 
 function Tasks({ t, classes }: any) {
@@ -128,13 +131,27 @@ function Tasks({ t, classes }: any) {
       <ListItemButton
         className={classes.drawerLi}
         onClick={handleTaskListClick(taskList)}
+        selected={selectedTaskList?.id === taskList.id}
       >
         {taskList.displayName}
       </ListItemButton>
     </ListItem>);
 
   return (
-    <AuthenticatedView rootClass={classes.root} drawerProps={{ listElements: drawerListElements }}>
+    <AuthenticatedView
+      rootClass={classes.root}
+      drawerProps={{
+        listElements: [...drawerListElements, <Button
+          className={classes.addTaskList}
+          onClick={handleAddingTaskList(true)}
+          variant='contained'
+          color="primary"
+        >
+          {t("New task list")}
+        </Button>
+        ]
+      }}
+    >
       <Typography variant="h4">{t("Tasks")}</Typography>
       <div className={classes.content}>
         <Paper elevation={1}>
@@ -143,6 +160,7 @@ function Tasks({ t, classes }: any) {
               onClick={handleAddingTask(true)}
               variant='contained'
               color="primary"
+              disabled={!selectedTaskList}
             >
               {t("New task")}
             </Button>
@@ -190,6 +208,7 @@ function Tasks({ t, classes }: any) {
       <AddTask
         open={addingTask}
         onClose={handleAddingTask(false)}
+        taskListId={selectedTaskList?.id}
       />
       <AddTaskList
         open={addingTaskList}

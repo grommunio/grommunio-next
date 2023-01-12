@@ -5,8 +5,11 @@ import { AnyAction } from 'redux'
 import {
   FETCH_TASK_LISTS_DATA,
   FETCH_TASKS_DATA,
-  DELETE_TASKS_DATA
+  DELETE_TASKS_DATA,
+  POST_TASK_LIST_DATA,
+  POST_TASK_DATA
 } from '../actions/types';
+import { addItem } from '../utils';
 
 const defaultState = {
   taskLists: [],
@@ -32,6 +35,18 @@ function tasksReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       tasks: action.payload ? state.tasks.filter((task: TodoTask) => task.id !== action.payload) : state.tasks,
+    }
+
+  case POST_TASK_LIST_DATA + '/fulfilled':
+    return {
+      ...state,
+      taskLists: addItem(state.taskLists, action.payload),
+    }
+
+  case POST_TASK_DATA + '/fulfilled':
+    return {
+      ...state,
+      tasks: addItem(state.tasks, action.payload),
     }
 
   default:
