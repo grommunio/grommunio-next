@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
+import { useAppContext } from '../azure/AppContext';
 
 const styles = {
   appbar: {
@@ -42,6 +43,7 @@ const styles = {
 };
 
 function TopBar(props: any) {
+  const app = useAppContext();
   const { classes } = props;
   const { t, i18n } = useTranslation();
   const dispatch = useTypeDispatch();
@@ -69,17 +71,18 @@ function TopBar(props: any) {
       <Toolbar className={classes.toolbar}>
         <Tabs
           className={classes.tabs}
-          value={tab}
+          value={app.user ? tab : ''}
           onChange={handleTab}
           textColor="inherit"
           indicatorColor="secondary"
+          disabled={!app.user}
         >
           <Tab className={classes.tab} value={''} label={t("Account")} />
-          <Tab className={classes.tab} value={'messages'} label={t("Messages")} />
-          <Tab className={classes.tab} value={'calendar'} label={t("Calendar")} />
-          <Tab className={classes.tab} value={'contacts'} label={t("Contacts")} />
-          <Tab className={classes.tab} value={'tasks'} label={t("Tasks")} />
-          <Tab className={classes.tab} value={'notes'} label={t("Notes")} />
+          <Tab className={classes.tab} value={'messages'} label={t("Messages")} disabled={!app.user}/>
+          <Tab className={classes.tab} value={'calendar'} label={t("Calendar")} disabled={!app.user}/>
+          <Tab className={classes.tab} value={'contacts'} label={t("Contacts")} disabled={!app.user}/>
+          <Tab className={classes.tab} value={'tasks'} label={t("Tasks")} disabled={!app.user}/>
+          <Tab className={classes.tab} value={'notes'} label={t("Notes")} disabled={!app.user}/>
         </Tabs>
         <div className={classes.flexEndContainer}>
           <Tooltip title={t("Language")}>
