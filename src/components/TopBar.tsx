@@ -49,7 +49,7 @@ function TopBar(props: any) {
   const dispatch = useTypeDispatch();
   const { language } = useTypeSelector(state => state.settings);
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
-  const [ tab, setTab ] = useState<string>(''); // TODO: In the future, the default will be part of the user settings
+  const [ tab, setTab ] = useState<string>(window.location.pathname.slice(1)); // TODO: In the future, the default will be part of the user settings
   const navigate = useNavigate();
 
   const handleMenu = (open: boolean) => (e: MouseEvent<HTMLElement>) => setMenuAnchor(open ? e.currentTarget : null);
