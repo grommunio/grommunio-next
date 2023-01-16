@@ -19,7 +19,8 @@ function formatEvents(rawEvents: Array<Event>) {
   return rawEvents.map((rawEvent: Event) => ({
     ...rawEvent,
     startDate: calculateEventtimeInTimezone(rawEvent.start?.dateTime || '', rawEvent.start?.timeZone || ''),
-    endDate: calculateEventtimeInTimezone(rawEvent.end?.dateTime || '', rawEvent.end?.timeZone || '')
+    endDate: calculateEventtimeInTimezone(rawEvent.end?.dateTime || '', rawEvent.end?.timeZone || ''),
+    title: rawEvent.subject,
   }))
 }
 
