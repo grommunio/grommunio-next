@@ -29,7 +29,6 @@ function Calendar({ classes }: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
 
-  // componentDidMount()
   useEffect(() => {
     dispatch(fetchEventsData(app));
   }, [app.authProvider]);
@@ -40,7 +39,6 @@ function Calendar({ classes }: any) {
       <ScheduleCalendar />
     </AuthenticatedView>
   );
-  // </ReturnSnippet>
 }
 
 

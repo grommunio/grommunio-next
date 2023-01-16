@@ -37,6 +37,7 @@ import Notes from '@mui/icons-material/Notes';
 import Close from '@mui/icons-material/Close';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import Create from '@mui/icons-material/Create';
+import { connect } from 'react-redux';
 
 const PREFIX = 'Demo';
 const classes = {
@@ -283,16 +284,11 @@ class AppointmentFormContainerBasic extends React.PureComponent {
   }
 }
 
-const schedulerData = [
-  { id: 69, startDate: '2022-12-22T09:45', endDate: '2022-12-22T11:00', title: 'Share memes' },
-  { id: 420, startDate: '2022-12-22T12:00', endDate: '2022-12-22T13:30', title: 'We go jim' },
-];
-
-export default class ScheduleCalendar extends React.PureComponent {
+class ScheduleCalendar extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      data: schedulerData,
+      data: props.events,
       confirmationVisible: false,
       editingFormVisible: false,
       deletedAppointmentId: undefined,
@@ -496,3 +492,12 @@ export default class ScheduleCalendar extends React.PureComponent {
     );
   }
 }
+
+const mapStateToProps = state => {
+  const { calendar } = state;
+  return {
+    events: calendar.events,
+  }
+}
+
+export default connect(mapStateToProps)(ScheduleCalendar);
