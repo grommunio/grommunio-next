@@ -5,7 +5,7 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { Button, IconButton, List, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { Button, IconButton, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { Delete } from '@mui/icons-material';
@@ -47,6 +47,9 @@ const styles: any = {
   buttonRow: {
     display: 'flex',
     justifyContent: 'flex-end',
+    margin: 8,
+  },
+  addButton: {
     margin: 8,
   },
 };
@@ -94,37 +97,40 @@ function Notes({ t, classes }: any) {
     patchNote(app.authProvider!, mergedNote);
   }
 
+  const drawerListElements = notes.map((note: Message, key: number) =>
+    <ListItem disablePadding key={key}>
+      <ListItemButton
+        onClick={handleNoteClick(note)}
+        divider
+      >
+        <ListItemText
+          primary={note.subject}
+        />
+        <IconButton onClick={handleNoteDelete(note.id || '')}>
+          <Delete color="error"/>
+        </IconButton>
+      </ListItemButton>
+    </ListItem>
+  );
+
   return (
-    <AuthenticatedView rootClass={classes.root}>
+    <AuthenticatedView
+      drawerProps={{
+        listElements: [
+          <Button
+            key={-1}
+            onClick={handleAddNote(true)}
+            variant='contained'
+            color="primary"
+            className={classes.addButton}
+          >
+            {t("New note")}
+          </Button>
+          ,...drawerListElements],
+      }}
+      rootClass={classes.root}>
       <Typography variant="h4">{t("Notes")}</Typography>
       <div className={classes.content}>
-        <Paper>
-          <div className={classes.action}>
-            <Button
-              onClick={handleAddNote(true)}
-              variant='contained'
-              color="primary"
-            >
-              {t("New note")}
-            </Button>
-          </div>
-          <List className={classes.mailList}>
-            {notes.map((note: Message) =>
-              <ListItemButton
-                key={note.id}
-                onClick={handleNoteClick(note)}
-                divider
-              >
-                <ListItemText
-                  primary={note.subject}
-                />
-                <IconButton onClick={handleNoteDelete(note.id || '')}>
-                  <Delete color="error"/>
-                </IconButton>
-              </ListItemButton>
-            )}
-          </List>
-        </Paper>
         <Paper elevation={8} className={classes.tinyMceContainer}>
           {selectedNote?.body?.content && <Editor
             tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
@@ -132,7 +138,8 @@ function Notes({ t, classes }: any) {
             initialValue={selectedNote?.body?.content}
             onDirty={() => setDirty(true)}
             init={{
-              height: 400,
+              width: '100%',
+              height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
               content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
             }}
           />}

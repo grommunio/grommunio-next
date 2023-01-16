@@ -10,7 +10,8 @@ import { withTranslation } from 'react-i18next';
 import { Message } from 'microsoft-graph';
 import { useAppContext } from '../../azure/AppContext';
 import { Editor } from '@tinymce/tinymce-react';
-import { postNote } from '../../api/notes';
+import { useTypeDispatch } from '../../store';
+import { postNoteData } from '../../actions/notes';
 
 const styles = (theme: any) => ({
   form: {
@@ -41,6 +42,7 @@ const styles = (theme: any) => ({
 function AddNote(props: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
+  const dispatch = useTypeDispatch();
   const { classes, t, open, onClose } = props;
 
   const handleAdd = () => {
@@ -51,8 +53,13 @@ function AddNote(props: any) {
       },
       subject: editorRef.current ? editorRef.current.getContent({ format: 'text' }) : ''
     };
-    postNote(app.authProvider!, note)
-      .then(resp => resp.id ? onClose() : null); // TODO: Update table view after successful add. (Maybe create action?)
+    dispatch(postNoteData({app, note}))
+      .then(resp => {
+        if(resp) {
+          onClose();
+          editorRef.current.setContent('');
+        }
+      });
   }
 
   return (

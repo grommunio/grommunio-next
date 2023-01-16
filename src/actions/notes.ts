@@ -3,9 +3,9 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Message } from "microsoft-graph";
-import { deleteNote, getNotes } from "../api/notes";
+import { deleteNote, getNotes, postNote } from "../api/notes";
 import { AppContext } from "../azure/AppContext";
-import { FETCH_NOTES_DATA, DELETE_NOTES_DATA } from "./types";
+import { FETCH_NOTES_DATA, DELETE_NOTES_DATA, POST_NOTE_DATA } from "./types";
 
 export const fetchNotesData = createAsyncThunk<
   Message[],
@@ -50,3 +50,28 @@ export const deleteNoteData = createAsyncThunk<
       return false;
     }
   );
+
+type postNoteDataParams = {
+    app: AppContext,
+    note: Message,
+  }
+  
+export const postNoteData = createAsyncThunk<
+    Message | boolean,
+    postNoteDataParams
+    >(
+      POST_NOTE_DATA,
+      async ({ note, app }: postNoteDataParams) => {
+        if (app.user) {
+          try {
+            const resp = await postNote(app.authProvider!, note);
+            return resp;
+          } catch (err) {
+            const error = err as Error;
+          app.displayError!(error.message);
+          return false;
+          }
+        }
+        return false;
+      }
+    );
