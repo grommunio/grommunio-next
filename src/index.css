@@ -112,7 +112,7 @@ pre code {
 /* OVERWRITES */
 
 .css-gyiown .VerticalAppointment-textContainer {
-	line-height: 2;
+	line-height: 2 !important;
 	white-space: pre-wrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
