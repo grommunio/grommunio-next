@@ -83,3 +83,12 @@ export async function patchEvent(authProvider: AuthCodeMSALBrowserAuthentication
     .patch(event);
 }
 
+export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  event: string): Promise<Event> {
+  ensureClient(authProvider);
+
+  return await graphClient!
+    .api('/me/events/' + event)
+    .delete();
+}
+

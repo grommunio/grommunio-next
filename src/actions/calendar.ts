@@ -5,7 +5,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
-import { getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
+import { deleteEvent, getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
 
 
@@ -18,7 +18,6 @@ export const fetchEventsData = createAsyncThunk<
     if (app.user) {
       try {
         const ianaTimeZones = findIana(app.user?.timeZone!);
-        console.log(ianaTimeZones[0].valueOf());
         const events = await getUserWeekCalendar(app.authProvider!, ianaTimeZones[0].valueOf());
         return events;
       } catch (err) {
@@ -78,9 +77,35 @@ export const patchEventData = createAsyncThunk<
   );
 
 
+type deleteEventDataParams = {
+  app: AppContext,
+  eventId: string,
+}
+
+export const deleteEventData = createAsyncThunk<
+  Event | boolean,
+  deleteEventDataParams
+  >(
+    PATCH_EVENT_DATA,
+    async ({ eventId, app }: deleteEventDataParams) => {
+      if (app.user) {
+        try {
+          const res = await deleteEvent(app.authProvider!, eventId);
+          return res;
+        } catch (err) {
+          const error = err as Error;
+          console.error(error);
+          app.displayError!(error.message);
+          return false;
+        }
+      }
+      return false;
+    }
+  );
+
+
 function formatEvent(rawEvent: any): Event {
   const { id, subject, location, notes, startDate, endDate } = rawEvent;
-  console.log(rawEvent);
   return {
     id,
     subject,
