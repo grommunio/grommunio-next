@@ -11,16 +11,20 @@ const defaultState = {
 };
 
 //TODO: Properly implement this function
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function calculateEventtimeInTimezone(event: string, tz: string) {
   return event;
 }
 
 function formatEvents(rawEvents: Array<Event>) {
   return rawEvents.map((rawEvent: Event) => ({
-    ...rawEvent,
+    id: rawEvent.id,
     startDate: calculateEventtimeInTimezone(rawEvent.start?.dateTime || '', rawEvent.start?.timeZone || ''),
     endDate: calculateEventtimeInTimezone(rawEvent.end?.dateTime || '', rawEvent.end?.timeZone || ''),
+    subject: rawEvent.subject,
     title: rawEvent.subject,
+    location: rawEvent.location?.displayName || '',
+    notes: rawEvent.body?.content || '',
   }))
 }
 

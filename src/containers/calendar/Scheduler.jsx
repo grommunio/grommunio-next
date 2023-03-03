@@ -38,7 +38,7 @@ import Close from '@mui/icons-material/Close';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import Create from '@mui/icons-material/Create';
 import { connect } from 'react-redux';
-import { postEventData } from '../../actions/calendar';
+import { patchEventData, postEventData } from '../../actions/calendar';
 
 const PREFIX = 'Demo';
 const classes = {
@@ -164,7 +164,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       ...appointmentData,
       ...appointmentChanges,
     };
-
     const isNewAppointment = appointmentData.id === undefined;
     const applyChanges = () => this.commitAppointment(isNewAppointment ? 'added' : 'changed');
 
@@ -387,16 +386,23 @@ class ScheduleCalendar extends React.PureComponent {
   }
 
   commitChanges({ added, changed, deleted }) {
-    this.props.postEvent({event: added, app: this.props.app});
     this.setState((state) => {
+      const { postEvent, patchEvent } = this.props;
       let { data } = state;
       if (added) {
+        postEvent({event: added, app: this.props.app});
         const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
         data = [...data, { id: startingAddedId, ...added }];
       }
       if (changed) {
-        data = data.map(appointment => (
-          changed[appointment.id] ? { ...appointment, ...changed[appointment.id] } : appointment));
+        data = data.map(appointment => {
+          if(changed[appointment.id]) {
+            const event = { ...appointment, ...changed[appointment.id] };
+            patchEvent({event, app: this.props.app});
+            return event;
+          }
+          return appointment;
+        });
       }
       if (deleted !== undefined) {
         this.setDeletedAppointmentId(deleted);
@@ -505,6 +511,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return {
     postEvent: async event => await dispatch(postEventData(event)),
+    patchEvent: async event => await dispatch(patchEventData(event)),
   }
 }
 

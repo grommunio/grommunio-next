@@ -5,8 +5,8 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
-import { getUserWeekCalendar, postEvent } from "../api/calendar";
-import { FETCH_EVENTS_DATA, POST_EVENT_DATA } from "./types";
+import { getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
 
 
 export const fetchEventsData = createAsyncThunk<
@@ -18,6 +18,7 @@ export const fetchEventsData = createAsyncThunk<
     if (app.user) {
       try {
         const ianaTimeZones = findIana(app.user?.timeZone!);
+        console.log(ianaTimeZones[0].valueOf());
         const events = await getUserWeekCalendar(app.authProvider!, ianaTimeZones[0].valueOf());
         return events;
       } catch (err) {
@@ -55,22 +56,45 @@ export const postEventData = createAsyncThunk<
     }
   );
 
+export const patchEventData = createAsyncThunk<
+  Event | boolean,
+  postEventDataParams
+  >(
+    PATCH_EVENT_DATA,
+    async ({ event, app }: postEventDataParams) => {
+      if (app.user) {
+        try {
+          const res = await patchEvent(app.authProvider!, formatEvent(event));
+          return res;
+        } catch (err) {
+          const error = err as Error;
+          console.error(error);
+          app.displayError!(error.message);
+          return false;
+        }
+      }
+      return false;
+    }
+  );
+
 
 function formatEvent(rawEvent: any): Event {
-  const { subject, location, notes, startDate, endDate } = rawEvent;
+  const { id, subject, location, notes, startDate, endDate } = rawEvent;
+  console.log(rawEvent);
   return {
+    id,
     subject,
     body: {
-      contentType: 'text',
+      contentType: "text",
       content: notes,
     },
     start: {
       dateTime: startDate,
-      timeZone: 'Central European Time'  // TODO: Remove hardcoded timezone
+      timeZone: 'Europe/Berlin'  // TODO: Remove hardcoded timezone
     },
     end: {
       dateTime: endDate,
-      timeZone: 'Central European Time'  // TODO: Remove hardcoded timezone
+      timeZone: 'Europe/Berlin'  // TODO: Remove hardcoded timezone
     },
     location: {
       displayName: location,

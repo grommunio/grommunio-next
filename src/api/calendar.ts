@@ -31,7 +31,6 @@ export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthe
     .api('/me/calendarview')
     .header('Prefer', `outlook.timezone="${timeZone}"`)
     .query({ startDateTime: startDateTime, endDateTime: endDateTime })
-    .select('subject,organizer,start,end')
     .orderby('start/dateTime')
     .top(25)
     .get();
@@ -74,4 +73,13 @@ export async function postEvent(authProvider: AuthCodeMSALBrowserAuthenticationP
     .api('/me/events')
     .post(newEvent);
 }
-// </CreateEventSnippet>
+
+export async function patchEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  event: Event): Promise<Event> {
+  ensureClient(authProvider);
+
+  return await graphClient!
+    .api('/me/events/' + event.id)
+    .patch(event);
+}
+
