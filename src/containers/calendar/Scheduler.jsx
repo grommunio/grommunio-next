@@ -74,11 +74,7 @@ const StyledDiv = styled('div')(({ theme }) => ({
     float: 'right',
   },
   [`& .${classes.picker}`]: {
-    marginRight: theme.spacing(2),
-    '&:last-child': {
-      marginRight: 0,
-    },
-    width: '50%',
+    margin: theme.spacing(2),
   },
   [`& .${classes.wrapper}`]: {
     display: 'flex',
@@ -92,6 +88,9 @@ const StyledDiv = styled('div')(({ theme }) => ({
   },
   [`& .${classes.button}`]: {
     marginLeft: theme.spacing(2),
+  },
+  [`& .${classes.flexRow}`]: {
+    display: "flex",
   },
 }));
 const StyledFab = styled(Fab)(({ theme }) => ({
@@ -203,7 +202,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       <AppointmentForm.Overlay
         visible={visible}
         target={target}
-        fullSize
         onHide={onHide}
       >
         <StyledDiv>
@@ -222,20 +220,22 @@ class AppointmentFormContainerBasic extends React.PureComponent {
             <div className={classes.wrapper}>
               <CalendarToday className={classes.icon} color="action" />
               <LocalizationProvider dateAdapter={AdapterMoment}>
-                <DateTimePicker
-                  label="Start Date"
-                  renderInput={
-                    props => <TextField className={classes.picker} {...props} />
-                  }
-                  {...startDatePickerProps}
-                />
-                <DateTimePicker
-                  label="End Date"
-                  renderInput={
-                    props => <TextField className={classes.picker} {...props} />
-                  }
-                  {...endDatePickerProps}
-                />
+                <div className={classes.flexRow}>
+                  <DateTimePicker
+                    label="Start Date"
+                    renderInput={
+                      props => <TextField sx={{ mr: 2 }} className={classes.picker} {...props} />
+                    }
+                    {...startDatePickerProps}
+                  />
+                  <DateTimePicker
+                    label="End Date"
+                    renderInput={
+                      props => <TextField className={classes.picker} {...props} />
+                    }
+                    {...endDatePickerProps}
+                  />
+                </div>
               </LocalizationProvider>
             </div>
             <div className={classes.wrapper}>
