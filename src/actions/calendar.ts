@@ -5,8 +5,8 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
-import { getUserWeekCalendar } from "../api/calendar";
-import { FETCH_EVENTS_DATA } from "./types";
+import { getUserWeekCalendar, postEvent } from "../api/calendar";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA } from "./types";
 
 
 export const fetchEventsData = createAsyncThunk<
@@ -28,3 +28,52 @@ export const fetchEventsData = createAsyncThunk<
     return [];
   }
 );
+
+type postEventDataParams = {
+  app: AppContext,
+  event: Event,
+}
+
+export const postEventData = createAsyncThunk<
+  Event | boolean,
+  postEventDataParams
+  >(
+    POST_EVENT_DATA,
+    async ({ event, app }: postEventDataParams) => {
+      if (app.user) {
+        try {
+          const res = await postEvent(app.authProvider!, formatEvent(event));
+          return res;
+        } catch (err) {
+          const error = err as Error;
+          console.error(error);
+          app.displayError!(error.message);
+          return false;
+        }
+      }
+      return false;
+    }
+  );
+
+
+function formatEvent(rawEvent: any): Event {
+  const { subject, location, notes, startDate, endDate } = rawEvent;
+  return {
+    subject,
+    body: {
+      contentType: 'text',
+      content: notes,
+    },
+    start: {
+      dateTime: startDate,
+      timeZone: 'Central European Time'  // TODO: Remove hardcoded timezone
+    },
+    end: {
+      dateTime: endDate,
+      timeZone: 'Central European Time'  // TODO: Remove hardcoded timezone
+    },
+    location: {
+      displayName: location,
+    },
+  }
+}

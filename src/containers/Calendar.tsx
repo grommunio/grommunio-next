@@ -36,7 +36,7 @@ function Calendar({ classes }: any) {
 
   return (
     <AuthenticatedView rootClass={classes.root}>
-      <ScheduleCalendar />
+      <ScheduleCalendar app={app}/>
     </AuthenticatedView>
   );
 }

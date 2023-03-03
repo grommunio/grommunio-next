@@ -38,6 +38,7 @@ import Close from '@mui/icons-material/Close';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import Create from '@mui/icons-material/Create';
 import { connect } from 'react-redux';
+import { postEventData } from '../../actions/calendar';
 
 const PREFIX = 'Demo';
 const classes = {
@@ -215,7 +216,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
             <div className={classes.wrapper}>
               <Create className={classes.icon} color="action" />
               <TextField
-                {...textEditorProps('title')}
+                {...textEditorProps('subject')}
               />
             </div>
             <div className={classes.wrapper}>
@@ -386,6 +387,7 @@ class ScheduleCalendar extends React.PureComponent {
   }
 
   commitChanges({ added, changed, deleted }) {
+    this.props.postEvent({event: added, app: this.props.app});
     this.setState((state) => {
       let { data } = state;
       if (added) {
@@ -500,4 +502,10 @@ const mapStateToProps = state => {
   }
 }
 
-export default connect(mapStateToProps)(ScheduleCalendar);
+const mapDispatchToProps = dispatch => {
+  return {
+    postEvent: async event => await dispatch(postEventData(event)),
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ScheduleCalendar);
