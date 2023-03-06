@@ -12,6 +12,7 @@ import AddContact from '../components/dialogs/AddContact';
 import { Delete } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
+import { useNavigate } from 'react-router-dom';
 
 const styles: any = {
   root: {
@@ -31,6 +32,7 @@ const styles: any = {
 };
 
 function Contacts({ classes }: any) {
+  const navigate = useNavigate();
   const app = useAppContext();
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
@@ -46,6 +48,10 @@ function Contacts({ classes }: any) {
 
   const handleDelete = (contactId: string) => () => {
     dispatch(deleteContactData({app, contactId}));
+  }
+
+  const handleContact = (contact: Contact) => () => {
+    navigate('/contacts/'+ contact.id)
   }
 
   return (
@@ -67,7 +73,7 @@ function Contacts({ classes }: any) {
           </TableHead>
           <TableBody>
             {contacts.map((contact: Contact, idx: number) =>
-              <TableRow key={idx}>
+              <TableRow key={idx} hover onClick={handleContact(contact)}>
                 <TableCell>
                   {contact.displayName}
                 </TableCell>

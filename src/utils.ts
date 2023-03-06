@@ -59,3 +59,7 @@ export function getLangs() {
 export function getStringAfterFirstSlash(): string {
   return window.location.pathname.split('/')[1] || '';
 }
+
+export function getStringAfterLastSlash() {
+  return window?.location?.href.split("/").pop() || '';
+}

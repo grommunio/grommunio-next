@@ -19,6 +19,7 @@ const AsyncNewMessage = makeLoadableComponent(() => import("./containers/NewMess
 const AsyncCalendar = makeLoadableComponent(() => import("./containers/Calendar"));
 const AsyncTasks =  makeLoadableComponent(() => import('./containers/Tasks'));
 const AsyncContacts =  makeLoadableComponent(() => import('./containers/Contacts'));
+const AsyncContact =  makeLoadableComponent(() => import('./containers/Contact'));
 const AsyncNotes =  makeLoadableComponent(() => import('./containers/Notes'));
 
 
@@ -51,6 +52,10 @@ const AppRoutes = ({ childProps }) => (
     <Route
       path="/contacts"
       element={makeAuthenticatedElement(AsyncContacts, childProps)}
+    />
+    <Route
+      path="/contacts/:contactId"
+      element={makeAuthenticatedElement(AsyncContact, childProps)}
     />
     <Route
       path="/notes"

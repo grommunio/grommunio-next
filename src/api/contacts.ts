@@ -33,3 +33,21 @@ export async function deleteContact(authProvider: AuthCodeMSALBrowserAuthenticat
     .api('/me/contacts/' + contactId)
     .delete();
 }
+
+export async function getContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  contactId: string): Promise<Contact> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/contacts/' + contactId)
+    .get();
+}
+
+export async function patchContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  contact: Contact): Promise<Contact> {
+  ensureClient(authProvider);
+  
+  return await graphClient!
+    .api('/me/contacts/' + contact.id)
+    .patch(contact);
+}
