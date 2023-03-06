@@ -202,6 +202,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
         visible={visible}
         target={target}
         onHide={onHide}
+        fullSize={false}
       >
         <StyledDiv>
           <div className={classes.header}>

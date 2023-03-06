@@ -146,6 +146,7 @@ function Tasks({ t, classes }: any) {
           onClick={handleAddingTaskList(true)}
           variant='contained'
           color="primary"
+          key={-1}
         >
           {t("New task list")}
         </Button>
