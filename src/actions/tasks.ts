@@ -3,9 +3,10 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { TodoTask, TodoTaskList } from "microsoft-graph";
-import { deleteTask, getUserTaskLists, getUserTasks, patchTask, postTask, postTaskList } from "../api/tasks";
+import { deleteTask, getUserTaskLists, getUserTasks, patchTask, postTask, postTaskList, deleteTaskList } from "../api/tasks";
 import { AppContext } from "../azure/AppContext";
-import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, PATCH_TASK_DATA, POST_TASK_DATA, POST_TASK_LIST_DATA } from "./types";
+import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, PATCH_TASK_DATA, POST_TASK_DATA,
+  POST_TASK_LIST_DATA, DELETE_TASK_LIST_DATA } from "./types";
 
 export const fetchTaskListsData = createAsyncThunk<
   TodoTaskList[],
@@ -117,6 +118,26 @@ export const postTaskListData = createAsyncThunk<
         try {
           const res = await postTaskList(app.authProvider!, taskList);
           return res;
+        } catch (err) {
+          const error = err as Error;
+          app.displayError!(error.message);
+          return false;
+        }
+      }
+      return false;
+    }
+  );
+
+export const deleteTaskListData = createAsyncThunk<
+  string | boolean,
+  postTaskListDataParams
+  >(
+    DELETE_TASK_LIST_DATA,
+    async ({ taskList, app }: postTaskListDataParams) => {
+      if (app.user) {
+        try {
+          await deleteTaskList(app.authProvider!, taskList);
+          return taskList.id || "";
         } catch (err) {
           const error = err as Error;
           app.displayError!(error.message);

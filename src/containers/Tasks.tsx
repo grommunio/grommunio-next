@@ -5,7 +5,7 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { deleteTaskData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
+import { deleteTaskData, deleteTaskListData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
 import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
@@ -51,7 +51,6 @@ const styles: any = {
   },
   drawerLi: {
     width: 'auto',
-    margin: '6px 12px 6px',
     borderRadius: '3px',
     position: 'relative',
     display: 'flex',
@@ -126,6 +125,11 @@ function Tasks({ t, classes }: any) {
       .then(() => setDirty(false));
   }
 
+  const handleDeleteTaskList = (taskList: TodoTaskList) => (e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    dispatch(deleteTaskListData({ app, taskList }));
+  }
+
   const drawerListElements = taskLists.map((taskList: TodoTaskList, idx: number) => 
     <ListItem disablePadding key={idx}>
       <ListItemButton
@@ -133,7 +137,10 @@ function Tasks({ t, classes }: any) {
         onClick={handleTaskListClick(taskList)}
         selected={selectedTaskList?.id === taskList.id}
       >
-        {taskList.displayName}
+        <ListItemText>{taskList.displayName}</ListItemText>
+        <IconButton size='small' onClick={handleDeleteTaskList(taskList)}>
+          <Delete color="error" fontSize='small'/>
+        </IconButton>
       </ListItemButton>
     </ListItem>);
 
