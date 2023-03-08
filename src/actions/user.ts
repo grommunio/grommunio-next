@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Person } from "microsoft-graph";
+import { Person, User } from "microsoft-graph";
 import { getPeople } from "../api/user";
 import { AppContext } from "../azure/AppContext";
-import { FETCH_PEOPLE_DATA } from "./types";
+import { FETCH_PEOPLE_DATA, SET_ME } from "./types";
 
 
 export const fetchPeopleData = createAsyncThunk<
@@ -26,3 +26,10 @@ export const fetchPeopleData = createAsyncThunk<
     return [];
   }
 );
+
+export function setMeData(me: User) {
+  return {
+    type: SET_ME,
+    data: me,
+  }
+}

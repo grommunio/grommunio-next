@@ -17,6 +17,8 @@ import { useMsal } from '@azure/msal-react';
 
 import { getUser } from '../api/user';
 import config from './Config';
+import { useDispatch } from 'react-redux';
+import { setMeData } from '../actions/user';
 
 // <AppContextSnippet>
 export interface AppUser {
@@ -72,6 +74,7 @@ export default function ProvideAppContext({ children }: ProvideAppContextProps) 
 
 function useProvideAppContext() {
   const msal = useMsal();
+  const dispatch = useDispatch();
   const [user, setUser] = useState<AppUser | undefined>(undefined);
   const [error, setError] = useState<AppError | undefined>(undefined);
 
@@ -112,6 +115,7 @@ function useProvideAppContext() {
               timeFormat: user.mailboxSettings?.timeFormat || 'h:mm a',
               timeZone: user.mailboxSettings?.timeZone || 'UTC'
             });
+            dispatch(setMeData(user));
           }
         } catch (err: any) {
           displayError(err.message);
@@ -138,6 +142,7 @@ function useProvideAppContext() {
       timeFormat: user.mailboxSettings?.timeFormat || '',
       timeZone: user.mailboxSettings?.timeZone || 'UTC'
     });
+    dispatch(setMeData(user));
   };
   // </SignInSnippet>
 

@@ -10,6 +10,7 @@ import logger from 'redux-logger';
 import authReducer from './reducers/auth';
 import calendarReducer from './reducers/calendar';
 import contactsReducer from './reducers/contacts';
+import meReducer from './reducers/me';
 import messagesReducer from './reducers/messages';
 import notesReducer from './reducers/notes';
 import settingsReducer from './reducers/settings';
@@ -20,6 +21,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   calendar: calendarReducer,
   contacts: contactsReducer,
+  me: meReducer,
   messages: messagesReducer,
   notes: notesReducer,
   settings: settingsReducer,

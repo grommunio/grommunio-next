@@ -3,9 +3,9 @@
 
 import { useState, MouseEvent } from 'react';
 import { withStyles } from '@mui/styles';
-import { AppBar, IconButton, Menu, MenuItem, Tab, Tabs, Toolbar, Tooltip} from '@mui/material';
+import { AppBar, Box, IconButton, Menu, MenuItem, Tab, Tabs, Toolbar, Tooltip, Typography} from '@mui/material';
 import { DRAWER_WIDTH } from '../constants';
-import { Translate } from '@mui/icons-material';
+import { AccountCircle, Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +40,24 @@ const styles = {
   trans: {
     color: '#fff',
   },
+  username: {
+    color: 'white',
+  },
+  profileButton: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '2px 8px',
+    borderRadius: 25,
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+  },
+  profileIcon: {
+    fontSize: 40,
+    color: '#aaa',
+    marginLeft: 8,
+  },
 };
 
 function TopBar(props: any) {
@@ -47,7 +65,8 @@ function TopBar(props: any) {
   const { classes } = props;
   const { t, i18n } = useTranslation();
   const dispatch = useTypeDispatch();
-  const { language } = useTypeSelector(state => state.settings);
+  const { me, settings } = useTypeSelector(state => state);
+  const { language } = settings;
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
   const [ tab, setTab ] = useState<string>(window.location.pathname.slice(1)); // TODO: In the future, the default will be part of the user settings
   const navigate = useNavigate();
@@ -90,6 +109,10 @@ function TopBar(props: any) {
               <Translate color="inherit" className={classes.trans}/>
             </IconButton>
           </Tooltip>
+          <Box className={classes.profileButton}>
+            <Typography className={classes.username}>{me.displayName}</Typography>
+            <AccountCircle className={classes.profileIcon}/>
+          </Box>
           <Menu
             id="lang-menu"
             anchorEl={menuAnchor}

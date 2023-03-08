@@ -28,3 +28,5 @@ export const FETCH_NOTES_DATA = 'FETCH_NOTES_DATA';
 
 export const POST_EVENT_DATA = 'POST_EVENT_DATA';
 export const PATCH_EVENT_DATA = "PATCH_EVENT_DATA";
+
+export const SET_ME = "SET_ME";
