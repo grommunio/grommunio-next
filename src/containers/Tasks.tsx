@@ -148,7 +148,7 @@ function Tasks({ t, classes }: any) {
     <AuthenticatedView
       rootClass={classes.root}
       drawerProps={{
-        listElements: [...drawerListElements, <Button
+        listElements: [<Button
           className={classes.addTaskList}
           onClick={handleAddingTaskList(true)}
           variant='contained'
@@ -156,7 +156,8 @@ function Tasks({ t, classes }: any) {
           key={-1}
         >
           {t("New task list")}
-        </Button>
+        </Button>,
+        ...drawerListElements, 
         ]
       }}
     >
