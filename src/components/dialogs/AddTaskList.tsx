@@ -79,6 +79,7 @@ function AddTaskList(props: any) {
           <Grid item xs={12} className={classes.gridItem}>
             <TextField
               name="displayName"
+              autoFocus
               className={classes.propertyInput}
               fullWidth
               label={t("Display name")}

@@ -90,6 +90,7 @@ function AddContact(props: any) {
               label={t("E-Mail Address")}
               value={emails || ''}
               onChange={handleEmails}
+              autoFocus
             />
           </Grid>
           <Grid item xs={12} className={classes.gridItem}>

@@ -94,6 +94,7 @@ function AddTask(props: any) {
               label={t("Title")}
               value={title || ''}
               onChange={handleChange}
+              autoFocus
             />
           
           </Grid>
