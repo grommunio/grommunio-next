@@ -63,3 +63,11 @@ export function getStringAfterFirstSlash(): string {
 export function getStringAfterLastSlash() {
   return window?.location?.href.split("/").pop() || '';
 }
+
+
+export function buildQuery(endpoint: string, params={}): string {
+  const paramsArray = Object.entries(params);
+  if(paramsArray.length === 0) return endpoint;
+  const query = endpoint + '?' + paramsArray.reduce((prev, [name, val]) => prev + (val !== undefined ? `${name}=${val}&` : ''), '');
+  return query.slice(0, -1);
+}

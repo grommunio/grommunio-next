@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -12,6 +12,8 @@ import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
+import SearchTextfield from '../components/SearchTextfield';
+import { debounce } from "lodash";
 
 const styles: any = {
   root: {
@@ -71,6 +73,16 @@ const styles: any = {
   addButton: {
     marginLeft: 8,
   },
+  flexContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  messages: {
+    flex: 1,
+  },
+  search: {
+    margin: '16px 16px 4px 16px'
+  }
 };
 
 type MessagesProps = {
@@ -81,22 +93,35 @@ function Messages({ classes }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
   const editorRef = useRef({});
+  const [params, setParams] = useState({});
   const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const dispatch = useTypeDispatch();
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
   const navigate = useNavigate();
 
+  const help = (search: string) => {
+    dispatch(fetchMessagesData({app, folderid: selectedFolder?.id, params: { [`$search`]: `"${search}"` || undefined }}));
+  }
+
+  const throttledSearch = useRef(debounce(help, 200));
+
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchMessagesData({app}));
     dispatch(fetchMailFoldersData(app));
-  }, [app.authProvider]);
+  }, []);
 
   const handleMailFolderClick = (folder: MailFolder) => () => {
-    dispatch(fetchMessagesData({app, folderid: folder.id}));
     setSelectedFolder(folder);
+    dispatch(fetchMessagesData({app, folderid: folder?.id, params}))
   }
+
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    throttledSearch.current(value);
+    setParams({ ...params, [`$search`]: value });
+  };
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
 
@@ -133,21 +158,28 @@ function Messages({ classes }: MessagesProps) {
         </Button>
       </div>
       <div className={classes.content}>
-        <Paper>
-          <List className={classes.mailList}>
-            {messages.map((message: Message) =>
-              <ListItemButton
-                key={message.id}
-                onClick={handleMailClick(message)}
-              >
-                <ListItemText
-                  primary={message.subject}
-                  secondary={message.bodyPreview}
-                />
-              </ListItemButton>
-            )}
-          </List>
-        </Paper>
+        <div className={classes.flexContainer}>
+          <SearchTextfield
+            className={classes.search}
+            label="Search mails"
+            onChange={handleSearch}
+          />
+          <Paper className={classes.messages}>
+            <List className={classes.mailList}>
+              {messages.map((message: Message) =>
+                <ListItemButton
+                  key={message.id}
+                  onClick={handleMailClick(message)}
+                >
+                  <ListItemText
+                    primary={message.subject}
+                    secondary={message.bodyPreview}
+                  />
+                </ListItemButton>
+              )}
+            </List>
+          </Paper>
+        </div>
         <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
           {selectedMsg?.from?.emailAddress &&
             <Typography variant="h4">

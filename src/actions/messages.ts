@@ -10,6 +10,7 @@ import { FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA } from "./types";
 type fetchMessagesDataArgTypes = {
   app: AppContext,
   folderid?: string,
+  params?: any,
 };
 
 export const fetchMessagesData = createAsyncThunk<
@@ -17,10 +18,10 @@ export const fetchMessagesData = createAsyncThunk<
   fetchMessagesDataArgTypes
 >(
   FETCH_MAILS_DATA,
-  async ({app, folderid}: fetchMessagesDataArgTypes) => {
+  async ({app, folderid, params}: fetchMessagesDataArgTypes) => {
     if (app.user) {
       try {
-        const mails = await getUserMessages(app.authProvider!, folderid);
+        const mails = await getUserMessages(app.authProvider!, folderid, params);
         return mails;
       } catch (err) {
         const error = err as Error;
