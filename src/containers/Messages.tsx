@@ -101,7 +101,7 @@ function Messages({ classes }: MessagesProps) {
   const navigate = useNavigate();
 
   const help = (search: string) => {
-    dispatch(fetchMessagesData({app, folderid: selectedFolder?.id, params: { [`$search`]: `"${search}"` || undefined }}));
+    dispatch(fetchMessagesData({app, folderid: selectedFolder?.id, params: { ...params, search: search || undefined }}));
   }
 
   const throttledSearch = useRef(debounce(help, 200));
@@ -120,7 +120,7 @@ function Messages({ classes }: MessagesProps) {
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     throttledSearch.current(value);
-    setParams({ ...params, [`$search`]: value });
+    setParams({ ...params, search: value });
   };
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
