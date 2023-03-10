@@ -85,7 +85,7 @@ function GAB(props: any) {
             <ListItemButton
               key={key}
               onClick={handleContactSelect(contact)}
-              selected={selectedContacts.includes(contact)}
+              selected={selectedContacts.findIndex(c => c.id === contact.id) !== -1}
             >
               <ListItemIcon>
                 <AccountCircle/>
