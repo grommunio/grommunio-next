@@ -17,6 +17,7 @@ function gabReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       seletion: action.contacts,
+      open: false,
     };
   
   case SET_GAB_OPEN:

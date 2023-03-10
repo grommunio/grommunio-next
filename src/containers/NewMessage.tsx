@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
-import { Button, Paper, TextField, Typography } from '@mui/material';
+import { Button, IconButton, Paper, TextField, Typography } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
-import { Message } from 'microsoft-graph';
+import { Contact, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
+import { ImportContacts } from '@mui/icons-material';
+import { useDispatch } from 'react-redux';
+import { setGABOpen } from '../actions/gab';
+import { useTypeSelector } from '../store';
 
 const styles: any = (theme: any) => ({
   root: {
@@ -42,6 +47,9 @@ const styles: any = (theme: any) => ({
   },
   input: {
     margin: theme.spacing(1, 0),
+  },
+  flexRow: {
+    display: 'flex',
   }
 });
 
@@ -51,8 +59,11 @@ type MessagesProps = {
 
 function NewMessage({ classes }: MessagesProps) {
   const app = useAppContext();
+  const dispatch = useDispatch();
+  const location = useLocation();
   const { t } = useTranslation();
   const editorRef = useRef<any>(null);
+  const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState('');
   const [subject, setSubject] = useState('');
   const stateFuncs: any = {
@@ -67,7 +78,7 @@ function NewMessage({ classes }: MessagesProps) {
         contentType: 'html',
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
-      toRecipients: toRecipients.split(',').map(address => ({
+      toRecipients: toRecipients.split(',').map((address: string) => ({
         emailAddress: {
           address,
         },
@@ -79,6 +90,17 @@ function NewMessage({ classes }: MessagesProps) {
   const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
     stateFuncs[stateFunc]((e.target as HTMLInputElement).value);
   }
+
+  const handleGAB = () => {
+    dispatch(setGABOpen(true));
+  }
+
+  useEffect(() => {
+    setToRecipients(toRecipients + (toRecipients && ",") +
+      selectedGABReceipients.map((contact: Contact) => {
+        return contact.emailAddresses ? contact.emailAddresses[0].address : ''
+      }).join(','));
+  }, [selectedGABReceipients])
 
   return (
     <AuthenticatedTemplate>
@@ -110,17 +132,22 @@ function NewMessage({ classes }: MessagesProps) {
               value={subject}
               fullWidth
             />
-            <TextField
-              className={classes.input}
-              label={t("Recipients")}
-              onChange={handleInput('setToRecipients')}
-              value={toRecipients}
-              fullWidth
-            />
+            <div className={classes.flexRow}>
+              <IconButton onClick={handleGAB}>
+                <ImportContacts />
+              </IconButton>
+              <TextField
+                className={classes.input}
+                label={t("Recipients")}
+                onChange={handleInput('setToRecipients')}
+                value={toRecipients}
+                fullWidth
+              />
+            </div>
             <Editor
               tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
               onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={''}
+              initialValue={location.state?.body?.content || ''}
               init={{
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
               }}

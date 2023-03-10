@@ -15,7 +15,6 @@ import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { debounce } from "lodash";
 import { Forward } from '@mui/icons-material';
-import { setGABOpen } from '../actions/gab';
 
 const styles: any = {
   root: {
@@ -136,8 +135,7 @@ function Messages({ classes }: MessagesProps) {
 
   const handleNewMessage = () => navigate('/newMessage');
 
-  /*
-  const handleContactSelect = () => {
+  /*const handleContactSelect = () => {
     const contacts = useTypeSelector(state => state.gab.seletion);
     if(selectedMsg) postMessageForward(app.authProvider!, selectedMsg, {
       toRecipients: contacts.map((contact: Contact) => {
@@ -154,8 +152,8 @@ function Messages({ classes }: MessagesProps) {
     })
   }*/
 
-  const handleGAB = () => {
-    dispatch(setGABOpen(true));
+  const handleForward = () => {
+    navigate('/newMessage', { state: selectedMsg });
   }
 
   const drawerListElements = useMemo(() => mailFolders.map((folder: MailFolder, idx: number) => 
@@ -214,7 +212,7 @@ function Messages({ classes }: MessagesProps) {
         <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
           {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
             <Tooltip title={t("Forward")} placement="top">
-              <IconButton onClick={handleGAB}>
+              <IconButton onClick={handleForward}>
                 <Forward />
               </IconButton>
             </Tooltip>
