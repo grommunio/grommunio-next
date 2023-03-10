@@ -39,13 +39,16 @@ const styles = (theme: any) => ({
     flex: 1,
     marginRight: 8,
   },
+  selected: {
+    backgroundColor: '#ff00ff'
+  }
 });
 
 function GAB(props: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
   const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
-  const { t } = props;
+  const { t, classes } = props;
   const { open } = useTypeSelector(state => state.gab);
   const { contacts } = useTypeSelector(state => state.contacts);
   
@@ -56,7 +59,7 @@ function GAB(props: any) {
 
   const handleContactSelect = (contact: Contact) => () => {
     if (selectedContacts.includes(contact)) {
-      setSelectedContacts(selectedContacts.filter((item) => item !== contact));
+      setSelectedContacts(selectedContacts.filter((item) => item.id !== contact.id));
     } else {
       setSelectedContacts([...selectedContacts, contact]);
     }
@@ -86,6 +89,7 @@ function GAB(props: any) {
               key={key}
               onClick={handleContactSelect(contact)}
               selected={selectedContacts.findIndex(c => c.id === contact.id) !== -1}
+              classes={{ selected: classes.selected }}
             >
               <ListItemIcon>
                 <AccountCircle/>
