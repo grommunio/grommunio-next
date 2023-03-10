@@ -6,7 +6,7 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
-import { Badge, Button, List, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { Badge, Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { debounce } from "lodash";
+import { Forward } from '@mui/icons-material';
+import { postMessageForward } from '../api/messages';
 
 const styles: any = {
   root: {
@@ -82,7 +84,10 @@ const styles: any = {
   },
   search: {
     margin: '16px 16px 4px 16px'
-  }
+  },
+  mailActionsContainer: {
+    marginBottom: 4,
+  },
 };
 
 type MessagesProps = {
@@ -130,6 +135,19 @@ function Messages({ classes }: MessagesProps) {
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
 
   const handleNewMessage = () => navigate('/newMessage');
+
+  const handleFoward = () => {
+    if(selectedMsg) postMessageForward(app.authProvider!, selectedMsg, {
+      toRecipients: [
+        {
+          "emailAddress": {
+            "address": "stefan.akie@grommunio.com",
+            "name": "Stefan Akie"
+          }
+        }
+      ]
+    })
+  }
 
   const drawerListElements = mailFolders.map((folder: MailFolder, idx: number) => 
     <ListItem disablePadding key={idx}>
@@ -185,6 +203,13 @@ function Messages({ classes }: MessagesProps) {
           </Paper>
         </div>
         <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
+          {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
+            <Tooltip title={t("Forward")} placement="top">
+              <IconButton onClick={handleFoward}>
+                <Forward />
+              </IconButton>
+            </Tooltip>
+          </div>}
           {selectedMsg?.from?.emailAddress &&
             <Typography variant="h4">
               {selectedMsg.from.emailAddress.name || ''} &lt;{selectedMsg.from.emailAddress.address || ''}&gt;

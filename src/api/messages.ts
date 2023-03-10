@@ -39,3 +39,14 @@ export async function getMailFolders(authProvider: AuthCodeMSALBrowserAuthentica
 
   return response.value;
 }
+
+export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  message: Message, forward: any /*TODO: Find proper forward mail type */): Promise<string | undefined> {
+  ensureClient(authProvider);
+  
+  const response = await graphClient!
+    .api('/me/messages/'+ message.id + "/forward")
+    .post(forward);
+
+  return response?.message;
+}
