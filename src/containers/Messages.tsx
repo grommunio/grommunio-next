@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -15,7 +15,7 @@ import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { debounce } from "lodash";
 import { Forward } from '@mui/icons-material';
-import { postMessageForward } from '../api/messages';
+import { setGABOpen } from '../actions/gab';
 
 const styles: any = {
   root: {
@@ -136,20 +136,29 @@ function Messages({ classes }: MessagesProps) {
 
   const handleNewMessage = () => navigate('/newMessage');
 
-  const handleFoward = () => {
+  /*
+  const handleContactSelect = () => {
+    const contacts = useTypeSelector(state => state.gab.seletion);
     if(selectedMsg) postMessageForward(app.authProvider!, selectedMsg, {
-      toRecipients: [
-        {
-          "emailAddress": {
-            "address": "stefan.akie@grommunio.com",
-            "name": "Stefan Akie"
+      toRecipients: contacts.map((contact: Contact) => {
+        if(contact?.emailAddresses && contact?.emailAddresses?.length > 0) {
+          return  {
+            emailAddress: {
+              ...contact.emailAddresses[0] //TODO: This should not be hardcoded in the future
+            }
           }
+        } else {
+          return null;
         }
-      ]
+      })
     })
+  }*/
+
+  const handleGAB = () => {
+    dispatch(setGABOpen(true));
   }
 
-  const drawerListElements = mailFolders.map((folder: MailFolder, idx: number) => 
+  const drawerListElements = useMemo(() => mailFolders.map((folder: MailFolder, idx: number) => 
     <ListItem disablePadding key={idx}>
       <ListItemButton
         className={classes.drawerLi}
@@ -164,7 +173,7 @@ function Messages({ classes }: MessagesProps) {
           <div className={classes.badgeAnchor}></div>
         </Badge>
       </ListItemButton>
-    </ListItem>);
+    </ListItem>), [mailFolders]);
 
   return (
     <AuthenticatedView
@@ -205,7 +214,7 @@ function Messages({ classes }: MessagesProps) {
         <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
           {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
             <Tooltip title={t("Forward")} placement="top">
-              <IconButton onClick={handleFoward}>
+              <IconButton onClick={handleGAB}>
                 <Forward />
               </IconButton>
             </Tooltip>

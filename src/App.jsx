@@ -15,6 +15,7 @@ import TopBar from './components/TopBar';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch } from './store';
 import { changeSettings } from './actions/settings';
+import GAB from './components/dialogs/GAB';
 
 const styles = {
   root: {
@@ -93,6 +94,7 @@ function App(props) {
             classes={classes}
             routesProps={routesProps}
           />
+          <GAB />
         </div>
       </ProvideAppContext>
     </MsalProvider>

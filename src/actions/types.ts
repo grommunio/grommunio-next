@@ -30,3 +30,5 @@ export const POST_EVENT_DATA = 'POST_EVENT_DATA';
 export const PATCH_EVENT_DATA = "PATCH_EVENT_DATA";
 
 export const SET_ME = "SET_ME";
+export const SET_GAB_CONTACTS_SELECTION = "SET_GAB_CONTACTS_SELECTION";
+export const SET_GAB_OPEN = "SET_GAB_OPEN";
