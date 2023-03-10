@@ -40,7 +40,7 @@ const styles = (theme: any) => ({
     marginRight: 8,
   },
   selected: {
-    backgroundColor: '#ff00ff'
+    backgroundColor: '#71a7ec7a !important'
   }
 });
 
