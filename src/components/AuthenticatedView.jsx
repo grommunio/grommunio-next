@@ -1,5 +1,4 @@
 import { AuthenticatedTemplate } from "@azure/msal-react";
-import Drawer from "./Drawer";
 import { withStyles } from '@mui/styles';
 
 const styles = {
@@ -14,14 +13,13 @@ const styles = {
 function AuthenticatedView({
   classes,
   rootClass=undefined,
-  drawerProps={},
+  
   children,
 }) {
 
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <Drawer {...drawerProps}/>
         <div className={rootClass}>
           {children}
         </div>

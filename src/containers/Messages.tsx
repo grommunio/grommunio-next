@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -90,10 +90,11 @@ const styles: any = {
 };
 
 type MessagesProps = {
-  classes: any,
+  classes: any;
+  setDrawerElements: (elements: Array<JSX.Element>) => void;
 }
 
-function Messages({ classes }: MessagesProps) {
+function Messages({ classes, setDrawerElements }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
   const editorRef = useRef({});
@@ -156,28 +157,28 @@ function Messages({ classes }: MessagesProps) {
     navigate('/newMessage', { state: selectedMsg });
   }
 
-  const drawerListElements = useMemo(() => mailFolders.map((folder: MailFolder, idx: number) => 
-    <ListItem disablePadding key={idx}>
-      <ListItemButton
-        className={classes.drawerLi}
-        onClick={handleMailFolderClick(folder)}
-        selected={selectedFolder?.id === folder.id}
-      >
-        {folder.displayName}
-        <Badge
-          badgeContent={folder.unreadItemCount}
-          color="primary"
+  useEffect(() => {
+    const elements = mailFolders.map((folder: MailFolder, idx: number) => 
+      <ListItem disablePadding key={idx}>
+        <ListItemButton
+          className={classes.drawerLi}
+          onClick={handleMailFolderClick(folder)}
+          selected={selectedFolder?.id === folder.id}
         >
-          <div className={classes.badgeAnchor}></div>
-        </Badge>
-      </ListItemButton>
-    </ListItem>), [mailFolders]);
+          {folder.displayName}
+          <Badge
+            badgeContent={folder.unreadItemCount}
+            color="primary"
+          >
+            <div className={classes.badgeAnchor}></div>
+          </Badge>
+        </ListItemButton>
+      </ListItem>);
+    setDrawerElements(elements);
+  }, [mailFolders])
 
   return (
     <AuthenticatedView
-      drawerProps={{
-        listElements: drawerListElements,
-      }}
       rootClass={classes.root}
     >
       <Typography variant="h4" className={classes.header}>{t("Messages")}</Typography>

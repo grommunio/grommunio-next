@@ -67,7 +67,7 @@ const styles: any = {
   },
 };
 
-function Tasks({ t, classes }: any) {
+function Tasks({ t, classes, setDrawerElements }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -130,36 +130,36 @@ function Tasks({ t, classes }: any) {
     dispatch(deleteTaskListData({ app, taskList }));
   }
 
-  const drawerListElements = taskLists.map((taskList: TodoTaskList, idx: number) => 
-    <ListItem disablePadding key={idx}>
-      <ListItemButton
-        className={classes.drawerLi}
-        onClick={handleTaskListClick(taskList)}
-        selected={selectedTaskList?.id === taskList.id}
-      >
-        <ListItemText>{taskList.displayName}</ListItemText>
-        <IconButton size='small' onClick={handleDeleteTaskList(taskList)}>
-          <Delete color="error" fontSize='small'/>
-        </IconButton>
-      </ListItemButton>
-    </ListItem>);
+  useEffect(() => {
+    const elements = taskLists.map((taskList: TodoTaskList, idx: number) => 
+      <ListItem disablePadding key={idx}>
+        <ListItemButton
+          className={classes.drawerLi}
+          onClick={handleTaskListClick(taskList)}
+          selected={selectedTaskList?.id === taskList.id}
+        >
+          <ListItemText>{taskList.displayName}</ListItemText>
+          <IconButton size='small' onClick={handleDeleteTaskList(taskList)}>
+            <Delete color="error" fontSize='small'/>
+          </IconButton>
+        </ListItemButton>
+      </ListItem>);
+    setDrawerElements([<Button
+      className={classes.addTaskList}
+      onClick={handleAddingTaskList(true)}
+      variant='contained'
+      color="primary"
+      key={-1}
+    >
+      {t("New task list")}
+    </Button>,
+    ...elements, 
+    ]);
+  }, [taskLists]);
 
   return (
     <AuthenticatedView
       rootClass={classes.root}
-      drawerProps={{
-        listElements: [<Button
-          className={classes.addTaskList}
-          onClick={handleAddingTaskList(true)}
-          variant='contained'
-          color="primary"
-          key={-1}
-        >
-          {t("New task list")}
-        </Button>,
-        ...drawerListElements, 
-        ]
-      }}
     >
       <Typography variant="h4">{t("Tasks")}</Typography>
       <div className={classes.content}>

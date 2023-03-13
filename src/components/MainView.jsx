@@ -2,11 +2,18 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import AppRoutes from '../Routes';
+import Drawer from './Drawer';
 
-export default function MainView() {
+export default function MainView({ classes }) {
+  const [drawerElements, setDrawerElements] = useState([]);
+
   return (
-    <AppRoutes childProps={{ authenticated: false }}/>
+    <div className={classes.mainView}>
+      <Drawer listElements={drawerElements}/>
+      <AppRoutes childProps={{ authenticated: false, setDrawerElements }}/>
+    </div>
   );
 }
 

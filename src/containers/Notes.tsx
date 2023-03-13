@@ -49,12 +49,24 @@ const styles: any = {
     justifyContent: 'flex-end',
     margin: 8,
   },
+  drawerLi: {
+    width: 'auto',
+    borderRadius: '3px',
+    position: 'relative',
+    display: 'flex',
+    transition: 'all 200ms linear',
+    '&:hover': {
+      backgroundColor: 'transparent',
+      textShadow: '0px 0px 1px white',
+      color: 'white',
+    },
+  },
   addButton: {
     margin: 8,
   },
 };
 
-function Notes({ t, classes }: any) {
+function Notes({ t, classes, setDrawerElements }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -97,38 +109,40 @@ function Notes({ t, classes }: any) {
     patchNote(app.authProvider!, mergedNote);
   }
 
-  const drawerListElements = notes.map((note: Message, key: number) =>
-    <ListItem disablePadding key={key}>
-      <ListItemButton
-        onClick={handleNoteClick(note)}
-        divider
+  useEffect(() => {
+    const elements = notes.map((note: Message, key: number) =>
+      <ListItem disablePadding key={key}>
+        <ListItemButton
+          onClick={handleNoteClick(note)}
+          divider
+          className={classes.drawerLi}
+          selected={selectedNote?.id === note.id}
+        >
+          <ListItemText
+            primary={note.subject}
+          />
+          <IconButton onClick={handleNoteDelete(note.id || '')}>
+            <Delete color="error"/>
+          </IconButton>
+        </ListItemButton>
+      </ListItem>);
+    setDrawerElements([
+      <Button
+        key={-1}
+        onClick={handleAddNote(true)}
+        variant='contained'
+        color="primary"
+        className={classes.addButton}
       >
-        <ListItemText
-          primary={note.subject}
-        />
-        <IconButton onClick={handleNoteDelete(note.id || '')}>
-          <Delete color="error"/>
-        </IconButton>
-      </ListItemButton>
-    </ListItem>
-  );
+        {t("New note")}
+      </Button>
+      ,...elements]);
+  }, [notes, selectedNote])
 
   return (
     <AuthenticatedView
-      drawerProps={{
-        listElements: [
-          <Button
-            key={-1}
-            onClick={handleAddNote(true)}
-            variant='contained'
-            color="primary"
-            className={classes.addButton}
-          >
-            {t("New note")}
-          </Button>
-          ,...drawerListElements],
-      }}
-      rootClass={classes.root}>
+      rootClass={classes.root}
+    >
       <Typography variant="h4">{t("Notes")}</Typography>
       <div className={classes.content}>
         <Paper elevation={8} className={classes.tinyMceContainer}>
