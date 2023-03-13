@@ -121,3 +121,7 @@ pre code {
 .tox-tinymce {
   flex: 1 !important;
 }
+
+.tox-promotion {
+  display: none !important;
+}
