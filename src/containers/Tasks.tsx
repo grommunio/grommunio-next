@@ -52,18 +52,14 @@ const styles: any = {
   drawerLi: {
     width: 'auto',
     borderRadius: '3px',
-    position: 'relative',
-    display: 'flex',
-    padding: '9px 14px',
-    transition: 'all 200ms linear',
     '&:hover': {
       backgroundColor: 'transparent',
       textShadow: '0px 0px 1px white',
       color: 'white',
     },
   },
-  addTaskList: {
-    margin: '0 8px',
+  addButton: {
+    margin: 8,
   },
 };
 
@@ -136,16 +132,17 @@ function Tasks({ t, classes, setDrawerElements }: any) {
         <ListItemButton
           className={classes.drawerLi}
           onClick={handleTaskListClick(taskList)}
+          divider
           selected={selectedTaskList?.id === taskList.id}
         >
-          <ListItemText>{taskList.displayName}</ListItemText>
+          <ListItemText primary={taskList.displayName} />
           <IconButton size='small' onClick={handleDeleteTaskList(taskList)}>
             <Delete color="error" fontSize='small'/>
           </IconButton>
         </ListItemButton>
       </ListItem>);
     setDrawerElements([<Button
-      className={classes.addTaskList}
+      sx={{m: 2}}
       onClick={handleAddingTaskList(true)}
       variant='contained'
       color="primary"
@@ -155,7 +152,7 @@ function Tasks({ t, classes, setDrawerElements }: any) {
     </Button>,
     ...elements, 
     ]);
-  }, [taskLists]);
+  }, [taskLists, selectedTaskList]);
 
   return (
     <AuthenticatedView

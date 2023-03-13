@@ -24,7 +24,7 @@ function Menu() {
   return (
     <div>
       <Drawer />
-      <div style={{ marginLeft: 276 }}>
+      <div style={{ marginLeft: 16 }}>
         <h1>grommunio Next</h1>
         <p className="lead">
           This app uses the Microsoft Graph API

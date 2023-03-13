@@ -25,12 +25,13 @@ const styles: any = {
   }
 };
 
-function Calendar({ classes }: any) {
+function Calendar({ classes, setDrawerElements }: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
 
   useEffect(() => {
     dispatch(fetchEventsData(app));
+    setDrawerElements([]);
   }, [app.authProvider]);
 
 

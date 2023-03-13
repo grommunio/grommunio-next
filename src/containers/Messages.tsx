@@ -48,12 +48,7 @@ const styles: any = {
   },
   drawerLi: {
     width: 'auto',
-    margin: '6px 12px 6px',
     borderRadius: '3px',
-    position: 'relative',
-    display: 'flex',
-    padding: '9px 14px',
-    transition: 'all 200ms linear',
     '&:hover': {
       backgroundColor: 'transparent',
       textShadow: '0px 0px 1px white',
@@ -164,6 +159,7 @@ function Messages({ classes, setDrawerElements }: MessagesProps) {
           className={classes.drawerLi}
           onClick={handleMailFolderClick(folder)}
           selected={selectedFolder?.id === folder.id}
+          divider
         >
           {folder.displayName}
           <Badge
@@ -175,7 +171,7 @@ function Messages({ classes, setDrawerElements }: MessagesProps) {
         </ListItemButton>
       </ListItem>);
     setDrawerElements(elements);
-  }, [mailFolders])
+  }, [mailFolders, selectedFolder])
 
   return (
     <AuthenticatedView

@@ -31,7 +31,7 @@ const styles: any = {
   },
 };
 
-function Contacts({ classes }: any) {
+function Contacts({ classes, setDrawerElements }: any) {
   const navigate = useNavigate();
   const app = useAppContext();
   const { t } = useTranslation();
@@ -42,6 +42,7 @@ function Contacts({ classes }: any) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchContactsData(app));
+    setDrawerElements([]);
   }, [app.authProvider]);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);

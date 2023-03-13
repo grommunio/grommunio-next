@@ -52,9 +52,6 @@ const styles: any = {
   drawerLi: {
     width: 'auto',
     borderRadius: '3px',
-    position: 'relative',
-    display: 'flex',
-    transition: 'all 200ms linear',
     '&:hover': {
       backgroundColor: 'transparent',
       textShadow: '0px 0px 1px white',
@@ -132,7 +129,7 @@ function Notes({ t, classes, setDrawerElements }: any) {
         onClick={handleAddNote(true)}
         variant='contained'
         color="primary"
-        className={classes.addButton}
+        sx={{m: 2}}
       >
         {t("New note")}
       </Button>

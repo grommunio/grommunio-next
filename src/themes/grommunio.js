@@ -21,7 +21,7 @@ const grommunioTheme = mode => ({
         },
       },
     },
-    MuiListItem: {
+    MuiListItemButton: {
       styleOverrides: {
         root: {
           '&.Mui-selected': {
