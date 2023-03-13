@@ -131,13 +131,6 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
     >
       <div className={classes.content}>
         <Paper className={classes.tinyMceContainer}>
-          <TextField
-            className={classes.input}
-            label={t("Subject")}
-            onChange={handleInput('setSubject')}
-            value={subject}
-            fullWidth
-          />
           <div className={classes.flexRow}>
             <IconButton onClick={handleGAB}>
               <ImportContacts />
@@ -150,6 +143,13 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
               fullWidth
             />
           </div>
+          <TextField
+            className={classes.input}
+            label={t("Subject")}
+            onChange={handleInput('setSubject')}
+            value={subject}
+            fullWidth
+          />
           <Editor
             tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
             onInit={(evt, editor) => editorRef.current = editor}
