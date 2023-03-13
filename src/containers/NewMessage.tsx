@@ -2,10 +2,9 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { AuthenticatedTemplate } from '@azure/msal-react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
-import { Button, IconButton, Paper, TextField, Typography } from '@mui/material';
+import { Button, IconButton, Paper, TextField } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message } from 'microsoft-graph';
@@ -15,6 +14,7 @@ import { ImportContacts } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
 import { useTypeSelector } from '../store';
+import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = (theme: any) => ({
   root: {
@@ -43,7 +43,7 @@ const styles: any = (theme: any) => ({
     padding: 16,
   },
   button: {
-    margin: theme.spacing(2, 1),
+    margin: theme.spacing(0, 1),
   },
   input: {
     margin: theme.spacing(1, 0),
@@ -109,59 +109,58 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
   }, [selectedGABReceipients])
 
   return (
-    <AuthenticatedTemplate>
-      <div className={classes.root}>
-        <Typography variant="h4">{t("New message")}</Typography>
-        <div>
-          <Button
-            onClick={handleSend(false)}
-            variant='contained'
-            color="primary"
-          >
-            {t("Save")}
-          </Button>
-          <Button
-            className={classes.button}
-            onClick={handleSend(true)}
-            variant='contained'
-            color="primary"
-          >
-            {t("Send")}
-          </Button>
-        </div>
-        <div className={classes.content}>
-          <Paper className={classes.tinyMceContainer}>
+    <AuthenticatedView
+      header={t("New message")}
+      actions={[
+        <Button
+          onClick={handleSend(false)}
+          variant='contained'
+          color="primary"
+        >
+          {t("Save")}
+        </Button>,
+        <Button
+          className={classes.button}
+          onClick={handleSend(true)}
+          variant='contained'
+          color="primary"
+        >
+          {t("Send")}
+        </Button>
+      ]}
+    >
+      <div className={classes.content}>
+        <Paper className={classes.tinyMceContainer}>
+          <TextField
+            className={classes.input}
+            label={t("Subject")}
+            onChange={handleInput('setSubject')}
+            value={subject}
+            fullWidth
+          />
+          <div className={classes.flexRow}>
+            <IconButton onClick={handleGAB}>
+              <ImportContacts />
+            </IconButton>
             <TextField
               className={classes.input}
-              label={t("Subject")}
-              onChange={handleInput('setSubject')}
-              value={subject}
+              label={t("Recipients")}
+              onChange={handleInput('setToRecipients')}
+              value={toRecipients}
               fullWidth
             />
-            <div className={classes.flexRow}>
-              <IconButton onClick={handleGAB}>
-                <ImportContacts />
-              </IconButton>
-              <TextField
-                className={classes.input}
-                label={t("Recipients")}
-                onChange={handleInput('setToRecipients')}
-                value={toRecipients}
-                fullWidth
-              />
-            </div>
-            <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-              onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={location.state?.body?.content || ''}
-              init={{
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-              }}
-            />
-          </Paper>
-        </div>
+          </div>
+          <Editor
+            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+            onInit={(evt, editor) => editorRef.current = editor}
+            initialValue={location.state?.body?.content || ''}
+            init={{
+              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+            }}
+          />
+        </Paper>
       </div>
-    </AuthenticatedTemplate>
+    </AuthenticatedView>
   );
   // </ReturnSnippet>
 }
