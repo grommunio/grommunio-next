@@ -31,8 +31,11 @@ function Contacts({ classes, setDrawerElements }: any) {
 
   // componentDidMount()
   useEffect(() => {
-    dispatch(fetchContactsData(app));
     setDrawerElements([]);
+  }, [])
+
+  useEffect(() => {
+    dispatch(fetchContactsData(app));
   }, [app.authProvider]);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);

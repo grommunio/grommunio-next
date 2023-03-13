@@ -55,9 +55,10 @@ const styles: any = (theme: any) => ({
 
 type MessagesProps = {
   classes: any,
+  setDrawerElements: (arg1: Array<JSX.Element>) => void,
 }
 
-function NewMessage({ classes }: MessagesProps) {
+function NewMessage({ classes, setDrawerElements }: MessagesProps) {
   const app = useAppContext();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -70,6 +71,11 @@ function NewMessage({ classes }: MessagesProps) {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
   }
+
+  // componentDidMount()
+  useEffect(() => {
+    setDrawerElements([]);
+  }, [])
 
   const handleSend = (send: boolean) => () => {
     const message: Message = {

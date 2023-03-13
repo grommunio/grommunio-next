@@ -20,8 +20,11 @@ function Calendar({ t, setDrawerElements }: any) {
   const dispatch = useTypeDispatch();
 
   useEffect(() => {
-    dispatch(fetchEventsData(app));
     setDrawerElements([]);
+  }, [])
+
+  useEffect(() => {
+    dispatch(fetchEventsData(app));
   }, [app.authProvider]);
 
 
