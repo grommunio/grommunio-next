@@ -36,6 +36,15 @@ const styles = {
     overflow: "hidden",
     zIndex: 100,
   },
+  drawerListElementClass: {
+    width: 'auto',
+    borderRadius: '3px',
+    '&:hover': {
+      backgroundColor: 'transparent',
+      textShadow: '0px 0px 1px white',
+      color: 'white',
+    },
+  }
 };
 
 // <MsalInstanceSnippet>

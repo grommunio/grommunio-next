@@ -11,8 +11,14 @@ export default function MainView({ classes }) {
 
   return (
     <div className={classes.mainView}>
-      <Drawer listElements={drawerElements}/>
-      <AppRoutes childProps={{ authenticated: false, setDrawerElements }}/>
+      <Drawer
+        listElements={drawerElements}
+      />
+      <AppRoutes childProps={{
+        authenticated: false,
+        setDrawerElements,
+        drawerListElementClass: classes.drawerListElementClass,
+      }}/>
     </div>
   );
 }

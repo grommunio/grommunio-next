@@ -28,18 +28,9 @@ const styles: any = {
     justifyContent: 'flex-end',
     margin: 8,
   },
-  drawerLi: {
-    width: 'auto',
-    borderRadius: '3px',
-    '&:hover': {
-      backgroundColor: 'transparent',
-      textShadow: '0px 0px 1px white',
-      color: 'white',
-    },
-  },
 };
 
-function Notes({ t, classes, setDrawerElements }: any) {
+function Notes({ t, classes, setDrawerElements, drawerListElementClass }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -88,14 +79,14 @@ function Notes({ t, classes, setDrawerElements }: any) {
         <ListItemButton
           onClick={handleNoteClick(note)}
           divider
-          className={classes.drawerLi}
+          className={drawerListElementClass}
           selected={selectedNote?.id === note.id}
         >
           <ListItemText
             primary={note.subject}
           />
-          <IconButton onClick={handleNoteDelete(note.id || '')}>
-            <Delete color="error"/>
+          <IconButton size='small'  onClick={handleNoteDelete(note.id || '')}>
+            <Delete color="error" fontSize='small' />
           </IconButton>
         </ListItemButton>
       </ListItem>);

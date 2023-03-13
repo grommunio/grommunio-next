@@ -38,18 +38,9 @@ const styles: any = {
     justifyContent: 'flex-end',
     margin: 8,
   },
-  drawerLi: {
-    width: 'auto',
-    borderRadius: '3px',
-    '&:hover': {
-      backgroundColor: 'transparent',
-      textShadow: '0px 0px 1px white',
-      color: 'white',
-    },
-  },
 };
 
-function Tasks({ t, classes, setDrawerElements }: any) {
+function Tasks({ t, classes, setDrawerElements, drawerListElementClass }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -114,9 +105,8 @@ function Tasks({ t, classes, setDrawerElements }: any) {
 
   useEffect(() => {
     const elements = taskLists.map((taskList: TodoTaskList, idx: number) => 
-      <ListItem disablePadding key={idx}>
+      <ListItem disablePadding key={idx} className={drawerListElementClass}>
         <ListItemButton
-          className={classes.drawerLi}
           onClick={handleTaskListClick(taskList)}
           divider
           selected={selectedTaskList?.id === taskList.id}

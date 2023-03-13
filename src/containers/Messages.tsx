@@ -35,19 +35,6 @@ const styles: any = {
     display: 'flex',
     flexDirection: 'column',
   },
-  drawerLi: {
-    width: 'auto',
-    borderRadius: '3px',
-    '&:hover': {
-      backgroundColor: 'transparent',
-      textShadow: '0px 0px 1px white',
-      color: 'white',
-    },
-  },
-  badgeAnchor: {
-    width: 16,
-    height: 12,
-  },
   flexRow: {
     display: 'flex',
     flex: 1,
@@ -70,9 +57,10 @@ const styles: any = {
 type MessagesProps = {
   classes: any;
   setDrawerElements: (elements: Array<JSX.Element>) => void;
+  drawerListElementClass: any,
 }
 
-function Messages({ classes, setDrawerElements }: MessagesProps) {
+function Messages({ classes, setDrawerElements, drawerListElementClass }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
   const editorRef = useRef({});
@@ -137,9 +125,8 @@ function Messages({ classes, setDrawerElements }: MessagesProps) {
 
   useEffect(() => {
     const elements = mailFolders.map((folder: MailFolder, idx: number) => 
-      <ListItem disablePadding key={idx}>
+      <ListItem disablePadding key={idx} className={drawerListElementClass}>
         <ListItemButton
-          className={classes.drawerLi}
           onClick={handleMailFolderClick(folder)}
           selected={selectedFolder?.id === folder.id}
           divider
@@ -149,7 +136,7 @@ function Messages({ classes, setDrawerElements }: MessagesProps) {
             badgeContent={folder.unreadItemCount}
             color="primary"
           >
-            <div className={classes.badgeAnchor}></div>
+            <div style={{width: 16, height: 12}}></div>
           </Badge>
         </ListItemButton>
       </ListItem>);
