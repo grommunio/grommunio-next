@@ -5,11 +5,10 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { Button, IconButton, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { Button, IconButton, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
 import { Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { Delete } from '@mui/icons-material';
-import theme from '../theme';
 import { withTranslation } from 'react-i18next';
 import { deleteNoteData, fetchNotesData } from '../actions/notes';
 import AddNote from '../components/dialogs/AddNote';
@@ -17,32 +16,12 @@ import { patchNote } from '../api/notes';
 import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = {
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    padding: 16,
-  },
   content: {
     flex: 1,
     display: 'flex',
   },
-  centerRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  mailList: {
-    width: 400,
-    height: '100%',
-  },
   tinyMceContainer: {
     flex: 1,
-  },
-  action: {
-    margin: theme.spacing(1),
-    display: 'flex',
-    justifyContent: 'center',
   },
   buttonRow: {
     display: 'flex',
@@ -57,9 +36,6 @@ const styles: any = {
       textShadow: '0px 0px 1px white',
       color: 'white',
     },
-  },
-  addButton: {
-    margin: 8,
   },
 };
 
@@ -138,9 +114,8 @@ function Notes({ t, classes, setDrawerElements }: any) {
 
   return (
     <AuthenticatedView
-      rootClass={classes.root}
+      header={t("Notes")}
     >
-      <Typography variant="h4">{t("Notes")}</Typography>
       <div className={classes.content}>
         <Paper elevation={8} className={classes.tinyMceContainer}>
           {selectedNote?.body?.content && <Editor

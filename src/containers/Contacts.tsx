@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { Button, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Button, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { Contact, EmailAddress } from 'microsoft-graph';
 import { deleteContactData, fetchContactsData } from '../actions/contacts';
 import AddContact from '../components/dialogs/AddContact';
@@ -15,16 +15,6 @@ import AuthenticatedView from '../components/AuthenticatedView';
 import { useNavigate } from 'react-router-dom';
 
 const styles: any = {
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    padding: 16,
-  },
-  content: {
-    flex: 1,
-    display: 'flex',
-  },
   paper: {
     flex: 1,
     marginTop: 8,
@@ -56,13 +46,14 @@ function Contacts({ classes, setDrawerElements }: any) {
   }
 
   return (
-    <AuthenticatedView rootClass={classes.root}>
-      <Typography variant='h4'>{t('Contacts')}</Typography>
-      <div>
-        <Button onClick={handleAdding(true)} variant='contained' color="primary">
+    <AuthenticatedView
+      header={t('Contacts')}
+      actions={[
+        <Button onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
           {t("New contact")}
         </Button>
-      </div>
+      ]}
+    >
       <Paper className={classes.paper}>
         <Table>
           <TableHead>

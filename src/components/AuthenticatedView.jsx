@@ -1,31 +1,38 @@
 import { AuthenticatedTemplate } from "@azure/msal-react";
+import { Typography } from "@mui/material";
 import { withStyles } from '@mui/styles';
+import { withTranslation } from "react-i18next";
 
 const styles = {
   root: {
-    display: "flex",
+    display: 'flex',
+    flexDirection: 'column',
     flex: 1,
-    overflow: "hidden",
-    zIndex: 100,
+    margin: 16,
+  },
+  header: {
+    margin: 8,
+  },
+  actions: {
+    marginLeft: 8,
   },
 }
 
 function AuthenticatedView({
-  classes,
-  rootClass=undefined,
-  
-  children,
+  classes, children, header, actions=[]
 }) {
 
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <div className={rootClass}>
-          {children}
+        <Typography variant="h4" className={classes.header}>{header || ''}</Typography>
+        <div className={classes.actions}>
+          {actions}
         </div>
+        {children}
       </div>
     </AuthenticatedTemplate>
   );
 }
 
-export default withStyles(styles)(AuthenticatedView);
+export default withTranslation()(withStyles(styles)(AuthenticatedView));

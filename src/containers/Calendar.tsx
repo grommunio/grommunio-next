@@ -10,22 +10,12 @@ import { fetchEventsData } from '../actions/calendar';
 import { useTypeDispatch } from '../store';
 import ScheduleCalendar from './calendar/Scheduler';
 import AuthenticatedView from '../components/AuthenticatedView';
+import { withTranslation } from 'react-i18next';
 
 const styles: any = {
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    overflowY: 'auto',
-  },
-  centerRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    flex: 1,
-  }
 };
 
-function Calendar({ classes, setDrawerElements }: any) {
+function Calendar({ t, setDrawerElements }: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
 
@@ -36,11 +26,13 @@ function Calendar({ classes, setDrawerElements }: any) {
 
 
   return (
-    <AuthenticatedView rootClass={classes.root}>
+    <AuthenticatedView
+      header={t("Calendar")}
+    >
       <ScheduleCalendar app={app}/>
     </AuthenticatedView>
   );
 }
 
 
-export default withStyles(styles)(Calendar);
+export default withTranslation()(withStyles(styles)(Calendar));

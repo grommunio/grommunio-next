@@ -6,7 +6,7 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { deleteTaskData, deleteTaskListData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
-import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
@@ -17,20 +17,9 @@ import { withTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = {
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    padding: 16,
-  },
   content: {
     flex: 1,
     display: 'flex',
-  },
-  centerRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    flex: 1,
   },
   mailList: {
     width: 400,
@@ -57,9 +46,6 @@ const styles: any = {
       textShadow: '0px 0px 1px white',
       color: 'white',
     },
-  },
-  addButton: {
-    margin: 8,
   },
 };
 
@@ -156,9 +142,8 @@ function Tasks({ t, classes, setDrawerElements }: any) {
 
   return (
     <AuthenticatedView
-      rootClass={classes.root}
+      header={t("Tasks")}
     >
-      <Typography variant="h4">{t("Tasks")}</Typography>
       <div className={classes.content}>
         <Paper elevation={1}>
           <div className={classes.action}>

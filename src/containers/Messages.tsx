@@ -17,21 +17,10 @@ import { debounce } from "lodash";
 import { Forward } from '@mui/icons-material';
 
 const styles: any = {
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    margin: 16,
-  },
   content: {
     flex: 1,
     height: '100%',
     display: 'flex',
-  },
-  centerRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    flex: 1,
   },
   mailList: {
     width: 400,
@@ -62,12 +51,6 @@ const styles: any = {
   flexRow: {
     display: 'flex',
     flex: 1,
-  },
-  header: {
-    margin: 8,
-  },
-  addButton: {
-    marginLeft: 8,
   },
   flexContainer: {
     display: 'flex',
@@ -175,14 +158,13 @@ function Messages({ classes, setDrawerElements }: MessagesProps) {
 
   return (
     <AuthenticatedView
-      rootClass={classes.root}
-    >
-      <Typography variant="h4" className={classes.header}>{t("Messages")}</Typography>
-      <div className={classes.addButton}>
+      header={t("Messages")}
+      actions={[
         <Button onClick={handleNewMessage} variant='contained' color="primary">
           {t("New message")}
         </Button>
-      </div>
+      ]}
+    >
       <div className={classes.content}>
         <div className={classes.flexContainer}>
           <SearchTextfield
