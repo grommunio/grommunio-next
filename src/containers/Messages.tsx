@@ -94,7 +94,7 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    throttledSearch.current(value);
+    throttledSearch.current(`"${value}"`);
     setParams({ ...params, search: value ? `"${value}"` : "" });
   };
 
