@@ -116,6 +116,7 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
           onClick={handleSend(false)}
           variant='contained'
           color="primary"
+          key={0}
         >
           {t("Save")}
         </Button>,
@@ -124,6 +125,7 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
           onClick={handleSend(true)}
           variant='contained'
           color="primary"
+          key={1}
         >
           {t("Send")}
         </Button>

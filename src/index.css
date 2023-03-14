@@ -73,14 +73,11 @@ pre code {
   color: black;
 }
 
-#loader {
-  position: absolute;
-  bottom: 8%;
-  left: 50%;
-  font-weight: 500;
-  font-family: "Arial", "Helvetica", sans-serif;
-  color: black;
-  transform: translate(-50%, -50%);
+#loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 /* Scrollbar width */

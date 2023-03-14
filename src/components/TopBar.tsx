@@ -60,6 +60,15 @@ const styles = {
   },
 };
 
+const routeTabMapping: any = {
+  'messages': 'messages',
+  'newMessage': 'messages',
+  'calendar': 'calendar',
+  'contacts': 'contacts',
+  'tasks': 'tasks',
+  'notes': 'notes',
+}
+
 function TopBar(props: any) {
   const app = useAppContext();
   const { classes } = props;
@@ -90,7 +99,7 @@ function TopBar(props: any) {
       <Toolbar className={classes.toolbar}>
         <Tabs
           className={classes.tabs}
-          value={app.user ? tab : ''}
+          value={app.user ? routeTabMapping[tab] : ''}
           onChange={handleTab}
           textColor="inherit"
           indicatorColor="secondary"

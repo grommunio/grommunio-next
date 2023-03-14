@@ -147,7 +147,7 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
     <AuthenticatedView
       header={t("Messages")}
       actions={[
-        <Button onClick={handleNewMessage} variant='contained' color="primary">
+        <Button key={0} onClick={handleNewMessage} variant='contained' color="primary">
           {t("New message")}
         </Button>
       ]}

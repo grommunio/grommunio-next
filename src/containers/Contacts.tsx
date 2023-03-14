@@ -52,7 +52,7 @@ function Contacts({ classes, setDrawerElements }: any) {
     <AuthenticatedView
       header={t('Contacts')}
       actions={[
-        <Button onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
+        <Button key={0} onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
           {t("New contact")}
         </Button>
       ]}
