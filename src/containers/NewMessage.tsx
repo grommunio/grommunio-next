@@ -62,7 +62,7 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
   const app = useAppContext();
   const dispatch = useDispatch();
   const location = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState('');
@@ -106,7 +106,7 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
       selectedGABReceipients.map((contact: Contact) => {
         return contact.emailAddresses ? contact.emailAddresses[0].address : ''
       }).join(','));
-  }, [selectedGABReceipients])
+  }, [selectedGABReceipients]);
 
   return (
     <AuthenticatedView
@@ -155,6 +155,8 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
             onInit={(evt, editor) => editorRef.current = editor}
             initialValue={location.state?.body?.content || ''}
             init={{
+              id: 'tinyMCE-editor',
+              language: i18n.language,
               content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
             }}
           />
@@ -162,7 +164,6 @@ function NewMessage({ classes, setDrawerElements }: MessagesProps) {
       </div>
     </AuthenticatedView>
   );
-  // </ReturnSnippet>
 }
 
 
