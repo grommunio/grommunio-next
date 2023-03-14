@@ -8,7 +8,8 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
-    margin: 16,
+    padding: 16,
+    overflow: 'auto',
   },
   header: {
     margin: 8,

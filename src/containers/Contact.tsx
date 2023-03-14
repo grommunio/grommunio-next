@@ -9,7 +9,8 @@ import { getStringAfterLastSlash } from '../utils';
 import ContactForm from '../components/ContactForm';
 import { getContact, patchContact } from '../api/contacts';
 import { Contact as ContactType } from 'microsoft-graph';
-import { Button, Typography } from '@mui/material';
+import { Button } from '@mui/material';
+import { withTranslation } from 'react-i18next';
 
 const styles: any = {
   root: {
@@ -27,7 +28,7 @@ const styles: any = {
   }
 };
 
-function Contact({ classes }: any) {
+function Contact({ classes, t }: any) {
   const app = useAppContext();
   const [contact, setContact] = useState<ContactType>({});
 
@@ -64,8 +65,9 @@ function Contact({ classes }: any) {
   };
 
   return (
-    <AuthenticatedView rootClass={classes.root}>
-      <Typography variant="h4">Contact</Typography>
+    <AuthenticatedView
+      header={t("Contact")}
+    >
       <div className={classes.formContainer}>
         <ContactForm contact={contact} handleChange={handleChange} handleNestedChange={handleNestedChange}/>
       </div>
@@ -75,4 +77,4 @@ function Contact({ classes }: any) {
 }
 
 
-export default withStyles(styles)(Contact);
+export default withTranslation()(withStyles(styles)(Contact));

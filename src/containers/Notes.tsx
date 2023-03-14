@@ -19,6 +19,7 @@ const styles: any = {
   content: {
     flex: 1,
     display: 'flex',
+    flexDirection: 'column',
   },
   tinyMceContainer: {
     flex: 1,
@@ -120,17 +121,16 @@ function Notes({ t, classes, setDrawerElements, drawerListElementClass }: any) {
               content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
             }}
           />}
-          {selectedNote &&
-          <div className={classes.buttonRow}>
-            <Button
-              disabled={!dirty}
-              onClick={handleSave}
-              variant="contained"
-            >
-              {t("Save")}
-            </Button>
-          </div>}
         </Paper>
+        <div className={classes.buttonRow}>
+          <Button
+            disabled={!dirty || !selectedNote}
+            onClick={handleSave}
+            variant="contained"
+          >
+            {t("Save")}
+          </Button>
+        </div>
       </div>
       <AddNote
         onClose={handleAddNote(false)}

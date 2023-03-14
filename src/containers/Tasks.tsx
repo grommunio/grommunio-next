@@ -21,9 +21,11 @@ const styles: any = {
     flex: 1,
     display: 'flex',
   },
-  mailList: {
+  taskList: {
     width: 400,
-    height: '100%',
+  },
+  taskPaper: {
+    margin: '0 16px'
   },
   tinyMceContainer: {
     flex: 1,
@@ -135,7 +137,7 @@ function Tasks({ t, classes, setDrawerElements, drawerListElementClass }: any) {
       header={t("Tasks")}
     >
       <div className={classes.content}>
-        <Paper elevation={1}>
+        <Paper elevation={1} className={classes.taskPaper}>
           <div className={classes.action}>
             <Button
               onClick={handleAddingTask(true)}
@@ -146,7 +148,7 @@ function Tasks({ t, classes, setDrawerElements, drawerListElementClass }: any) {
               {t("New task")}
             </Button>
           </div>
-          <List className={classes.mailList}>
+          <List className={classes.taskList}>
             {tasks.map((task: TodoTask) =>
               <ListItemButton
                 key={task.id}
