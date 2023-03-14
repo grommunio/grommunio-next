@@ -67,6 +67,7 @@ const routeTabMapping: any = {
   'contacts': 'contacts',
   'tasks': 'tasks',
   'notes': 'notes',
+  '': '',
 }
 
 function TopBar(props: any) {
