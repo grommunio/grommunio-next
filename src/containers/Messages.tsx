@@ -84,6 +84,7 @@ function objectToCNF(filters: any) {
 const filterOptions = [
   { label: "High importance", value: "importance eq 'high'" },
   { label: "Unread", value: "isRead eq false" },
+  { label: "Attachments", value: "hasAttachments eq true" }
 ]
 
 function Messages({ classes, setDrawerElements, drawerListElementClass }: MessagesProps) {
