@@ -13,7 +13,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { debounce } from "lodash";
 import { FilterList, Forward } from '@mui/icons-material';
 
 const styles: any = {
@@ -90,7 +89,6 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
   const app = useAppContext();
   const { t } = useTranslation();
   const editorRef = useRef({});
-  const [params, setParams] = useState({});
   const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
@@ -99,32 +97,31 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
   const navigate = useNavigate();
 
-  const help = (search: string) => {
-    dispatch(fetchMessagesData({
-      app,
-      folderid: selectedFolder?.id,
-      params: { ...params, search: `${search}` || undefined },
-    }));
-  }
-
-  const throttledSearch = useRef(debounce(help, 200));
-
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchMessagesData({app}));
     dispatch(fetchMailFoldersData(app));
   }, []);
 
-  const handleMailFolderClick = (folder: MailFolder) => () => {
-    setSelectedFolder(folder);
-    dispatch(fetchMessagesData({app, folderid: folder?.id, params}))
+  const debouncedSearch = (search: string, folderid?: string) => {
+    dispatch(fetchMessagesData({
+      app,
+      folderid,
+      params: {
+        search: search === '""' ? undefined : search,
+      },
+    }));
   }
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    throttledSearch.current(`"${value}"`);
-    setParams({ ...params, search: value ? `"${value}"` : "" });
+    debouncedSearch(`"${value}"`, selectedFolder?.id);
   };
+
+  const handleMailFolderClick = (folder: MailFolder) => () => {
+    setSelectedFolder(folder);
+    dispatch(fetchMessagesData({app, folderid: folder?.id, params: { filter: objectToCNF(mailFilters) || undefined }}))
+  }
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
 
@@ -167,7 +164,13 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
   }
 
   useEffect(() => {
-    dispatch(fetchMessagesData({app, params: { "$filter": objectToCNF(mailFilters) }}));
+    dispatch(fetchMessagesData({
+      app,
+      folderid: selectedFolder?.id,
+      params: {
+        filter: objectToCNF(mailFilters) || undefined,
+      },
+    }));
   }, [mailFilters]);
 
   useEffect(() => {
