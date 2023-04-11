@@ -74,12 +74,17 @@ type MessagesProps = {
   drawerListElementClass: any,
 }
 
-function mailFiltersToQueryParamValue(filters: any) {
+function objectToCNF(filters: any) {
   return Object.entries(filters)
     .filter(e => e[1])
     .map(e => e[0])
-    .join(""); // TODO: Improve for more values
+    .join(" and ");
 }
+
+const filterOptions = [
+  { label: "High importance", value: "importance eq 'high'" },
+  { label: "Unread", value: "isRead eq false" },
+]
 
 function Messages({ classes, setDrawerElements, drawerListElementClass }: MessagesProps) {
   const app = useAppContext();
@@ -162,7 +167,7 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
   }
 
   useEffect(() => {
-    dispatch(fetchMessagesData({app, params: { "$filter": mailFiltersToQueryParamValue(mailFilters) }}));
+    dispatch(fetchMessagesData({app, params: { "$filter": objectToCNF(mailFilters) }}));
   }, [mailFilters]);
 
   useEffect(() => {
@@ -221,12 +226,14 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
                 className: classes.menu,
               }}
             >
-              <MenuItem
-                selected={mailFilters["importance eq 'high'"]}
-                onClick={handleFilter("importance eq 'high'")}
-              >
-                {t("High importance")}
-              </MenuItem>
+              {filterOptions.map(({ label, value }) =>
+                <MenuItem
+                  selected={mailFilters[value]}
+                  onClick={handleFilter(value)}
+                >
+                  {t(label)}
+                </MenuItem>
+              )}
             </Menu>
           </div>
           <Paper className={classes.messages}>
