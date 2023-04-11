@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { FilterList, Forward } from '@mui/icons-material';
+import { debounce } from 'lodash';
 
 const styles: any = {
   content: {
@@ -103,15 +104,15 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
     dispatch(fetchMailFoldersData(app));
   }, []);
 
-  const debouncedSearch = (search: string, folderid?: string) => {
-    dispatch(fetchMessagesData({
+  const debouncedSearch = debounce(async (search: string, folderid?: string) => {
+    await dispatch(fetchMessagesData({
       app,
       folderid,
       params: {
         search: search === '""' ? undefined : search,
       },
     }));
-  }
+  }, 250);
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
