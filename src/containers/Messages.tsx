@@ -6,7 +6,7 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
-import { Badge, Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
+import { Badge, Button, IconButton, List, ListItem, ListItemButton, ListItemText, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { debounce } from "lodash";
-import { Forward } from '@mui/icons-material';
+import { FilterList, Forward } from '@mui/icons-material';
 
 const styles: any = {
   content: {
@@ -45,12 +45,26 @@ const styles: any = {
   },
   messages: {
     flex: 1,
+    margin: 8,
   },
   search: {
-    margin: '16px 16px 4px 16px'
+    margin: '8px 4px',
+    flex: 1,
   },
   mailActionsContainer: {
     marginBottom: 4,
+  },
+  filterRow: {
+    margin: '8px 4px 0px 4px',
+    display: 'flex',
+  },
+  iconButtonContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  menu: {
+    margin: 0,
   },
 };
 
@@ -60,6 +74,13 @@ type MessagesProps = {
   drawerListElementClass: any,
 }
 
+function mailFiltersToQueryParamValue(filters: any) {
+  return Object.entries(filters)
+    .filter(e => e[1])
+    .map(e => e[0])
+    .join(""); // TODO: Improve for more values
+}
+
 function Messages({ classes, setDrawerElements, drawerListElementClass }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
@@ -67,6 +88,8 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
   const [params, setParams] = useState({});
   const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
+  const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
+  const [mailFilters, setMailFilters] = useState<any>({});
   const dispatch = useTypeDispatch();
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
   const navigate = useNavigate();
@@ -123,6 +146,25 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
     navigate('/newMessage', { state: selectedMsg });
   }
 
+  const handleFilterMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setFilterAnchor(null);
+  };
+
+  const handleFilter = (filter: string) => () => {
+    setMailFilters({
+      ...mailFilters,
+      [filter]: !mailFilters[filter],
+    });
+  }
+
+  useEffect(() => {
+    dispatch(fetchMessagesData({app, params: { "$filter": mailFiltersToQueryParamValue(mailFilters) }}));
+  }, [mailFilters]);
+
   useEffect(() => {
     const elements = mailFolders.map((folder: MailFolder, idx: number) => 
       <ListItem disablePadding key={idx} className={drawerListElementClass}>
@@ -154,11 +196,39 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
     >
       <div className={classes.content}>
         <div className={classes.flexContainer}>
-          <SearchTextfield
-            className={classes.search}
-            label="Search mails"
-            onChange={handleSearch}
-          />
+          <div className={classes.filterRow}>
+            <SearchTextfield
+              className={classes.search}
+              label="Filter mails"
+              onChange={handleSearch}
+            />
+            <div className={classes.iconButtonContainer}>
+              <IconButton
+                aria-controls={filterAnchor ? 'long-menu' : undefined}
+                aria-expanded={filterAnchor ? 'true' : undefined}
+                aria-haspopup="true"
+                style={{ height: 40 }}
+                onClick={handleFilterMenu}
+              >
+                <FilterList />
+              </IconButton>
+            </div>
+            <Menu
+              anchorEl={filterAnchor}
+              open={!!filterAnchor}
+              onClose={handleMenuClose}
+              PaperProps={{
+                className: classes.menu,
+              }}
+            >
+              <MenuItem
+                selected={mailFilters["importance eq 'high'"]}
+                onClick={handleFilter("importance eq 'high'")}
+              >
+                {t("High importance")}
+              </MenuItem>
+            </Menu>
+          </div>
           <Paper className={classes.messages}>
             <List className={classes.mailList}>
               {messages.map((message: Message) =>
