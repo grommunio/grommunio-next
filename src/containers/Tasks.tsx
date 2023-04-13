@@ -11,7 +11,6 @@ import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
 import { Delete } from '@mui/icons-material';
-import theme from '../theme';
 import AddTaskList from '../components/dialogs/AddTaskList';
 import { withTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
@@ -32,7 +31,7 @@ const styles: any = {
     flex: 1,
   },
   action: {
-    margin: theme.spacing(1),
+    margin: 8,
     display: 'flex',
     justifyContent: 'center',
   },

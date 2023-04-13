@@ -4,18 +4,19 @@
 import { useState, MouseEvent } from 'react';
 import { withStyles } from '@mui/styles';
 import { AppBar, Box, IconButton, Menu, MenuItem, Toolbar, Tooltip, Typography} from '@mui/material';
-import { AccountCircle, Translate } from '@mui/icons-material';
+import { AccountCircle, Settings, Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
 import logo from '../res/grommunio_logo_default.svg';
+import SettingsDrawer from './SettingsDrawer';
+
 const styles = {
   appbar: {
     height: 64,
   },
   toolbar: {
-    background: 'linear-gradient(150deg, rgb(0, 159, 253), rgb(42, 42, 114))',
     color: '#000',
   },
   flexEndContainer: {
@@ -72,6 +73,7 @@ function TopBar(props: any) {
   const { me, settings } = useTypeSelector(state => state);
   const { language } = settings;
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
+  const [ settingsOpen, setSettingsOpen ] = useState<boolean>(false);
 
   const handleMenu = (open: boolean) => (e: MouseEvent<HTMLElement>) => setMenuAnchor(open ? e.currentTarget : null);
 
@@ -81,6 +83,8 @@ function TopBar(props: any) {
     window.localStorage.setItem('lang', lang);
     setMenuAnchor(null)
   }
+
+  const handleSettings = () => setSettingsOpen(!settingsOpen);
 
   return (
     <AppBar
@@ -100,6 +104,11 @@ function TopBar(props: any) {
           <Tooltip title={t("Language")}>
             <IconButton onClick={handleMenu(true)}>
               <Translate color="inherit" className={classes.trans}/>
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Language")}>
+            <IconButton onClick={handleSettings}>
+              <Settings color="inherit" className={classes.trans}/>
             </IconButton>
           </Tooltip>
           <Box className={classes.profileButton}>
@@ -126,6 +135,7 @@ function TopBar(props: any) {
           </Menu>
         </div>
       </Toolbar>
+      <SettingsDrawer open={settingsOpen} onClose={handleSettings}/>
     </AppBar>
   );
 }
