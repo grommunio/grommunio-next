@@ -22,6 +22,7 @@ const styles = {
     width: 260,
     marginTop: 64,
     padding: 8,
+    border: "none",
   },
   title: {
     display: 'flex',

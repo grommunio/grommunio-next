@@ -22,7 +22,7 @@ const styles = theme => ({
     width: 90,
     overflowX: 'hidden',
     overflowY: 'auto',
-    borderRight: 0,
+    border: "none",
   },
   list: {
     display: 'flex',

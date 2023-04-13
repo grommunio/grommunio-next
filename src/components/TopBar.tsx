@@ -15,6 +15,7 @@ import SettingsDrawer from './SettingsDrawer';
 const styles = {
   appbar: {
     height: 64,
+    border: "none",
   },
   toolbar: {
     color: '#000',
@@ -92,6 +93,7 @@ function TopBar(props: any) {
       position='fixed'
       className={classes.appbar}
       sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+
     >
       <Toolbar className={classes.toolbar}>
         <img
