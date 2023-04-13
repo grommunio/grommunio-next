@@ -4,7 +4,6 @@
 import { useState, MouseEvent } from 'react';
 import { withStyles } from '@mui/styles';
 import { AppBar, Box, IconButton, Menu, MenuItem, Tab, Tabs, Toolbar, Tooltip, Typography} from '@mui/material';
-import { DRAWER_WIDTH } from '../constants';
 import { AccountCircle, Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
 import { useNavigate } from 'react-router-dom';
@@ -12,13 +11,13 @@ import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
 import { useAppContext } from '../azure/AppContext';
+import logo from '../res/grommunio_logo_default.svg';
 
 const styles = {
   appbar: {
     height: 64,
   },
   toolbar: {
-    marginLeft: DRAWER_WIDTH,
     background: 'linear-gradient(150deg, rgb(0, 159, 253), rgb(42, 42, 114))',
     color: '#000',
   },
@@ -58,6 +57,9 @@ const styles = {
     color: '#aaa',
     marginLeft: 8,
   },
+  logo: {
+    marginRight: 16,
+  },
 };
 
 const routeTabMapping: any = {
@@ -96,8 +98,19 @@ function TopBar(props: any) {
   }
 
   return (
-    <AppBar color='primary' position='relative' className={classes.appbar}>
+    <AppBar
+      color='primary'
+      position='fixed'
+      className={classes.appbar}
+      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+    >
       <Toolbar className={classes.toolbar}>
+        <img
+          src={logo}
+          height="32"
+          alt="grommunio"
+          className={classes.logo}
+        />
         <Tabs
           className={classes.tabs}
           value={app.user ? routeTabMapping[tab] : ''}

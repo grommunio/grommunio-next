@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import AppRoutes from '../Routes';
 import Drawer from './Drawer';
+import { Toolbar } from '@mui/material';
 
 export default function MainView({ classes }) {
   const [drawerElements, setDrawerElements] = useState([]);
@@ -14,11 +15,14 @@ export default function MainView({ classes }) {
       <Drawer
         listElements={drawerElements}
       />
-      <AppRoutes childProps={{
-        authenticated: false,
-        setDrawerElements,
-        drawerListElementClass: classes.drawerListElementClass,
-      }}/>
+      <div className={classes.routes}>
+        <Toolbar />
+        <AppRoutes childProps={{
+          authenticated: false,
+          setDrawerElements,
+          drawerListElementClass: classes.drawerListElementClass,
+        }}/>
+      </div>
     </div>
   );
 }

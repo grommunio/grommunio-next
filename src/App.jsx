@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { useTypeDispatch } from './store';
 import { changeSettings } from './actions/settings';
 import GAB from './components/dialogs/GAB';
+import { CssBaseline } from '@mui/material';
 
 const styles = {
   root: {
@@ -39,11 +40,11 @@ const styles = {
   drawerListElementClass: {
     width: 'auto',
     borderRadius: '3px',
-    '&:hover': {
-      backgroundColor: 'transparent',
-      textShadow: '0px 0px 1px white',
-      color: 'white',
-    },
+  },
+  routes: {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
   }
 };
 
@@ -98,6 +99,7 @@ function App(props) {
     <MsalProvider instance={msalInstance}>
       <ProvideAppContext>
         <div className={classes.root}>
+          <CssBaseline />
           <TopBar />
           <AsyncMainView
             classes={classes}
