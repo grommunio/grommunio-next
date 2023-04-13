@@ -15,6 +15,7 @@ import theme from '../theme';
 import AddTaskList from '../components/dialogs/AddTaskList';
 import { withTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
+import FolderList from '../components/FolderList';
 
 const styles: any = {
   content: {
@@ -42,7 +43,7 @@ const styles: any = {
   },
 };
 
-function Tasks({ t, classes, setDrawerElements, drawerListElementClass }: any) {
+function Tasks({ t, classes, drawerListElementClass }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -105,49 +106,45 @@ function Tasks({ t, classes, setDrawerElements, drawerListElementClass }: any) {
     dispatch(deleteTaskListData({ app, taskList }));
   }
 
-  useEffect(() => {
-    const elements = taskLists.map((taskList: TodoTaskList, idx: number) => 
-      <ListItem disablePadding key={idx} className={drawerListElementClass}>
-        <ListItemButton
-          onClick={handleTaskListClick(taskList)}
-          divider
-          selected={selectedTaskList?.id === taskList.id}
-        >
-          <ListItemText primary={taskList.displayName} />
-          <IconButton size='small' onClick={handleDeleteTaskList(taskList)}>
-            <Delete color="error" fontSize='small'/>
-          </IconButton>
-        </ListItemButton>
-      </ListItem>);
-    setDrawerElements([<Button
-      sx={{m: 2}}
-      onClick={handleAddingTaskList(true)}
-      variant='contained'
-      color="primary"
-      key={-1}
-    >
-      {t("New task list")}
-    </Button>,
-    ...elements, 
-    ]);
-  }, [taskLists, selectedTaskList]);
-
   return (
     <AuthenticatedView
       header={t("Tasks")}
+      actions={[<Button
+        key={0}
+        onClick={handleAddingTask(true)}
+        variant='contained'
+        color="primary"
+        disabled={!selectedTaskList}
+      >
+        {t("New task")}
+      </Button>]}
     >
       <div className={classes.content}>
+        <FolderList>
+          {taskLists.map((taskList: TodoTaskList, idx: number) => 
+            <ListItem disablePadding key={idx} className={drawerListElementClass}>
+              <ListItemButton
+                onClick={handleTaskListClick(taskList)}
+                divider
+                selected={selectedTaskList?.id === taskList.id}
+              >
+                <ListItemText primary={taskList.displayName} />
+                <IconButton size='small' onClick={handleDeleteTaskList(taskList)}>
+                  <Delete color="error" fontSize='small'/>
+                </IconButton>
+              </ListItemButton>
+            </ListItem>)}
+          <Button
+            sx={{m: 2}}
+            onClick={handleAddingTaskList(true)}
+            variant='contained'
+            color="primary"
+            key={-1}
+          >
+            {t("New task list")}
+          </Button>
+        </FolderList>
         <Paper elevation={1} className={classes.taskPaper}>
-          <div className={classes.action}>
-            <Button
-              onClick={handleAddingTask(true)}
-              variant='contained'
-              color="primary"
-              disabled={!selectedTaskList}
-            >
-              {t("New task")}
-            </Button>
-          </div>
           <List className={classes.taskList}>
             {tasks.map((task: TodoTask) =>
               <ListItemButton

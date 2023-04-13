@@ -24,9 +24,13 @@ const grommunioTheme = mode => ({
     MuiListItemButton: {
       styleOverrides: {
         root: {
+          borderRadius: 4,
           '&.Mui-selected': {
-            background: `linear-gradient(150deg, ${blue['400']}, #2d323b)`,
+            background: `linear-gradient(150deg, ${blue['500']}, #2d323b)`,
             color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
           },
         },
       },

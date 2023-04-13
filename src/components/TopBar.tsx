@@ -3,16 +3,13 @@
 
 import { useState, MouseEvent } from 'react';
 import { withStyles } from '@mui/styles';
-import { AppBar, Box, IconButton, Menu, MenuItem, Tab, Tabs, Toolbar, Tooltip, Typography} from '@mui/material';
+import { AppBar, Box, IconButton, Menu, MenuItem, Toolbar, Tooltip, Typography} from '@mui/material';
 import { AccountCircle, Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
-import { useAppContext } from '../azure/AppContext';
 import logo from '../res/grommunio_logo_default.svg';
-
 const styles = {
   appbar: {
     height: 64,
@@ -60,28 +57,21 @@ const styles = {
   logo: {
     marginRight: 16,
   },
+  searchBox: {
+    backgroundColor: '#fafafa',
+    display: 'flex',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
 };
 
-const routeTabMapping: any = {
-  'messages': 'messages',
-  'newMessage': 'messages',
-  'calendar': 'calendar',
-  'contacts': 'contacts',
-  'tasks': 'tasks',
-  'notes': 'notes',
-  '': '',
-}
-
 function TopBar(props: any) {
-  const app = useAppContext();
   const { classes } = props;
   const { t, i18n } = useTranslation();
   const dispatch = useTypeDispatch();
   const { me, settings } = useTypeSelector(state => state);
   const { language } = settings;
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
-  const [ tab, setTab ] = useState<string>(window.location.pathname.slice(1)); // TODO: In the future, the default will be part of the user settings
-  const navigate = useNavigate();
 
   const handleMenu = (open: boolean) => (e: MouseEvent<HTMLElement>) => setMenuAnchor(open ? e.currentTarget : null);
 
@@ -90,11 +80,6 @@ function TopBar(props: any) {
     dispatch(changeSettings('language', lang));
     window.localStorage.setItem('lang', lang);
     setMenuAnchor(null)
-  }
-
-  const handleTab = (_: any, newVal: string) => {
-    setTab(newVal);
-    navigate(`/${newVal}`);
   }
 
   return (
@@ -111,21 +96,6 @@ function TopBar(props: any) {
           alt="grommunio"
           className={classes.logo}
         />
-        <Tabs
-          className={classes.tabs}
-          value={app.user ? routeTabMapping[tab] : ''}
-          onChange={handleTab}
-          textColor="inherit"
-          indicatorColor="secondary"
-          disabled={!app.user}
-        >
-          <Tab className={classes.tab} value={''} label={t("Account")} />
-          <Tab className={classes.tab} value={'messages'} label={t("Messages")} disabled={!app.user}/>
-          <Tab className={classes.tab} value={'calendar'} label={t("Calendar")} disabled={!app.user}/>
-          <Tab className={classes.tab} value={'contacts'} label={t("Contacts")} disabled={!app.user}/>
-          <Tab className={classes.tab} value={'tasks'} label={t("Tasks")} disabled={!app.user}/>
-          <Tab className={classes.tab} value={'notes'} label={t("Notes")} disabled={!app.user}/>
-        </Tabs>
         <div className={classes.flexEndContainer}>
           <Tooltip title={t("Language")}>
             <IconButton onClick={handleMenu(true)}>

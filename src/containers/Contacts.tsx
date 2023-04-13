@@ -21,18 +21,13 @@ const styles: any = {
   },
 };
 
-function Contacts({ classes, setDrawerElements }: any) {
+function Contacts({ classes }: any) {
   const navigate = useNavigate();
   const app = useAppContext();
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
   const [adding, setAdding] = useState<boolean>(false);
-
-  // componentDidMount()
-  useEffect(() => {
-    setDrawerElements([]);
-  }, [])
 
   useEffect(() => {
     dispatch(fetchContactsData(app));

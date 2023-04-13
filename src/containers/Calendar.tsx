@@ -11,17 +11,14 @@ import { useTypeDispatch } from '../store';
 import ScheduleCalendar from './calendar/Scheduler';
 import AuthenticatedView from '../components/AuthenticatedView';
 import { withTranslation } from 'react-i18next';
+import { Button } from '@mui/material';
 
 const styles: any = {
 };
 
-function Calendar({ t, setDrawerElements }: any) {
+function Calendar({ t }: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
-
-  useEffect(() => {
-    setDrawerElements([]);
-  }, [])
 
   useEffect(() => {
     dispatch(fetchEventsData(app));
@@ -31,6 +28,11 @@ function Calendar({ t, setDrawerElements }: any) {
   return (
     <AuthenticatedView
       header={t("Calendar")}
+      actions={[
+        <Button key={0} variant='contained' color="primary">
+          {"New event"}
+        </Button>
+      ]}
     >
       <ScheduleCalendar app={app}/>
     </AuthenticatedView>

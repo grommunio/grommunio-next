@@ -15,6 +15,7 @@ import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { FilterList, Forward } from '@mui/icons-material';
 import { debounce } from 'lodash';
+import FolderList from '../components/FolderList';
 
 const styles: any = {
   content: {
@@ -70,8 +71,6 @@ const styles: any = {
 
 type MessagesProps = {
   classes: any;
-  setDrawerElements: (elements: Array<JSX.Element>) => void;
-  drawerListElementClass: any,
 }
 
 function objectToCNF(filters: any) {
@@ -87,7 +86,7 @@ const filterOptions = [
   { label: "Attachments", value: "hasAttachments eq true" }
 ]
 
-function Messages({ classes, setDrawerElements, drawerListElementClass }: MessagesProps) {
+function Messages({ classes }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
   const editorRef = useRef({});
@@ -175,26 +174,6 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
     }));
   }, [mailFilters]);
 
-  useEffect(() => {
-    const elements = mailFolders.map((folder: MailFolder, idx: number) => 
-      <ListItem disablePadding key={idx} className={drawerListElementClass}>
-        <ListItemButton
-          onClick={handleMailFolderClick(folder)}
-          selected={selectedFolder?.id === folder.id}
-          divider
-        >
-          {folder.displayName}
-          <Badge
-            badgeContent={folder.unreadItemCount}
-            color="primary"
-          >
-            <div style={{width: 16, height: 12}}></div>
-          </Badge>
-        </ListItemButton>
-      </ListItem>);
-    setDrawerElements(elements);
-  }, [mailFolders, selectedFolder])
-
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -205,6 +184,24 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
       ]}
     >
       <div className={classes.content}>
+        <FolderList>
+          {mailFolders.map((folder: MailFolder, idx: number) => 
+            <ListItem disablePadding key={idx}>
+              <ListItemButton
+                onClick={handleMailFolderClick(folder)}
+                selected={selectedFolder?.id === folder.id}
+                divider
+              >
+                {folder.displayName}
+                <Badge
+                  badgeContent={folder.unreadItemCount}
+                  color="primary"
+                >
+                  <div style={{width: 16, height: 12}}></div>
+                </Badge>
+              </ListItemButton>
+            </ListItem>)}
+        </FolderList>
         <div className={classes.flexContainer}>
           <div className={classes.filterRow}>
             <SearchTextfield
@@ -231,8 +228,9 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
                 className: classes.menu,
               }}
             >
-              {filterOptions.map(({ label, value }) =>
+              {filterOptions.map(({ label, value }, key) =>
                 <MenuItem
+                  key={key}
                   selected={mailFilters[value]}
                   onClick={handleFilter(value)}
                 >
@@ -243,9 +241,9 @@ function Messages({ classes, setDrawerElements, drawerListElementClass }: Messag
           </div>
           <Paper className={classes.messages}>
             <List className={classes.mailList}>
-              {messages.map((message: Message) =>
+              {messages.map((message: Message, key: number) =>
                 <ListItemButton
-                  key={message.id}
+                  key={key}
                   onClick={handleMailClick(message)}
                 >
                   <ListItemText

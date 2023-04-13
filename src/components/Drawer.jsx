@@ -4,25 +4,25 @@
 import PropTypes from 'prop-types';
 import { withTranslation } from 'react-i18next';
 import {
-  Drawer, List, Toolbar,
+  Drawer, Tab, Tabs, Toolbar,
 } from '@mui/material';
 import { withStyles } from '@mui/styles';
-import { DRAWER_WIDTH } from '../constants';
+import { useNavigate } from 'react-router-dom';
+import { AccountBox, CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
+import { useState } from 'react';
+import { useAppContext } from '../azure/AppContext';
 
 const styles = theme => ({
   /* || Side Bar */
-  drawerExpanded: {
-    [theme.breakpoints.up('lg')]: {
-      width: DRAWER_WIDTH,
-    },
+  drawer: {
+    width: 90,
   },
   drawerPaper: {
-    width: DRAWER_WIDTH,
-    backgroundColor: '#fff',
-    // eslint-disable-next-line max-len
-    boxShadow: 'rgba(0, 0, 0, 0.06) 0px 5px 5px -3px, rgba(0, 0, 0, 0.043) 0px 8px 10px 1px, rgba(0, 0, 0, 0.035) 0px 3px 14px 2px',
+    backgroundColor: '#f0f0f0',
+    width: 90,
     overflowX: 'hidden',
     overflowY: 'auto',
+    borderRight: 0,
   },
   drawerHeader: {
     display: 'flex',
@@ -39,23 +39,52 @@ const styles = theme => ({
   },
 });
 
-function ResponsiveDrawer({ classes, listElements }) {
+const tabs = [
+  { label: "Account", icon: AccountBox, route: "/" },
+  { label: "Messages", icon: Mail, route: "/messages" },
+  { label: "Calendar", icon: CalendarMonth, route: "/calendar" },
+  { label: "Contacts", icon: ContactEmergency, route: "/contacts" },
+  { label: "Tasks", icon: Task, route: "/tasks" },
+  { label: "Notes", icon: Note, route: "/notes" },
+]
+
+function ResponsiveDrawer({ classes }) {
+  const app = useAppContext();
+  const [tab, setTab] = useState(0);
+  const navigate = useNavigate();
+
+  const handleTab = (event, newValue) => {
+    setTab(newValue);
+  };
+
+  const handleTabClicked = route => () => navigate(route)
 
   return (
-    <nav className={classes.drawerExpanded} aria-label="navigation">
-      <Drawer
-        classes={{
-          paper: classes.drawerPaper,
-        }}
-        variant="permanent"
-        open
+    <Drawer
+      classes={{
+        root: classes.drawer,
+        paper: classes.drawerPaper,
+      }}
+      variant="permanent"
+      open
+    >
+      <Toolbar />
+      <Tabs
+        orientation="vertical"
+        variant="scrollable"
+        value={tab}
+        onChange={handleTab}
       >
-        <Toolbar />
-        <List className={classes.list}>
-          {listElements}
-        </List>
-      </Drawer>
-    </nav>
+        {tabs.map(({ label, icon: Icon, route }) =>
+          <Tab
+            disabled={!app.user}
+            key={label}
+            icon={<Icon fontSize="large"/>}
+            onClick={handleTabClicked(route)}
+          />
+        )}
+      </Tabs>
+    </Drawer>
   );
 }
 

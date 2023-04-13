@@ -1,5 +1,5 @@
 import { AuthenticatedTemplate } from "@azure/msal-react";
-import { Typography } from "@mui/material";
+import { Paper } from "@mui/material";
 import { withStyles } from '@mui/styles';
 import { withTranslation } from "react-i18next";
 
@@ -16,20 +16,20 @@ const styles = {
   },
   actions: {
     marginLeft: 8,
+    padding: 8,
   },
 }
 
 function AuthenticatedView({
-  classes, children, header, actions=[]
+  classes, children, actions=[]
 }) {
 
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <Typography variant="h4" className={classes.header}>{header || ''}</Typography>
-        <div className={classes.actions}>
+        <Paper className={classes.actions}>
           {actions}
-        </div>
+        </Paper>
         {children}
       </div>
     </AuthenticatedTemplate>

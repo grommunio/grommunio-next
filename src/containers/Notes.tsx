@@ -14,9 +14,14 @@ import { deleteNoteData, fetchNotesData } from '../actions/notes';
 import AddNote from '../components/dialogs/AddNote';
 import { patchNote } from '../api/notes';
 import AuthenticatedView from '../components/AuthenticatedView';
+import FolderList from '../components/FolderList';
 
 const styles: any = {
   content: {
+    flex: 1,
+    display: 'flex',
+  },
+  flexContainer: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
@@ -31,7 +36,7 @@ const styles: any = {
   },
 };
 
-function Notes({ t, classes, setDrawerElements, drawerListElementClass }: any) {
+function Notes({ t, classes, drawerListElementClass }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -74,63 +79,63 @@ function Notes({ t, classes, setDrawerElements, drawerListElementClass }: any) {
     patchNote(app.authProvider!, mergedNote);
   }
 
-  useEffect(() => {
-    const elements = notes.map((note: Message, key: number) =>
-      <ListItem disablePadding key={key}>
-        <ListItemButton
-          onClick={handleNoteClick(note)}
-          divider
-          className={drawerListElementClass}
-          selected={selectedNote?.id === note.id}
-        >
-          <ListItemText
-            primary={note.subject}
-          />
-          <IconButton size='small'  onClick={handleNoteDelete(note.id || '')}>
-            <Delete color="error" fontSize='small' />
-          </IconButton>
-        </ListItemButton>
-      </ListItem>);
-    setDrawerElements([
-      <Button
-        key={-1}
-        onClick={handleAddNote(true)}
-        variant='contained'
-        color="primary"
-        sx={{m: 2}}
-      >
-        {t("New note")}
-      </Button>
-      ,...elements]);
-  }, [notes, selectedNote])
 
   return (
     <AuthenticatedView
       header={t("Notes")}
+      actions={[
+        <Button
+          key={-1}
+          onClick={handleAddNote(true)}
+          variant='contained'
+          color="primary"
+        >
+          {t("New note")}
+        </Button>]}
     >
       <div className={classes.content}>
-        <Paper elevation={8} className={classes.tinyMceContainer}>
-          {selectedNote?.body?.content && <Editor
-            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-            onInit={(evt, editor) => editorRef.current = editor}
-            initialValue={selectedNote?.body?.content}
-            onDirty={() => setDirty(true)}
-            init={{
-              width: '100%',
-              height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
-              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-            }}
-          />}
+        <FolderList>
+          {notes.map((note: Message, key: number) =>
+            <ListItem disablePadding key={key}>
+              <ListItemButton
+                onClick={handleNoteClick(note)}
+                divider
+                className={drawerListElementClass}
+                selected={selectedNote?.id === note.id}
+              >
+                <ListItemText
+                  primary={note.subject}
+                />
+                <IconButton size='small'  onClick={handleNoteDelete(note.id || '')}>
+                  <Delete color="error" fontSize='small' />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>)}
+        </FolderList>
+        <Paper className={classes.flexContainer}>
+          <div className={classes.tinyMceContainer}>
+            {selectedNote?.body?.content && <Editor
+              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+              onInit={(evt, editor) => editorRef.current = editor}
+              initialValue={selectedNote?.body?.content}
+              onDirty={() => setDirty(true)}
+              init={{
+                width: '100%',
+                height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+              }}
+            />}
+          </div>
+          <div className={classes.buttonRow}>
+            <Button
+              disabled={!dirty || !selectedNote}
+              onClick={handleSave}
+              variant="contained"
+            >
+              {t("Save")}
+            </Button>
+          </div>
         </Paper>
-        <div className={classes.buttonRow}>
-          <Button
-            disabled={!dirty || !selectedNote}
-            onClick={handleSave}
-            variant="contained"
-          >
-            {t("Save")}
-          </Button>
-        </div>
       </div>
       <AddNote
         onClose={handleAddNote(false)}
