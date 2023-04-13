@@ -8,6 +8,7 @@ const ColorModeContext = React.createContext({
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   toggleColorMode: () => {},
   setColorTheme: (colorTheme) => colorTheme,
+  mode: "light",
 });
 
 export default ColorModeContext;

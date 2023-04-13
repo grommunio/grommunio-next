@@ -106,7 +106,7 @@ function TopBar(props: any) {
               <Translate color="inherit" className={classes.trans}/>
             </IconButton>
           </Tooltip>
-          <Tooltip title={t("Language")}>
+          <Tooltip title={t("Settings")}>
             <IconButton onClick={handleSettings}>
               <Settings color="inherit" className={classes.trans}/>
             </IconButton>

@@ -36,7 +36,7 @@ const styles: any = {
   },
 };
 
-function Notes({ t, classes, drawerListElementClass }: any) {
+function Notes({ t, classes }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -100,7 +100,6 @@ function Notes({ t, classes, drawerListElementClass }: any) {
               <ListItemButton
                 onClick={handleNoteClick(note)}
                 divider
-                className={drawerListElementClass}
                 selected={selectedNote?.id === note.id}
               >
                 <ListItemText

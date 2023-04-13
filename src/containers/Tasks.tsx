@@ -42,7 +42,7 @@ const styles: any = {
   },
 };
 
-function Tasks({ t, classes, drawerListElementClass }: any) {
+function Tasks({ t, classes }: any) {
   const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
@@ -121,7 +121,7 @@ function Tasks({ t, classes, drawerListElementClass }: any) {
       <div className={classes.content}>
         <FolderList>
           {taskLists.map((taskList: TodoTaskList, idx: number) => 
-            <ListItem disablePadding key={idx} className={drawerListElementClass}>
+            <ListItem disablePadding key={idx}>
               <ListItemButton
                 onClick={handleTaskListClick(taskList)}
                 divider

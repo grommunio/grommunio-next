@@ -9,7 +9,7 @@ import { ThemeProvider } from '@mui/material/styles';
 
 
 export default function ToggleColorMode({ children }) {
-  const darkMode = window.localStorage.getItem("darkMode") === null ? true : false;
+  const darkMode = window.localStorage.getItem("darkMode");
   const [mode, setMode] = React.useState(darkMode === 'true' ? 'dark' : 'light');
 
   const [colorTheme, setColorTheme] = React.useState(window.localStorage.getItem("colorTheme"));
@@ -22,13 +22,14 @@ export default function ToggleColorMode({ children }) {
       setColorTheme: colorTheme => {
         setColorTheme(colorTheme);
       },
+      mode,
     }),
     [],
   );
 
   const theme = React.useMemo(
     () => createCustomTheme(mode, colorTheme),
-    [mode, colorTheme],
+    [mode, colorTheme, darkMode],
   );
 
   return (

@@ -18,13 +18,13 @@ import { changeSettings } from './actions/settings';
 import GAB from './components/dialogs/GAB';
 import { CssBaseline } from '@mui/material';
 
-const styles = {
+const styles = theme => ({
   root: {
     display: "flex",
     flexDirection: 'column',
     flex: 1,
     overflow: "hidden",
-    backgroundColor: "#fafafa",
+    backgroundColor: theme.palette.mode === "dark" ? "#212121" : "#fafafa",
     backgroundSize: "cover",
     width: "100%",
     height: "100%",
@@ -46,7 +46,7 @@ const styles = {
     flexDirection: 'column',
     flex: 1,
   }
-};
+});
 
 // <MsalInstanceSnippet>
 const msalInstance = new PublicClientApplication({

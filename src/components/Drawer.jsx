@@ -12,13 +12,13 @@ import { AccountBox, CalendarMonth, ContactEmergency, Mail, Note, Task } from '@
 import { useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 
-const styles = {
+const styles = theme => ({
   /* || Side Bar */
   drawer: {
     width: 90,
   },
   drawerPaper: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.palette.mode === "dark" ? '#0a0a0a' : '#f0f0f0',
     width: 90,
     overflowX: 'hidden',
     overflowY: 'auto',
@@ -29,7 +29,7 @@ const styles = {
     flexDirection: 'column',
     flex: 1,
   },
-};
+});
 
 const tabs = [
   { label: "Account", icon: AccountBox, route: "/" },

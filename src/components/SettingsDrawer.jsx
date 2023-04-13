@@ -4,7 +4,7 @@
 import PropTypes from 'prop-types';
 import { withTranslation } from 'react-i18next';
 import {
-  Drawer, Grid, IconButton, Typography,
+  Drawer, FormControlLabel, Grid, IconButton, Radio, RadioGroup, Typography,
 } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { Close } from '@mui/icons-material';
@@ -53,10 +53,16 @@ const colors = [
 function SettingsDrawer({ classes, t, open, onClose }) {
   const colorContext = useContext(ColorModeContext);
   const colorTheme = window.localStorage.getItem("colorTheme");
+  const darkMode = window.localStorage.getItem("darkMode");
 
   const handleTheme = colorTheme => () => {
     window.localStorage.setItem('colorTheme', colorTheme);
     colorContext.setColorTheme(colorTheme);
+  }
+
+  const handleColorMode = event => {
+    window.localStorage.setItem('darkMode', event.target.value);
+    colorContext.toggleColorMode();
   }
 
   return (
@@ -90,6 +96,16 @@ function SettingsDrawer({ classes, t, open, onClose }) {
             />
           )}
         </Grid>
+      </div>
+      <div className={classes.colorMode}>
+        <Typography>{t("Dark mode")}</Typography>
+        <RadioGroup
+          value={darkMode === "true" ? "true" : "false"}
+          onChange={handleColorMode}
+        >
+          <FormControlLabel value="true" control={<Radio />} label={t("Dark")} />
+          <FormControlLabel value="false" control={<Radio />} label={t("Light")} />
+        </RadioGroup>
       </div>
     </Drawer>
   );
