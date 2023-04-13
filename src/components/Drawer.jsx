@@ -42,7 +42,7 @@ const tabs = [
 
 function ResponsiveDrawer({ classes }) {
   const app = useAppContext();
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(tabs.findIndex(t => t.route === window.location.pathname));
   const navigate = useNavigate();
 
   const handleTab = (event, newValue) => {
