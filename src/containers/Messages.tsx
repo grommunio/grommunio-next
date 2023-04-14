@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { FilterList, Forward } from '@mui/icons-material';
+import { FilterList, FlagOutlined, Forward, MailOutlineOutlined, PushPinOutlined } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
@@ -256,25 +256,41 @@ function Messages({ classes }: MessagesProps) {
             <List className={classes.mailList}>
               {messages.map((message: Message, key: number) => {
                 const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
-                const selected = checkedMessages.includes(message);
+                const checked = checkedMessages.includes(message);
                 return <Hover key={key}>
-                  {(hover: boolean) => hover || checkedMessages.length > 0 ? <ListItemButton
-                    selected={selected}
+                  {(hover: boolean) => hover || checkedMessages.length > 0 || selectedMsg === message ? <ListItemButton
+                    selected={checked || selectedMsg === message}
                     onClick={handleMailClick(message)}
                   >
                     <ListItemIcon>
                       <Checkbox
                         sx={{ p: 0.5 }}
-                        checked={selected}
+                        checked={checked}
                         onChange={handleMailCheckbox(message)}
                       />
                     </ListItemIcon>
                     <ListItemText
-                      primary={message.subject}
+                      primary={<>
+                        {message.subject}
+                        {hover && <div>
+                          <IconButton size='small' title="Mark as unread">
+                            <MailOutlineOutlined fontSize='small'/>
+                          </IconButton>
+                          <IconButton size='small' title="Mark this message">
+                            <FlagOutlined fontSize='small'/>
+                          </IconButton>
+                          <IconButton size='small' title="Pin this message">
+                            <PushPinOutlined fontSize='small'/>
+                          </IconButton>
+                        </div>}
+                      </>}
                       secondary={message.bodyPreview}
+                      primaryTypographyProps={{
+                        style: { display: 'flex', alignItems: 'center', minHeight: 30, justifyContent: 'space-between' },
+                      }}
                     />
                   </ListItemButton>: <ListItemButton
-                    selected={selected}
+                    selected={checked || selectedMsg === message}
                     onClick={handleMailClick(message)}
                   >
                     <ListItemAvatar>
@@ -285,6 +301,9 @@ function Messages({ classes }: MessagesProps) {
                     <ListItemText
                       primary={message.subject}
                       secondary={message.bodyPreview}
+                      primaryTypographyProps={{
+                        style: { minHeight: 30 },
+                      }}
                     />
                   </ListItemButton> }
                 </Hover>;
