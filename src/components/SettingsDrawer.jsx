@@ -92,7 +92,7 @@ function SettingsDrawer({ classes, t, open, onClose }) {
               onClick={handleTheme(name)}
               style={{
                 backgroundColor: color['500'],
-                border: colorTheme === name ? "2px solid black" : ""
+                border: colorTheme === name ? "2px solid " + (darkMode === "true" ? "#fff" : "#000") : ""
               }}
             />
           )}
