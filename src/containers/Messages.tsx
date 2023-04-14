@@ -192,7 +192,7 @@ function Messages({ classes }: MessagesProps) {
                 selected={selectedFolder?.id === folder.id}
                 divider
               >
-                {folder.displayName}
+                <ListItemText primary={folder.displayName} />
                 <Badge
                   badgeContent={folder.unreadItemCount}
                   color="primary"
