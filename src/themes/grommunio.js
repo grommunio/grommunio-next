@@ -71,21 +71,6 @@ const grommunioTheme = mode => ({
       },
     },
   },
-  typography: {
-    h1: {
-      color: mode === 'light' ? '#333' : '#fff',
-      fontSize: '2em',
-      fontWeight: 'bold',
-    },
-    h2: {
-      color: mode === 'light' ? '#333' : '#fff',
-      fontSize: '1.5em',
-      fontWeight: 'bold',
-    },
-    caption: {
-      color: mode === 'light' ? '#000' : '#fff',
-    },
-  },
   palette: {
     mode: mode,
     primary: blue, 
