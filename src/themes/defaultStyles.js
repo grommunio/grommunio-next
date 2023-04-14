@@ -24,9 +24,6 @@ const defaultStyles = mode => ({
         borderRadius: 4,
         border: "1px solid " + (mode === 'light' ? '#d1d1d1' : '#d6d6d6'),
       },
-      elevation1: {
-        margin: 16,
-      },
     },
   },
   MuiButton: {

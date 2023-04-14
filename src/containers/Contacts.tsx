@@ -17,7 +17,6 @@ import { useNavigate } from 'react-router-dom';
 const styles: any = {
   paper: {
     flex: 1,
-    marginTop: 8,
   },
 };
 

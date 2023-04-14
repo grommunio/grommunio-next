@@ -30,7 +30,7 @@ const styles = (theme: any) => ({
     display: 'flex',
   },
   propertyInput: {
-    margin: theme.spacing(1, 1, 1, 1),
+    margin: theme.spacing(1, 0),
     flex: 1,
   },
   flexTextfield: {

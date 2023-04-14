@@ -25,6 +25,7 @@ const styles: any = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
+    marginLeft: 16,
   },
   tinyMceContainer: {
     flex: 1,

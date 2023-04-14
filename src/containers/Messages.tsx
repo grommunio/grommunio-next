@@ -43,20 +43,20 @@ const styles: any = {
   flexContainer: {
     display: 'flex',
     flexDirection: 'column',
+    margin: "0 16px",
   },
   messages: {
     flex: 1,
-    margin: 8,
+    marginTop: 16,
   },
   search: {
-    margin: '8px 4px',
     flex: 1,
+    marginRight: 4,
   },
   mailActionsContainer: {
     marginBottom: 4,
   },
   filterRow: {
-    margin: '8px 4px 0px 4px',
     display: 'flex',
   },
   iconButtonContainer: {

@@ -15,8 +15,8 @@ const styles = {
     margin: 8,
   },
   actions: {
-    marginLeft: 8,
     padding: 8,
+    marginBottom: 24,
   },
 }
 
