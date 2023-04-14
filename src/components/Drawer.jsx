@@ -9,7 +9,7 @@ import {
 import { withStyles } from '@mui/styles';
 import { useNavigate } from 'react-router-dom';
 import { AccountBox, CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 
 const styles = theme => ({
@@ -45,11 +45,12 @@ function ResponsiveDrawer({ classes }) {
   const [tab, setTab] = useState(tabs.findIndex(t => t.route === window.location.pathname));
   const navigate = useNavigate();
 
-  const handleTab = (event, newValue) => {
+  const handleTabClicked = (e, newValue) => {
     setTab(newValue);
-  };
+  }
 
-  const handleTabClicked = route => () => navigate(route)
+  // Necessary to properly sync redirect with tab indicator
+  useEffect(() => navigate(tabs[tab].route), [tab]);
 
   return (
     <Drawer
@@ -65,14 +66,13 @@ function ResponsiveDrawer({ classes }) {
         orientation="vertical"
         variant="scrollable"
         value={tab}
-        onChange={handleTab}
+        onChange={handleTabClicked}
       >
-        {tabs.map(({ label, icon: Icon, route }) =>
+        {tabs.map(({ label, icon: Icon }) =>
           <Tab
             disabled={!app.user}
             key={label}
             icon={<Icon fontSize="large"/>}
-            onClick={handleTabClicked(route)}
           />
         )}
       </Tabs>

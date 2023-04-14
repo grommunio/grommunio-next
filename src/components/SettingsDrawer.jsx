@@ -78,8 +78,8 @@ function SettingsDrawer({ classes, t, open, onClose }) {
     >
       <div className={classes.title}>
         <Typography variant='h6'>{t("Settings")}</Typography>
-        <IconButton>
-          <Close onClick={onClose} />
+        <IconButton onClick={onClose}>
+          <Close  />
         </IconButton>
       </div>
       <div className={classes.design}>
