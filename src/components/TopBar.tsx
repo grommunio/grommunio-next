@@ -98,7 +98,7 @@ function TopBar(props: any) {
       <Toolbar className={classes.toolbar}>
         <img
           src={logo}
-          height="32"
+          height="42"
           alt="grommunio"
           className={classes.logo}
         />
