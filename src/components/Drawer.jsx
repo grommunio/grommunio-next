@@ -42,15 +42,13 @@ const tabs = [
 
 function ResponsiveDrawer({ classes }) {
   const app = useAppContext();
-  const [tab, setTab] = useState(tabs.findIndex(t => t.route === window.location.pathname));
+  const [tab, setTab] = useState(tabs.find(t => t.route === window.location.pathname).route);
   const navigate = useNavigate();
 
   const handleTabClicked = (e, newValue) => {
     setTab(newValue);
+    navigate(newValue);
   }
-
-  // Necessary to properly sync redirect with tab indicator
-  useEffect(() => navigate(tabs[tab].route), [tab]);
 
   return (
     <Drawer
@@ -68,8 +66,9 @@ function ResponsiveDrawer({ classes }) {
         value={tab}
         onChange={handleTabClicked}
       >
-        {tabs.map(({ label, icon: Icon }) =>
+        {tabs.map(({ label, icon: Icon, route }) =>
           <Tab
+            value={route}
             disabled={!app.user}
             key={label}
             icon={<Icon fontSize="large"/>}

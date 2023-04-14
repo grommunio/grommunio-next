@@ -7,7 +7,6 @@ import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-reac
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useAppContext } from "../azure/AppContext";
-import Drawer from "../components/Drawer";
 
 function Menu() {
   const app = useAppContext();
@@ -23,7 +22,6 @@ function Menu() {
 
   return (
     <div>
-      <Drawer />
       <div style={{ marginLeft: 16 }}>
         <h1>grommunio Next</h1>
         <p className="lead">
