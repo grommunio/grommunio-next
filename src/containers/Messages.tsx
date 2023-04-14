@@ -6,7 +6,7 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
-import { Badge, Button, IconButton, List, ListItem, ListItemButton, ListItemText, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import SearchTextfield from '../components/SearchTextfield';
 import { FilterList, Forward } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
+import Hover from '../components/Hover';
 
 const styles: any = {
   content: {
@@ -92,6 +93,7 @@ function Messages({ classes }: MessagesProps) {
   const editorRef = useRef({});
   const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
+  const [checkedMessages, setCheckedMessages] = useState<Array<Message>>([]);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [mailFilters, setMailFilters] = useState<any>({});
   const dispatch = useTypeDispatch();
@@ -174,6 +176,17 @@ function Messages({ classes }: MessagesProps) {
     }));
   }, [mailFilters]);
 
+  const handleMailCheckbox = (message: Message) => (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const copy = [...checkedMessages];
+    if(e.target.checked) {
+      copy.push(message);
+    } else {
+      copy.splice(copy.findIndex(m => m.id === message.id), 1);
+    }
+    setCheckedMessages(copy);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -241,17 +254,41 @@ function Messages({ classes }: MessagesProps) {
           </div>
           <Paper className={classes.messages}>
             <List className={classes.mailList}>
-              {messages.map((message: Message, key: number) =>
-                <ListItemButton
-                  key={key}
-                  onClick={handleMailClick(message)}
-                >
-                  <ListItemText
-                    primary={message.subject}
-                    secondary={message.bodyPreview}
-                  />
-                </ListItemButton>
-              )}
+              {messages.map((message: Message, key: number) => {
+                const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
+                const selected = checkedMessages.includes(message);
+                return <Hover key={key}>
+                  {(hover: boolean) => hover || checkedMessages.length > 0 ? <ListItemButton
+                    selected={selected}
+                    onClick={handleMailClick(message)}
+                  >
+                    <ListItemIcon>
+                      <Checkbox
+                        sx={{ p: 0.5 }}
+                        checked={selected}
+                        onChange={handleMailCheckbox(message)}
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={message.subject}
+                      secondary={message.bodyPreview}
+                    />
+                  </ListItemButton>: <ListItemButton
+                    selected={selected}
+                    onClick={handleMailClick(message)}
+                  >
+                    <ListItemAvatar>
+                      <Avatar sx={{ width: 32, height: 32 }}>
+                        <Typography variant='body2'>{names[0][0]}{names[names.length - 1][0]}</Typography>
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={message.subject}
+                      secondary={message.bodyPreview}
+                    />
+                  </ListItemButton> }
+                </Hover>;
+              })}
             </List>
           </Paper>
         </div>
