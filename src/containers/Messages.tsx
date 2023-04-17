@@ -187,6 +187,8 @@ function Messages({ classes }: MessagesProps) {
     setCheckedMessages(copy);
   }
 
+  const handlePlaceholder = (e: React.MouseEvent<HTMLElement>) => e.stopPropagation();
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -273,13 +275,13 @@ function Messages({ classes }: MessagesProps) {
                       primary={<>
                         {message.subject}
                         {hover && <div>
-                          <IconButton size='small' title="Mark as unread">
+                          <IconButton onClick={handlePlaceholder} size='small' title="Mark as unread">
                             <MailOutlineOutlined fontSize='small'/>
                           </IconButton>
-                          <IconButton size='small' title="Mark this message">
+                          <IconButton onClick={handlePlaceholder} size='small' title="Mark this message">
                             <FlagOutlined fontSize='small'/>
                           </IconButton>
-                          <IconButton size='small' title="Pin this message">
+                          <IconButton onClick={handlePlaceholder} size='small' title="Pin this message">
                             <PushPinOutlined fontSize='small'/>
                           </IconButton>
                         </div>}
@@ -302,7 +304,7 @@ function Messages({ classes }: MessagesProps) {
                       primary={message.subject}
                       secondary={message.bodyPreview}
                       primaryTypographyProps={{
-                        style: { minHeight: 30 },
+                        style: { minHeight: 30, display: 'flex', alignItems: 'center' },
                       }}
                     />
                   </ListItemButton> }
