@@ -50,7 +50,15 @@ const styles: any = {
   },
   messages: {
     flex: 1,
+    borderTop: "none",
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+  mailListActions: {
     marginTop: 16,
+    borderBottom: "none",
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   search: {
     flex: 1,
@@ -61,6 +69,7 @@ const styles: any = {
   },
   filterRow: {
     display: 'flex',
+    marginRight: -4,
   },
   iconButtonContainer: {
     display: 'flex',
@@ -264,7 +273,7 @@ function Messages({ classes }: MessagesProps) {
               )}
             </Menu>
           </div>
-          <Paper className={classes.messages}>
+          <Paper className={classes.mailListActions}>
             <div className={classes.mailListHeader}>
               <IconButton onClick={handleCheckAll} className={classes.checkAll}>
                 <CheckBoxOutlined color={checkedMessages.length === messages.length ? "primary" : "secondary"}/>
@@ -278,6 +287,8 @@ function Messages({ classes }: MessagesProps) {
                 Filter
               </Button>
             </div>
+          </Paper>
+          <Paper className={classes.messages}>
             <List className={classes.mailList}>
               {messages.map((message: Message, key: number) => {
                 const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
