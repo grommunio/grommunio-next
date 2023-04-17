@@ -1,23 +1,20 @@
 import { AuthenticatedTemplate } from "@azure/msal-react";
-import { Paper } from "@mui/material";
 import { withStyles } from '@mui/styles';
 import { withTranslation } from "react-i18next";
+import Toolbar from "./Toolbar";
 
 const styles = {
   root: {
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
-    padding: 16,
+    padding: "0px 16px 16px 16px",
     overflow: 'auto',
   },
   header: {
     margin: 8,
   },
-  actions: {
-    padding: 8,
-    marginBottom: 24,
-  },
+  
 }
 
 function AuthenticatedView({
@@ -27,9 +24,7 @@ function AuthenticatedView({
   return (
     <AuthenticatedTemplate>
       <div className={classes.root}>
-        <Paper className={classes.actions}>
-          {actions}
-        </Paper>
+        <Toolbar>{actions}</Toolbar>
         {children}
       </div>
     </AuthenticatedTemplate>
