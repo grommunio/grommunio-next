@@ -6,7 +6,7 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
-import { Avatar, Badge, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
+import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
   MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
+import { CheckBoxOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
@@ -75,7 +75,22 @@ const styles: any = {
     alignItems: 'center',
     minHeight: 30,
     justifyContent: 'space-between'
-  }
+  },
+  mailListHeader: {
+    padding: 4,
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  checkAll: {
+    marginLeft: 8,
+  },
+  filterButton: {
+    marginRight: 8,
+    textTransform: 'none',
+  },
+  filterIcon: {
+    marginBottom: 4,
+  },
 };
 
 type MessagesProps = {
@@ -195,6 +210,10 @@ function Messages({ classes }: MessagesProps) {
 
   const handlePlaceholder = (e: React.MouseEvent<HTMLElement>) => e.stopPropagation();
 
+  const handleCheckAll = () => {
+    setCheckedMessages(messages.length === checkedMessages.length ? [] : messages);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -226,17 +245,6 @@ function Messages({ classes }: MessagesProps) {
               label="Filter mails"
               onChange={handleSearch}
             />
-            <div className={classes.iconButtonContainer}>
-              <IconButton
-                aria-controls={filterAnchor ? 'long-menu' : undefined}
-                aria-expanded={filterAnchor ? 'true' : undefined}
-                aria-haspopup="true"
-                style={{ height: 40 }}
-                onClick={handleFilterMenu}
-              >
-                <FilterList />
-              </IconButton>
-            </div>
             <Menu
               anchorEl={filterAnchor}
               open={!!filterAnchor}
@@ -257,6 +265,19 @@ function Messages({ classes }: MessagesProps) {
             </Menu>
           </div>
           <Paper className={classes.messages}>
+            <div className={classes.mailListHeader}>
+              <IconButton onClick={handleCheckAll} className={classes.checkAll}>
+                <CheckBoxOutlined color={checkedMessages.length === messages.length ? "primary" : "secondary"}/>
+              </IconButton>
+              <Button
+                className={classes.filterButton}
+                onClick={handleFilterMenu}
+                startIcon={<FilterList className={classes.filterIcon}/>}
+                color="inherit"
+              >
+                Filter
+              </Button>
+            </div>
             <List className={classes.mailList}>
               {messages.map((message: Message, key: number) => {
                 const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
