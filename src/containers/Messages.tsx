@@ -70,6 +70,12 @@ const styles: any = {
   menu: {
     margin: 0,
   },
+  mailListItemTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: 30,
+    justifyContent: 'space-between'
+  }
 };
 
 type MessagesProps = {
@@ -256,17 +262,22 @@ function Messages({ classes }: MessagesProps) {
                 const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
                 const checked = checkedMessages.includes(message);
                 return <Hover key={key}>
-                  {(hover: boolean) => hover || checkedMessages.length > 0 || selectedMsg === message ? <ListItemButton
+                  {(hover: boolean) => <ListItemButton
                     selected={checked || selectedMsg === message}
                     onClick={handleMailClick(message)}
                   >
-                    <ListItemIcon>
+                    {hover || checkedMessages.length > 0 ? <ListItemIcon>
                       <Checkbox
                         sx={{ p: 0.5 }}
                         checked={checked}
                         onChange={handleMailCheckbox(message)}
                       />
-                    </ListItemIcon>
+                    </ListItemIcon> : <ListItemAvatar>
+                      <Avatar sx={{ width: 32, height: 32 }}>
+                        <Typography variant='body2'>{names[0][0]}{names[names.length - 1][0]}</Typography>
+                      </Avatar>
+                    </ListItemAvatar>}
+                    
                     <ListItemText
                       primary={<>
                         {message.subject}
@@ -286,31 +297,10 @@ function Messages({ classes }: MessagesProps) {
                       </>}
                       secondary={message.bodyPreview}
                       primaryTypographyProps={{
-                        style: { display: 'flex', alignItems: 'center', minHeight: 30, justifyContent: 'space-between' },
+                        className: classes.mailListItemTitle,
                       }}
                     />
-                  </ListItemButton>: <ListItemButton
-                    selected={checked || selectedMsg === message}
-                    onClick={handleMailClick(message)}
-                  >
-                    <ListItemAvatar>
-                      <Avatar sx={{ width: 32, height: 32 }}>
-                        <Typography variant='body2'>{names[0][0]}{names[names.length - 1][0]}</Typography>
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={<>
-                        {message.subject}
-                        {message.importance === "high" && <div>
-                          <PriorityHigh color="error" fontSize='small' />
-                        </div>}
-                      </>}
-                      secondary={message.bodyPreview}
-                      primaryTypographyProps={{
-                        style: { minHeight: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-                      }}
-                    />
-                  </ListItemButton> }
+                  </ListItemButton>}
                 </Hover>;
               })}
             </List>
