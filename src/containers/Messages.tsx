@@ -6,17 +6,19 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
-import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+import { Avatar, Badge, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
+  MenuItem, Paper, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { FilterList, FlagOutlined, Forward, MailOutlineOutlined, PushPinOutlined } from '@mui/icons-material';
+import { FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
+import MailActions from '../components/messages/MailActions';
 
 const styles: any = {
   content: {
@@ -128,8 +130,6 @@ function Messages({ classes }: MessagesProps) {
 
   const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
 
-  const handleNewMessage = () => navigate('/newMessage');
-
   /*const handleContactSelect = () => {
     const contacts = useTypeSelector(state => state.gab.seletion);
     if(selectedMsg) postMessageForward(app.authProvider!, selectedMsg, {
@@ -192,11 +192,7 @@ function Messages({ classes }: MessagesProps) {
   return (
     <AuthenticatedView
       header={t("Messages")}
-      actions={[
-        <Button key={0} onClick={handleNewMessage} variant='contained' color="primary">
-          {t("New message")}
-        </Button>
-      ]}
+      actions={<MailActions openedMail={selectedMsg} selection={checkedMessages}/>}
     >
       <div className={classes.content}>
         <FolderList>
@@ -274,7 +270,7 @@ function Messages({ classes }: MessagesProps) {
                     <ListItemText
                       primary={<>
                         {message.subject}
-                        {hover && <div>
+                        {hover ? <div>
                           <IconButton onClick={handlePlaceholder} size='small' title="Mark as unread">
                             <MailOutlineOutlined fontSize='small'/>
                           </IconButton>
@@ -284,6 +280,8 @@ function Messages({ classes }: MessagesProps) {
                           <IconButton onClick={handlePlaceholder} size='small' title="Pin this message">
                             <PushPinOutlined fontSize='small'/>
                           </IconButton>
+                        </div> : message.importance === "high" && <div>
+                          <PriorityHigh color="error" fontSize='small' />
                         </div>}
                       </>}
                       secondary={message.bodyPreview}
@@ -301,10 +299,15 @@ function Messages({ classes }: MessagesProps) {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={message.subject}
+                      primary={<>
+                        {message.subject}
+                        {message.importance === "high" && <div>
+                          <PriorityHigh color="error" fontSize='small' />
+                        </div>}
+                      </>}
                       secondary={message.bodyPreview}
                       primaryTypographyProps={{
-                        style: { minHeight: 30, display: 'flex', alignItems: 'center' },
+                        style: { minHeight: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
                       }}
                     />
                   </ListItemButton> }
