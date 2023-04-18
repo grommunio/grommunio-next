@@ -115,6 +115,8 @@ const styles: any = {
   },
   tab: {
     textTransform: 'none',
+    border: '2px solid #545454',
+    marginRight: 8,
   },
 };
 
@@ -126,7 +128,7 @@ type MailTab = {
   // This will probably get more props in the future
   ID: number,
   label: string,
-  Component?: any, // TODO: Find type
+  Component?: typeof NewMessage,
 };
 
 function objectToCNF(filters: any) {
@@ -420,9 +422,10 @@ function Messages({ classes }: MessagesProps) {
             </TabPanel>
           )}
           <div className={classes.mailTabsContainer}>
-            <Tabs onChange={handleTab} value={mailTab} color="primary">
+            <Tabs onChange={handleTab} value={mailTab} color="primary" textColor='primary'>
               {mailTabs.map((tab, key) =>
                 <Tab
+                  disableRipple
                   key={key}
                   value={tab}
                   label={<div className={classes.flexRow}>
