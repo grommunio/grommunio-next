@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, JSXElementConstructor, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
+import { CheckBoxOutlined, Edit, EditOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
@@ -44,6 +44,7 @@ const styles: any = {
   flexRow: {
     display: 'flex',
     flex: 1,
+    alignItems: 'center',
   },
   flexContainer: {
     display: 'flex',
@@ -240,7 +241,6 @@ function Messages({ classes }: MessagesProps) {
 
   const handleTabLabelChange = (tabIndex: number) => (newLabel: string) => {
     const copy = [...mailTabs];
-    console.log(tabIndex, newLabel, copy);
     copy[tabIndex].label = newLabel;
     setMailTabs(copy);
   }
@@ -412,7 +412,16 @@ function Messages({ classes }: MessagesProps) {
           <div className={classes.mailTabsContainer}>
             <Tabs onChange={handleTab} value={mailTab} color="primary">
               {mailTabs.map((tab, key) =>
-                <Tab key={key} value={tab} label={tab.label || "<No subject>"} className={classes.tab}/>
+                <Tab
+                  key={key}
+                  value={tab}
+                  label={<div className={classes.flexRow}>
+                    {key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : null}
+                    {tab.label || "<No subject>"}
+                  </div>}
+                  className={classes.tab}
+                  
+                />
               )}
             </Tabs>
           </div>
