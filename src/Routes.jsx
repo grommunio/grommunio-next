@@ -15,7 +15,7 @@ function makeAuthenticatedElement(AsyncComponent, childProps) {
 const AsyncLogin = makeLoadableComponent(() => import("./containers/Login"));
 const AsyncMenu = makeLoadableComponent(() => import("./containers/Menu"));
 const AsyncMessages = makeLoadableComponent(() => import("./containers/Messages"));
-const AsyncNewMessage = makeLoadableComponent(() => import("./containers/NewMessage"));
+const AsyncNewMessage = makeLoadableComponent(() => import("./components/NewMessage"));
 const AsyncCalendar = makeLoadableComponent(() => import("./containers/Calendar"));
 const AsyncTasks =  makeLoadableComponent(() => import('./containers/Tasks'));
 const AsyncContacts =  makeLoadableComponent(() => import('./containers/Contacts'));

@@ -14,18 +14,12 @@ import { ImportContacts } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
 import { useTypeSelector } from '../store';
-import AuthenticatedView from '../components/AuthenticatedView';
 
 const styles: any = (theme: any) => ({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-    padding: theme.spacing(2),
-  },
   content: {
-    flex: 1,
     display: 'flex',
+    height: '100%',
+    flexDirection: 'column',
   },
   centerRow: {
     display: 'flex',
@@ -50,7 +44,12 @@ const styles: any = (theme: any) => ({
   },
   flexRow: {
     display: 'flex',
-  }
+  },
+  actions: {
+    display: 'flex',
+    marginBottom: 16,
+    padding: 9,
+  },
 });
 
 type MessagesProps = {
@@ -103,62 +102,56 @@ function NewMessage({ classes }: MessagesProps) {
   }, [selectedGABReceipients]);
 
   return (
-    <AuthenticatedView
-      header={t("New message")}
-      actions={[
+    <div className={classes.content}>
+      <Paper className={classes.actions}>
         <Button
           onClick={handleSend(false)}
           variant='contained'
           color="primary"
-          key={0}
         >
           {t("Save")}
-        </Button>,
+        </Button>
         <Button
           className={classes.button}
           onClick={handleSend(true)}
           variant='contained'
           color="primary"
-          key={1}
         >
           {t("Send")}
         </Button>
-      ]}
-    >
-      <div className={classes.content}>
-        <Paper className={classes.tinyMceContainer}>
-          <div className={classes.flexRow}>
-            <IconButton onClick={handleGAB}>
-              <ImportContacts />
-            </IconButton>
-            <TextField
-              className={classes.input}
-              label={t("Recipients")}
-              onChange={handleInput('setToRecipients')}
-              value={toRecipients}
-              fullWidth
-            />
-          </div>
+      </Paper>
+      <Paper className={classes.tinyMceContainer}>
+        <div className={classes.flexRow}>
+          <IconButton onClick={handleGAB}>
+            <ImportContacts />
+          </IconButton>
           <TextField
             className={classes.input}
-            label={t("Subject")}
-            onChange={handleInput('setSubject')}
-            value={subject}
+            label={t("Recipients")}
+            onChange={handleInput('setToRecipients')}
+            value={toRecipients}
             fullWidth
           />
-          <Editor
-            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-            onInit={(evt, editor) => editorRef.current = editor}
-            initialValue={location.state?.body?.content || ''}
-            init={{
-              id: 'tinyMCE-editor',
-              language: i18n.language,
-              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-            }}
-          />
-        </Paper>
-      </div>
-    </AuthenticatedView>
+        </div>
+        <TextField
+          className={classes.input}
+          label={t("Subject")}
+          onChange={handleInput('setSubject')}
+          value={subject}
+          fullWidth
+        />
+        <Editor
+          tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+          onInit={(evt, editor) => editorRef.current = editor}
+          initialValue={location.state?.body?.content || ''}
+          init={{
+            id: 'tinyMCE-editor',
+            language: i18n.language,
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+          }}
+        />
+      </Paper>
+    </div>
   );
 }
 

@@ -20,7 +20,7 @@ import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
 import MailActions from '../components/messages/MailActions';
 import { now } from 'moment';
-import NewMessage from './NewMessage';
+import NewMessage from '../components/NewMessage';
 
 const styles: any = {
   content: {
@@ -110,8 +110,7 @@ const styles: any = {
   mailTabsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'flex-end',
-    flex: 1,
+    marginTop: 8,
   }
 };
 
