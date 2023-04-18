@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import { Button } from '@mui/material';
 import { withTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined, FlagOutlined, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
+import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined,
+  FlagOutlined, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
 import { withStyles } from '@mui/styles';
 
 const styles = {
@@ -24,11 +24,9 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   );
 });
 
-const MailActions = ({ t, openedMail, selection }) => {
-  const navigate = useNavigate();
+const MailActions = ({ t, openedMail, selection, handleNewMessage }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   
-  const handleNewMessage = () => navigate('/newMessage');
   const handlePlaceholder = (e) => e.stopPropagation();
 
   return [

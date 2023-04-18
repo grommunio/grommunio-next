@@ -9,7 +9,7 @@ import {
 import { withStyles } from '@mui/styles';
 import { useNavigate } from 'react-router-dom';
 import { AccountBox, CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 
 const styles = theme => ({

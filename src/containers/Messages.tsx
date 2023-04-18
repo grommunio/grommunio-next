@@ -7,7 +7,7 @@ import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
 import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
-  MenuItem, Paper, Tooltip, Typography } from '@mui/material';
+  MenuItem, Paper, Tab, Tabs, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,8 @@ import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
 import MailActions from '../components/messages/MailActions';
+import { now } from 'moment';
+import NewMessage from './NewMessage';
 
 const styles: any = {
   content: {
@@ -34,10 +36,10 @@ const styles: any = {
     padding: 0,
   },
   tinyMceContainer: {
-    flex: 1,
     padding: 16,
     display: 'flex',
     flexDirection: 'column',
+    flex: 1,
   },
   flexRow: {
     display: 'flex',
@@ -100,11 +102,29 @@ const styles: any = {
   filterIcon: {
     marginBottom: 4,
   },
+  mailContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+  },
+  mailTabsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    flex: 1,
+  }
 };
 
 type MessagesProps = {
   classes: any;
 }
+
+type MailTab = {
+  // This will probably get more props in the future
+  ID: number,
+  label: string,
+  component?: JSX.Element,
+};
 
 function objectToCNF(filters: any) {
   return Object.entries(filters)
@@ -128,8 +148,10 @@ function Messages({ classes }: MessagesProps) {
   const [checkedMessages, setCheckedMessages] = useState<Array<Message>>([]);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [mailFilters, setMailFilters] = useState<any>({});
-  const dispatch = useTypeDispatch();
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
+  const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
+  const [mailTab, setMailTab] = useState<MailTab | null>(null);
+  const dispatch = useTypeDispatch();
   const navigate = useNavigate();
 
   // componentDidMount()
@@ -158,24 +180,15 @@ function Messages({ classes }: MessagesProps) {
     dispatch(fetchMessagesData({app, folderid: folder?.id, params: { filter: objectToCNF(mailFilters) || undefined }}))
   }
 
-  const handleMailClick = (msg: Message) => () => setSelectedMsg(msg);
-
-  /*const handleContactSelect = () => {
-    const contacts = useTypeSelector(state => state.gab.seletion);
-    if(selectedMsg) postMessageForward(app.authProvider!, selectedMsg, {
-      toRecipients: contacts.map((contact: Contact) => {
-        if(contact?.emailAddresses && contact?.emailAddresses?.length > 0) {
-          return  {
-            emailAddress: {
-              ...contact.emailAddresses[0] //TODO: This should not be hardcoded in the future
-            }
-          }
-        } else {
-          return null;
-        }
-      })
-    })
-  }*/
+  const handleMailClick = (msg: Message) => () => {
+    const copy = [...mailTabs];
+    const tab = { ID: 1, label: msg.subject || '' };
+    if(selectedMsg === null) copy.unshift(tab);
+    else copy[0] = tab;
+    setSelectedMsg(msg);
+    setMailTabs(copy);
+    setMailTab(tab);
+  }
 
   const handleForward = () => {
     navigate('/newMessage', { state: selectedMsg });
@@ -223,10 +236,20 @@ function Messages({ classes }: MessagesProps) {
     setCheckedMessages(messages.length === checkedMessages.length ? [] : messages);
   }
 
+  const handleNewMessage = () => {
+    const copy = [...mailTabs];
+    const tab = { ID: now(), label: '<No subject>', component: <NewMessage /> };
+    copy.push(tab);
+    setMailTabs(copy);
+    setMailTab(tab);
+  }
+
+  const handleTab = (e: any, newVal: MailTab) => setMailTab(newVal);
+
   return (
     <AuthenticatedView
       header={t("Messages")}
-      actions={<MailActions openedMail={selectedMsg} selection={checkedMessages}/>}
+      actions={<MailActions handleNewMessage={handleNewMessage} openedMail={selectedMsg} selection={checkedMessages}/>}
     >
       <div className={classes.content}>
         <FolderList>
@@ -338,40 +361,67 @@ function Messages({ classes }: MessagesProps) {
             </List>
           </Paper>
         </div>
-        <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
-          {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
-            <Tooltip title={t("Forward")} placement="top">
-              <IconButton onClick={handleForward}>
-                <Forward />
-              </IconButton>
-            </Tooltip>
-          </div>}
-          {selectedMsg?.from?.emailAddress &&
-            <Typography variant="h4">
-              {selectedMsg.from.emailAddress.name || ''} &lt;{selectedMsg.from.emailAddress.address || ''}&gt;
-            </Typography>}
-          {selectedMsg?.body?.content && <div className={classes.flexRow}>
-            <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-              onInit={(evt, editor) => editorRef.current = editor}
-              initialValue={selectedMsg?.body?.content}
-              disabled
-              init={{
-                disabled: true,
-                menubar: false,
-                readonly: true,
-                toolbar: '',
-                plugins: ['wordcount'],
-                width: '100%',
-                height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
-              }}
-            /></div>}
-        </Paper>
+        <div className={classes.mailContainer}>
+          {mailTab?.ID === 1 && <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
+            {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
+              <Tooltip title={t("Forward")} placement="top">
+                <IconButton onClick={handleForward}>
+                  <Forward />
+                </IconButton>
+              </Tooltip>
+            </div>}
+            {selectedMsg?.from?.emailAddress &&
+              <Typography variant="h4">
+                {selectedMsg.from.emailAddress.name || ''} &lt;{selectedMsg.from.emailAddress.address || ''}&gt;
+              </Typography>}
+            {selectedMsg?.body?.content && <div className={classes.flexRow}>
+              <Editor
+                tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+                onInit={(evt, editor) => editorRef.current = editor}
+                initialValue={selectedMsg?.body?.content}
+                disabled
+                init={{
+                  disabled: true,
+                  menubar: false,
+                  readonly: true,
+                  toolbar: '',
+                  plugins: ['wordcount'],
+                  width: '100%',
+                  height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
+                }}
+              /></div>}
+          </Paper>}
+          {mailTabs.slice(1).map((tab, key) =>
+            <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
+              {tab?.component || null}
+            </TabPanel>
+          )}
+          <div className={classes.mailTabsContainer}>
+            <Tabs onChange={handleTab} value={mailTab} color="primary">
+              {mailTabs.map((tab, key) =>
+                <Tab key={key} value={tab} label={tab.label} />
+              )}
+            </Tabs>
+          </div>
+        </div>
       </div>
     </AuthenticatedView>
   );
-  // </ReturnSnippet>
 }
 
+function TabPanel(props: any) {
+  const { children, hidden, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={hidden}
+      style={{ flex: 1 }}
+      {...other}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default withStyles(styles)(Messages);
