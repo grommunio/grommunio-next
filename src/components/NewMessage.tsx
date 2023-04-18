@@ -10,7 +10,7 @@ import { postMessage } from '../api/messages';
 import { Contact, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { ImportContacts } from '@mui/icons-material';
+import { Delete, ImportContacts } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
 import { useTypeSelector } from '../store';
@@ -50,14 +50,21 @@ const styles: any = (theme: any) => ({
     marginBottom: 16,
     padding: 9,
   },
+  iconButtonRow: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
 });
 
 type MessagesProps = {
   classes: any,
   handleTabLabelChange: (label: string) => void,
+  handleDraftClose: () => void,
 }
 
-function NewMessage({ classes, handleTabLabelChange }: MessagesProps) {
+function NewMessage({ classes, handleTabLabelChange, handleDraftClose }: MessagesProps) {
   const app = useAppContext();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -126,6 +133,11 @@ function NewMessage({ classes, handleTabLabelChange }: MessagesProps) {
         >
           {t("Send")}
         </Button>
+        <div className={classes.iconButtonRow}>
+          <IconButton title={t('Discard') || ""} onClick={handleDraftClose /* TODO: Prompt confirmation dialog */}>
+            <Delete />
+          </IconButton>
+        </div>
       </Paper>
       <Paper className={classes.tinyMceContainer}>
         <div className={classes.flexRow}>

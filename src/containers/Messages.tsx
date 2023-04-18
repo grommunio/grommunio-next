@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, Edit, EditOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
+import { CheckBoxOutlined, EditOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
@@ -259,6 +259,13 @@ function Messages({ classes }: MessagesProps) {
 
   const handleTab = (e: any, newVal: MailTab) => setMailTab(newVal);
 
+  const handleDraftClose = (tabIndex: number) => () => {
+    const copy = [...mailTabs];
+    copy.splice(tabIndex, 1);
+    setMailTab(copy[0] || null);
+    setMailTabs(copy);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -406,7 +413,10 @@ function Messages({ classes }: MessagesProps) {
           </Paper>}
           {mailTabs.slice(1).map((tab, key) =>
             <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
-              {tab?.Component ? <tab.Component handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)} /> : null}
+              {tab?.Component ? <tab.Component
+                handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)}
+                handleDraftClose={handleDraftClose(key + 1)}
+              />: null}
             </TabPanel>
           )}
           <div className={classes.mailTabsContainer}>
