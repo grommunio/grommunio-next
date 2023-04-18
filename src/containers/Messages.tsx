@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, JSXElementConstructor, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -111,7 +111,10 @@ const styles: any = {
     display: 'flex',
     flexDirection: 'column',
     marginTop: 8,
-  }
+  },
+  tab: {
+    textTransform: 'none',
+  },
 };
 
 type MessagesProps = {
@@ -122,7 +125,7 @@ type MailTab = {
   // This will probably get more props in the future
   ID: number,
   label: string,
-  component?: JSX.Element,
+  Component?: any, // TODO: Find type
 };
 
 function objectToCNF(filters: any) {
@@ -235,9 +238,20 @@ function Messages({ classes }: MessagesProps) {
     setCheckedMessages(messages.length === checkedMessages.length ? [] : messages);
   }
 
+  const handleTabLabelChange = (tabIndex: number) => (newLabel: string) => {
+    const copy = [...mailTabs];
+    console.log(tabIndex, newLabel, copy);
+    copy[tabIndex].label = newLabel;
+    setMailTabs(copy);
+  }
+
   const handleNewMessage = () => {
     const copy = [...mailTabs];
-    const tab = { ID: now(), label: '<No subject>', component: <NewMessage /> };
+    const tab = {
+      ID: now(),
+      label: '<No subject>',
+      Component: NewMessage,
+    };
     copy.push(tab);
     setMailTabs(copy);
     setMailTab(tab);
@@ -392,13 +406,13 @@ function Messages({ classes }: MessagesProps) {
           </Paper>}
           {mailTabs.slice(1).map((tab, key) =>
             <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
-              {tab?.component || null}
+              {tab?.Component ? <tab.Component handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)} /> : null}
             </TabPanel>
           )}
           <div className={classes.mailTabsContainer}>
             <Tabs onChange={handleTab} value={mailTab} color="primary">
               {mailTabs.map((tab, key) =>
-                <Tab key={key} value={tab} label={tab.label} />
+                <Tab key={key} value={tab} label={tab.label || "<No subject>"} className={classes.tab}/>
               )}
             </Tabs>
           </div>

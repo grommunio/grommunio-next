@@ -54,9 +54,10 @@ const styles: any = (theme: any) => ({
 
 type MessagesProps = {
   classes: any,
+  handleTabLabelChange: (label: string) => void,
 }
 
-function NewMessage({ classes }: MessagesProps) {
+function NewMessage({ classes, handleTabLabelChange }: MessagesProps) {
   const app = useAppContext();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -88,6 +89,12 @@ function NewMessage({ classes }: MessagesProps) {
 
   const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
     stateFuncs[stateFunc]((e.target as HTMLInputElement).value);
+  }
+
+  const handleSubject = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+    setSubject(value);
+    handleTabLabelChange(value);
   }
 
   const handleGAB = () => {
@@ -136,7 +143,7 @@ function NewMessage({ classes }: MessagesProps) {
         <TextField
           className={classes.input}
           label={t("Subject")}
-          onChange={handleInput('setSubject')}
+          onChange={handleSubject}
           value={subject}
           fullWidth
         />
