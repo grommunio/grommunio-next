@@ -123,7 +123,19 @@ const styles: any = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     maxWidth: 172,
-  }
+  },
+  mailSender: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: 220,
+  },
+  mailPreview: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: 312,
+  },
 };
 
 type MessagesProps = {
@@ -363,7 +375,9 @@ function Messages({ classes }: MessagesProps) {
                     
                     <ListItemText
                       primary={<>
-                        {message.subject}
+                        <div className={classes.mailSender}>
+                          {message.sender?.emailAddress?.name || message.sender?.emailAddress?.address || "Unknown sender"}
+                        </div>
                         {hover ? <div>
                           <IconButton onClick={handlePlaceholder} size='small' title="Mark as unread">
                             <MailOutlineOutlined fontSize='small'/>
@@ -378,7 +392,10 @@ function Messages({ classes }: MessagesProps) {
                           <PriorityHigh color="error" fontSize='small' />
                         </div>}
                       </>}
-                      secondary={message.bodyPreview}
+                      secondary={<div>
+                        <div className={classes.mailPreview}>&gt; {message.subject}</div>
+                        <div className={classes.mailPreview}>{message.bodyPreview}</div>
+                      </div>}
                       primaryTypographyProps={{
                         className: classes.mailListItemTitle,
                       }}
