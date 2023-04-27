@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
+import moment from "moment";
+
 export type URLParams = {
   [index: string]: string;
 }
@@ -70,4 +72,11 @@ export function buildQuery(endpoint: string, params={}): string {
   if(paramsArray.length === 0) return endpoint;
   const query = endpoint + '?' + paramsArray.reduce((prev, [name, val]) => prev + (val !== undefined ? `${name}=${val}&` : ''), '');
   return query.slice(0, -1);
+}
+
+export function parseISODate(isoDateString: string) {
+  console.log(moment.locale());
+  if(!isoDateString) return "";
+  // TODO: Get locale
+  return moment(isoDateString).format('LL'); // TODO: Format date depending on time since received
 }

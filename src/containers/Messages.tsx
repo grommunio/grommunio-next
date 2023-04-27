@@ -21,6 +21,7 @@ import Hover from '../components/Hover';
 import MailActions from '../components/messages/MailActions';
 import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
+import { parseISODate } from '../utils';
 
 const styles: any = {
   content: {
@@ -136,6 +137,20 @@ const styles: any = {
     whiteSpace: 'nowrap',
     maxWidth: 312,
   },
+  mailSubjectContainer: {
+    display: 'flex',
+  },
+  mailSubject: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: 256,
+  },
+  mailDate: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'flex-end',
+  }
 };
 
 type MessagesProps = {
@@ -393,7 +408,10 @@ function Messages({ classes }: MessagesProps) {
                         </div>}
                       </>}
                       secondary={<div>
-                        <div className={classes.mailPreview}>&gt; {message.subject}</div>
+                        <div className={classes.mailSubjectContainer}>
+                          <div className={classes.mailSubject}>&gt; {message.subject}</div>
+                          <div className={classes.mailDate}>{parseISODate(message.receivedDateTime || "")}</div>
+                        </div>
                         <div className={classes.mailPreview}>{message.bodyPreview}</div>
                       </div>}
                       primaryTypographyProps={{
