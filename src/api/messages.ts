@@ -50,3 +50,14 @@ export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthen
 
   return response?.message;
 }
+
+export async function deleteMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  id: string): Promise<string | undefined> {
+  ensureClient(authProvider);
+  
+  const response = await graphClient!
+    .api('/me/messages/'+ id)
+    .delete();
+
+  return response?.message;
+}

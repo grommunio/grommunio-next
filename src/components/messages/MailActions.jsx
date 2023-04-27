@@ -4,6 +4,9 @@ import { withTranslation } from 'react-i18next';
 import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined,
   FlagOutlined, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
 import { withStyles } from '@mui/styles';
+import { useAppContext } from '../../azure/AppContext';
+import { useDispatch } from 'react-redux';
+import { deleteMessageData } from '../../actions/messages';
 
 const styles = {
   button: {
@@ -26,8 +29,13 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
 
 const MailActions = ({ t, openedMail, selection, handleNewMessage }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
-  
+  const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
+  const dispatch = useDispatch();
+
+  const handleMailDelete = () => {
+    dispatch(deleteMessageData({app, messages: selection}));
+  }
 
   return [
     <ActionButton
@@ -41,7 +49,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage }) => {
     </ActionButton>,
     <ActionButton
       key={1}
-      onClick={handlePlaceholder}
+      onClick={handleMailDelete}
       disabled={!mailsSelected}
       startIcon={<DeleteOutlineOutlined />}
     >

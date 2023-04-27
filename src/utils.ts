@@ -75,8 +75,7 @@ export function buildQuery(endpoint: string, params={}): string {
 }
 
 export function parseISODate(isoDateString: string) {
-  console.log(moment.locale());
   if(!isoDateString) return "";
   // TODO: Get locale
-  return moment(isoDateString).format('LL'); // TODO: Format date depending on time since received
+  return moment(isoDateString).format('l'); // TODO: Format date depending on time since received
 }

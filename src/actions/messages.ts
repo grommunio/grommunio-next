@@ -3,9 +3,9 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { MailFolder, Message } from "microsoft-graph";
-import { getMailFolders, getUserMessages } from "../api/messages";
+import { deleteMessage, getMailFolders, getUserMessages } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
-import { FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA } from "./types";
+import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA } from "./types";
 
 type fetchMessagesDataArgTypes = {
   app: AppContext,
@@ -48,5 +48,35 @@ export const fetchMailFoldersData = createAsyncThunk<
       }
     }
     return [];
+  }
+);
+
+type deleteMessageDataArgTypes = {
+  app: AppContext,
+  messages: Message[],
+};
+
+export const deleteMessageData = createAsyncThunk<
+  string[],
+  deleteMessageDataArgTypes
+>(
+  DELETE_MESSAGE_DATA,
+  async ({app, messages}: deleteMessageDataArgTypes) => {
+    const succ: string[] = [];
+    if (app.user) {
+      for(let i = 0; i < messages.length; i++) {
+        const id=messages[i].id;
+        try {
+          if(id) {
+            await deleteMessage(app.authProvider!, id || "");
+            succ.push(id)
+          }
+        } catch (err) {
+          const error = err as Error;
+          app.displayError!(error.message);
+        }
+      }
+    }
+    return succ;
   }
 );
