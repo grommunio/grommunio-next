@@ -118,6 +118,12 @@ const styles: any = {
     border: '2px solid #545454',
     marginRight: 8,
   },
+  tabContent: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: 172,
+  }
 };
 
 type MessagesProps = {
@@ -391,12 +397,11 @@ function Messages({ classes }: MessagesProps) {
                   disableRipple
                   key={key}
                   value={tab}
-                  label={<div className={classes.flexRow}>
+                  label={<div className={classes.tabContent}>
                     {key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : null}
                     {tab.label || "<No subject>"}
                   </div>}
                   className={classes.tab}
-                  
                 />
               )}
             </Tabs>
