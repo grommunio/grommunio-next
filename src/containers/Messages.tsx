@@ -111,7 +111,7 @@ const styles: any = {
   mailTabsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    marginTop: 8,
+    marginBottom: 24,
   },
   tab: {
     textTransform: 'none',
@@ -384,6 +384,23 @@ function Messages({ classes }: MessagesProps) {
           </Paper>
         </div>
         <div className={classes.mailContainer}>
+          <div className={classes.mailTabsContainer}>
+            <Tabs onChange={handleTab} value={mailTab} color="primary" textColor='primary'>
+              {mailTabs.map((tab, key) =>
+                <Tab
+                  disableRipple
+                  key={key}
+                  value={tab}
+                  label={<div className={classes.flexRow}>
+                    {key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : null}
+                    {tab.label || "<No subject>"}
+                  </div>}
+                  className={classes.tab}
+                  
+                />
+              )}
+            </Tabs>
+          </div>
           {mailTab?.ID === 1 && <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
             {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
               <Tooltip title={t("Forward")} placement="top">
@@ -421,23 +438,6 @@ function Messages({ classes }: MessagesProps) {
               />: null}
             </TabPanel>
           )}
-          <div className={classes.mailTabsContainer}>
-            <Tabs onChange={handleTab} value={mailTab} color="primary" textColor='primary'>
-              {mailTabs.map((tab, key) =>
-                <Tab
-                  disableRipple
-                  key={key}
-                  value={tab}
-                  label={<div className={classes.flexRow}>
-                    {key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : null}
-                    {tab.label || "<No subject>"}
-                  </div>}
-                  className={classes.tab}
-                  
-                />
-              )}
-            </Tabs>
-          </div>
         </div>
       </div>
     </AuthenticatedView>
