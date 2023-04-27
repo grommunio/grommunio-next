@@ -54,6 +54,7 @@ export const fetchMailFoldersData = createAsyncThunk<
 type deleteMessageDataArgTypes = {
   app: AppContext,
   messages: Message[],
+  force?: boolean,
 };
 
 export const deleteMessageData = createAsyncThunk<
@@ -61,14 +62,14 @@ export const deleteMessageData = createAsyncThunk<
   deleteMessageDataArgTypes
 >(
   DELETE_MESSAGE_DATA,
-  async ({app, messages}: deleteMessageDataArgTypes) => {
+  async ({app, messages, force}: deleteMessageDataArgTypes) => {
     const succ: string[] = [];
     if (app.user) {
       for(let i = 0; i < messages.length; i++) {
         const id=messages[i].id;
         try {
           if(id) {
-            await deleteMessage(app.authProvider!, id || "");
+            await deleteMessage(app.authProvider!, id || "", force);
             succ.push(id)
           }
         } catch (err) {

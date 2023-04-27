@@ -27,14 +27,19 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   );
 });
 
-const MailActions = ({ t, openedMail, selection, handleNewMessage }) => {
+const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
   const dispatch = useDispatch();
 
   const handleMailDelete = () => {
-    dispatch(deleteMessageData({app, messages: selection}));
+    dispatch(deleteMessageData({
+      app,
+      messages: selection,
+      // TODO: This does not work. Find way to convert non-english displayname
+      force: folder.displayname == "Deleted items"
+    }));
   }
 
   return [

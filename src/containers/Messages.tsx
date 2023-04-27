@@ -304,7 +304,12 @@ function Messages({ classes }: MessagesProps) {
   return (
     <AuthenticatedView
       header={t("Messages")}
-      actions={<MailActions handleNewMessage={handleNewMessage} openedMail={selectedMsg} selection={checkedMessages}/>}
+      actions={<MailActions
+        handleNewMessage={handleNewMessage}
+        openedMail={selectedMsg}
+        selection={checkedMessages}
+        folder={selectedFolder}
+      />}
     >
       <div className={classes.content}>
         <FolderList>

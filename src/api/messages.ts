@@ -52,12 +52,15 @@ export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthen
 }
 
 export async function deleteMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  id: string): Promise<string | undefined> {
+  id: string, force=false): Promise<string | undefined> {
   ensureClient(authProvider);
   
-  const response = await graphClient!
+  
+  const response = force ? await graphClient! // Full delete
     .api('/me/messages/'+ id)
-    .delete();
+    .delete() : await graphClient! // Move to deleted items
+      .api('/me/messages/'+ id + "/move")
+      .post({ destinationId: "deleteditems" });
 
   return response?.message;
 }
