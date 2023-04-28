@@ -3,9 +3,9 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { MailFolder, Message } from "microsoft-graph";
-import { deleteMessage, getMailFolders, getUserMessages } from "../api/messages";
+import { deleteMessage, getMailFolders, getUserMessages, patchMessage } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
-import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA } from "./types";
+import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, PATCH_MESSAGE_DATA } from "./types";
 
 type fetchMessagesDataArgTypes = {
   app: AppContext,
@@ -48,6 +48,31 @@ export const fetchMailFoldersData = createAsyncThunk<
       }
     }
     return [];
+  }
+);
+
+type patchMessageDataArgTypes = {
+  app: AppContext,
+  message: Message,
+  specificProps?: any,
+};
+
+export const patchMessageData = createAsyncThunk<
+  Message | boolean,
+  patchMessageDataArgTypes
+>(
+  PATCH_MESSAGE_DATA,
+  async ({app, message, specificProps}: patchMessageDataArgTypes) => {
+    if (app.user) {
+      try {
+        const res = await patchMessage(app.authProvider!, message, specificProps);
+        return res || false;
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+      }
+    }
+    return false;
   }
 );
 

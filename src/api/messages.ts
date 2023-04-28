@@ -51,6 +51,17 @@ export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthen
   return response?.message;
 }
 
+export async function patchMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  message: Message, specificProps: any): Promise<Message | undefined> {
+  ensureClient(authProvider);
+  
+  const response = await graphClient!
+    .api('/me/messages/'+ message.id)
+    .patch(specificProps || message);
+
+  return response;
+}
+
 export async function deleteMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
   id: string, force=false): Promise<string | undefined> {
   ensureClient(authProvider);

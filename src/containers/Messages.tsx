@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { fetchMailFoldersData, fetchMessagesData } from '../actions/messages';
+import { fetchMailFoldersData, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
   MenuItem, Paper, Tab, Tabs, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
@@ -226,6 +226,8 @@ function Messages({ classes }: MessagesProps) {
     setSelectedMsg(msg);
     setMailTabs(copy);
     setMailTab(tab);
+    // Set isRead
+    if(!msg.isRead) dispatch(patchMessageData({ app, message: msg, specificProps: { isRead: true }}));
   }
 
   const handleForward = () => {
@@ -414,8 +416,16 @@ function Messages({ classes }: MessagesProps) {
                       </>}
                       secondary={<div>
                         <div className={classes.mailSubjectContainer}>
-                          <div className={classes.mailSubject}>&gt; {message.subject}</div>
-                          <div className={classes.mailDate}>{parseISODate(message.receivedDateTime || "")}</div>
+                          <div className={classes.mailSubject}>
+                            <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
+                              &gt; {message.subject}
+                            </Typography>
+                          </div>
+                          <div className={classes.mailDate}>
+                            <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
+                              {parseISODate(message.receivedDateTime || "")}
+                            </Typography>
+                          </div>
                         </div>
                         <div className={classes.mailPreview}>{message.bodyPreview}</div>
                       </div>}

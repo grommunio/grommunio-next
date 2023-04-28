@@ -3,7 +3,7 @@
 import { AnyAction } from 'redux'
 import {
   DELETE_MESSAGE_DATA,
-  FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA,
+  FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, PATCH_MESSAGE_DATA,
 } from '../actions/types';
 import { Message } from 'microsoft-graph';
 
@@ -40,6 +40,17 @@ function messagesReducer(state = defaultState, action: AnyAction) {
         return res;
       }),
     };
+  
+  case PATCH_MESSAGE_DATA + "/fulfilled":
+    return {
+      ...state,
+      mails: state.mails.map((mail: Message) => {
+        if(mail.id === action.payload.id) {
+          // Shallow merge is necessary to keep the selected mail in the list
+          return Object.assign(mail, action.payload);
+        } else return mail;
+      }),
+    }
 
   default:
     return state;
