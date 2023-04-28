@@ -36,7 +36,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => 
   const handleMailDelete = () => {
     dispatch(deleteMessageData({
       app,
-      messages: selection,
+      messages: selection.length > 0 ? selection : [openedMail],
       // TODO: This does not work. Find way to convert non-english displayname
       force: folder.displayname == "Deleted items"
     }));
