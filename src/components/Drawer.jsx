@@ -24,11 +24,6 @@ const styles = theme => ({
     overflowY: 'auto',
     border: "none",
   },
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-  },
 });
 
 const tabs = [

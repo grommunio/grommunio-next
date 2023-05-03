@@ -13,28 +13,12 @@ import { postTaskListData } from '../../actions/tasks';
 import { useTypeDispatch } from '../../store';
 
 const styles = (theme: any) => ({
-  form: {
-    width: '100%',
-    marginTop: theme.spacing(4),
-  },
-  grid: {
-    display: 'flex',
-    margin: theme.spacing(1, 1, 1, 1),
-    flex: 1,
-  },
-  input: {
-    marginBottom: theme.spacing(3),
-  },
   gridItem: {
     display: 'flex',
   },
   propertyInput: {
     margin: theme.spacing(1, 1, 1, 1),
     flex: 1,
-  },
-  flexTextfield: {
-    flex: 1,
-    marginRight: 8,
   },
 });
 

@@ -12,10 +12,6 @@ import { useAppContext } from '../../azure/AppContext';
 import { postContact } from '../../api/contacts';
 
 const styles = (theme: any) => ({
-  form: {
-    width: '100%',
-    marginTop: theme.spacing(4),
-  },
   grid: {
     display: 'flex',
     margin: theme.spacing(1, 1, 1, 1),

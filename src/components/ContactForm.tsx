@@ -32,11 +32,6 @@ const styles = (theme: any) => ({
     margin: theme.spacing(1),
     flex: 1,
   },
-  countrySelect: {
-    margin: theme.spacing(1),
-    flex: 1,
-    marginLeft: 8,
-  },
   flexRow: {
     display: 'flex',
     margin: theme.spacing(0, 0, 2, 0),

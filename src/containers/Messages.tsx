@@ -61,11 +61,6 @@ const styles: any = {
     display: 'flex',
     marginRight: -4,
   },
-  iconButtonContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
   menu: {
     margin: 0,
   },

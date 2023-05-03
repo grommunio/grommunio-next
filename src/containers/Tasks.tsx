@@ -30,11 +30,6 @@ const styles: any = {
   tinyMceContainer: {
     flex: 1,
   },
-  action: {
-    margin: 8,
-    display: 'flex',
-    justifyContent: 'center',
-  },
   buttonRow: {
     display: 'flex',
     justifyContent: 'flex-end',

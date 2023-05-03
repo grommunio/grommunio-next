@@ -11,10 +11,6 @@ const styles = {
     padding: "0px 16px 16px 16px",
     overflow: 'auto',
   },
-  header: {
-    margin: 8,
-  },
-  
 }
 
 function AuthenticatedView({

@@ -20,15 +20,6 @@ const styles: any = (theme: any) => ({
     height: '100%',
     flexDirection: 'column',
   },
-  centerRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  mailList: {
-    width: 400,
-    height: '100%',
-  },
   tinyMceContainer: {
     flex: 1,
     display: 'flex',

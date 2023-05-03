@@ -13,16 +13,6 @@ import { Button } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 
 const styles: any = {
-  root: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: 16,
-  },
-  centerRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    flex: 1,
-  },
   formContainer: {
     margin: 8,
   }

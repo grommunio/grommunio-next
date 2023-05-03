@@ -15,34 +15,11 @@ import { useState } from 'react';
 import { AccountCircle } from '@mui/icons-material';
 
 
-const styles = (theme: any) => ({
-  form: {
-    width: '100%',
-    marginTop: theme.spacing(4),
-  },
-  grid: {
-    display: 'flex',
-    margin: theme.spacing(1, 1, 1, 1),
-    flex: 1,
-  },
-  input: {
-    marginBottom: theme.spacing(3),
-  },
-  gridItem: {
-    display: 'flex',
-  },
-  propertyInput: {
-    margin: theme.spacing(1, 1, 1, 1),
-    flex: 1,
-  },
-  flexTextfield: {
-    flex: 1,
-    marginRight: 8,
-  },
+const styles = {
   selected: {
     backgroundColor: '#71a7ec7a !important'
   }
-});
+};
 
 function GAB(props: any) {
   const app = useAppContext();

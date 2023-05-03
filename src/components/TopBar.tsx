@@ -26,15 +26,6 @@ const styles = {
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  tabs: {
-    '& .MuiTabs-indicator': {
-      backgroundColor: '#000',
-    },
-  },
-  tab: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   trans: {
     color: '#fff',
   },
@@ -58,12 +49,6 @@ const styles = {
   },
   logo: {
     marginRight: 16,
-  },
-  searchBox: {
-    backgroundColor: '#fafafa',
-    display: 'flex',
-    alignItems: 'center',
-    borderRadius: 8,
   },
 };
 
