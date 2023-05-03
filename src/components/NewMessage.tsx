@@ -9,7 +9,6 @@ import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
 import { Delete, ImportContacts } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
@@ -62,17 +61,17 @@ type MessagesProps = {
   classes: any,
   handleTabLabelChange: (label: string) => void,
   handleDraftClose: () => void,
+  initialState?: Message,
 }
 
-function NewMessage({ classes, handleTabLabelChange, handleDraftClose }: MessagesProps) {
+function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
   const app = useAppContext();
   const dispatch = useDispatch();
-  const location = useLocation();
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
-  const [toRecipients, setToRecipients] = useState('');
-  const [subject, setSubject] = useState('');
+  const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [subject, setSubject] = useState(initialState?.subject || "");
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
@@ -109,11 +108,14 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose }: Message
   }
 
   useEffect(() => {
-    setToRecipients(toRecipients + (toRecipients && ",") +
+    console.log("weird effect call", toRecipients);
+    if(selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
       selectedGABReceipients.map((contact: Contact) => {
         return contact.emailAddresses ? contact.emailAddresses[0].address : ''
       }).join(','));
   }, [selectedGABReceipients]);
+
+  console.log(toRecipients);
 
   return (
     <div className={classes.content}>
@@ -162,7 +164,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose }: Message
         <Editor
           tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
           onInit={(evt, editor) => editorRef.current = editor}
-          initialValue={location.state?.body?.content || ''}
+          initialValue={initialState?.body?.content || ''}
           init={{
             id: 'tinyMCE-editor',
             language: i18n.language,

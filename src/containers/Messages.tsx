@@ -10,7 +10,6 @@ import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAv
   MenuItem, Paper, Tab, Tabs, Tooltip, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
@@ -162,6 +161,7 @@ type MailTab = {
   ID: number,
   label: string,
   Component?: typeof NewMessage,
+  initialState?: Message,
 };
 
 function objectToCNF(filters: any) {
@@ -190,7 +190,6 @@ function Messages({ classes }: MessagesProps) {
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [mailTab, setMailTab] = useState<MailTab | null>(null);
   const dispatch = useTypeDispatch();
-  const navigate = useNavigate();
 
   // componentDidMount()
   useEffect(() => {
@@ -231,7 +230,16 @@ function Messages({ classes }: MessagesProps) {
   }
 
   const handleForward = () => {
-    navigate('/newMessage', { state: selectedMsg });
+    const copy = [...mailTabs];
+    const tab: MailTab = {
+      ID: now(),
+      label: 'FW: ' + selectedMsg?.subject,
+      Component: NewMessage,
+      initialState: selectedMsg || undefined,
+    };
+    copy.push(tab);
+    setMailTabs(copy);
+    setMailTab(tab);
   }
 
   const handleFilterMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -491,6 +499,7 @@ function Messages({ classes }: MessagesProps) {
           {mailTabs.slice(1).map((tab, key) =>
             <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
               {tab?.Component ? <tab.Component
+                initialState={tab.initialState}
                 handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)}
                 handleDraftClose={handleDraftClose(key + 1)}
               />: null}
