@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
-  MenuItem, Paper, Tab, Tabs, Tooltip, Typography } from '@mui/material';
+  MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
-import { Editor } from '@tinymce/tinymce-react';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, EditOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined, Reply } from '@mui/icons-material';
+import { CheckBoxOutlined, EditOutlined, FilterList, FlagOutlined, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
@@ -21,6 +20,7 @@ import MailActions from '../components/messages/MailActions';
 import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
 import { parseISODate } from '../utils';
+import MessagePaper from '../components/messages/MessagePaper';
 
 const styles: any = {
   content: {
@@ -34,17 +34,6 @@ const styles: any = {
     height: 0, // Used to get inside-div scrolling
     minHeight: '100%',
     padding: 0,
-  },
-  tinyMceContainer: {
-    padding: 16,
-    display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
-  },
-  flexRow: {
-    display: 'flex',
-    flex: 1,
-    alignItems: 'center',
   },
   flexContainer: {
     display: 'flex',
@@ -67,11 +56,7 @@ const styles: any = {
     flex: 1,
     marginRight: 4,
   },
-  mailActionsContainer: {
-    marginBottom: 4,
-    display: 'flex',
-    justifyContent: 'flex-end',
-  },
+  
   filterRow: {
     display: 'flex',
     marginRight: -4,
@@ -182,7 +167,6 @@ const filterOptions = [
 function Messages({ classes }: MessagesProps) {
   const app = useAppContext();
   const { t } = useTranslation();
-  const editorRef = useRef({});
   const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const [checkedMessages, setCheckedMessages] = useState<Array<Message>>([]);
@@ -489,40 +473,11 @@ function Messages({ classes }: MessagesProps) {
               )}
             </Tabs>
           </div>
-          {mailTab?.ID === 1 && <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
-            {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
-              <Tooltip title={t("Forward")} placement="top">
-                <IconButton onClick={handleReply}>
-                  <Reply />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={t("Forward")} placement="top">
-                <IconButton onClick={handleForward}>
-                  <Forward />
-                </IconButton>
-              </Tooltip>
-            </div>}
-            {selectedMsg?.from?.emailAddress &&
-              <Typography variant="h4">
-                {selectedMsg.from.emailAddress.name || ''} &lt;{selectedMsg.from.emailAddress.address || ''}&gt;
-              </Typography>}
-            {selectedMsg?.body?.content && <div className={classes.flexRow}>
-              <Editor
-                tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-                onInit={(evt, editor) => editorRef.current = editor}
-                initialValue={selectedMsg?.body?.content}
-                disabled
-                init={{
-                  disabled: true,
-                  menubar: false,
-                  readonly: true,
-                  toolbar: '',
-                  plugins: ['wordcount'],
-                  width: '100%',
-                  height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
-                }}
-              /></div>}
-          </Paper>}
+          {mailTab?.ID === 1 && <MessagePaper
+            handleForward={handleForward}
+            handleReply={handleReply}
+            selectedMsg={selectedMsg}
+          />}
           {mailTabs.slice(1).map((tab, key) =>
             <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
               {tab?.Component ? <tab.Component
