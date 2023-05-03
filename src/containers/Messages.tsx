@@ -414,7 +414,7 @@ function Messages({ classes }: MessagesProps) {
                           <PriorityHigh color="error" fontSize='small' />
                         </div>}
                       </>}
-                      secondary={<div>
+                      secondary={<>
                         <div className={classes.mailSubjectContainer}>
                           <div className={classes.mailSubject}>
                             <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
@@ -428,9 +428,12 @@ function Messages({ classes }: MessagesProps) {
                           </div>
                         </div>
                         <div className={classes.mailPreview}>{message.bodyPreview}</div>
-                      </div>}
+                      </>}
                       primaryTypographyProps={{
                         className: classes.mailListItemTitle,
+                      }}
+                      secondaryTypographyProps={{
+                        component: 'span',
                       }}
                     />
                   </ListItemButton>}
