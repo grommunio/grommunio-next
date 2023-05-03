@@ -22,7 +22,7 @@ import NewMessage from '../components/NewMessage';
 import { parseISODate } from '../utils';
 import MessagePaper from '../components/messages/MessagePaper';
 
-const styles: any = {
+const styles: any = (theme: any) => ({
   content: {
     flex: 1,
     height: '100%',
@@ -105,6 +105,8 @@ const styles: any = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     maxWidth: 172,
+    fontWeight: theme.typography.fontWeightBold,
+    fontSize: theme.typography.pxToRem(15),
   },
   mailSender: {
     overflow: 'hidden',
@@ -132,7 +134,7 @@ const styles: any = {
     display: 'flex',
     justifyContent: 'flex-end',
   }
-};
+});
 
 type MessagesProps = {
   classes: any;
@@ -453,7 +455,13 @@ function Messages({ classes }: MessagesProps) {
         </div>
         <div className={classes.mailContainer}>
           <div className={classes.mailTabsContainer}>
-            <Tabs onChange={handleTab} value={mailTab} color="primary" textColor='primary'>
+            <Tabs
+              onChange={handleTab}
+              value={mailTab}
+              color="primary"
+              textColor="inherit"
+              style={{ color: 'white' }}
+            >
               {mailTabs.map((tab, key) =>
                 <Tab
                   disableRipple
