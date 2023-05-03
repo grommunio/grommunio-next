@@ -6,7 +6,7 @@ import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, Draft
 import { withStyles } from '@mui/styles';
 import { useAppContext } from '../../azure/AppContext';
 import { useDispatch } from 'react-redux';
-import { deleteMessageData, moveMessageData } from '../../actions/messages';
+import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
 
 const styles = {
   button: {
@@ -27,7 +27,7 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   );
 });
 
-const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => {
+const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
@@ -48,6 +48,12 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => 
       messages: selection.length > 0 ? selection : [openedMail],
       destinationId,
     }));
+  }
+
+  const handleReadToggle = () => {
+    (selection.length > 0 ? selection : [openedMail]).forEach(message => {
+      dispatch(patchMessageData({app, message, specificProps: { isRead: !message.isRead }}));
+    });
   }
 
   return [
@@ -102,7 +108,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => 
     </ActionButton>,
     <ActionButton
       key={5}
-      onClick={handlePlaceholder}
+      onClick={handleReply}
       disabled={selection.length > 1 || !openedMail /* TODO: this is still a bit buggy */} 
       startIcon={<ReplyAllOutlined color={mailsSelected ? "primary" : "secondary"}/>}
     >
@@ -110,7 +116,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => 
     </ActionButton>,
     <ActionButton
       key={6}
-      onClick={handlePlaceholder}
+      onClick={handleReadToggle}
       disabled={!mailsSelected}
       startIcon={<DraftsOutlined />}
     >

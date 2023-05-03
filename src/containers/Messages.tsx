@@ -322,6 +322,7 @@ function Messages({ classes }: MessagesProps) {
         openedMail={selectedMsg}
         selection={checkedMessages}
         folder={selectedFolder}
+        handleReply={handleReply}
       />}
     >
       <div className={classes.content}>
@@ -405,7 +406,6 @@ function Messages({ classes }: MessagesProps) {
                         <Typography variant='body2'>{names[0][0]}{names[names.length - 1][0]}</Typography>
                       </Avatar>
                     </ListItemAvatar>}
-                    
                     <ListItemText
                       primary={<>
                         <div className={classes.mailSender}>

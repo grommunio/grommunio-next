@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { Forward, Reply } from "@mui/icons-material";
+import { Forward, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
@@ -69,7 +69,7 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
           <Tooltip title={t("Forward")} placement="top">
             <IconButton onClick={handleReply}>
-              <Reply color="primary"/>
+              <ReplyAll color="primary"/>
             </IconButton>
           </Tooltip>
           <Tooltip title={t("Forward")} placement="top">
