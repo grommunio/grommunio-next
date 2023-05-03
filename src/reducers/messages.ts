@@ -30,15 +30,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
   case DELETE_MESSAGE_DATA + "/fulfilled":
     return {
       ...state,
-      mails: state.mails.filter((mail: Message) => {
-        console.log(action.payload, mail.id);
-        // For some unknown reason '.includes' does not work here.
-        let res = true;
-        action.payload.forEach((id: string) => {
-          if(id === mail.id) res = false;
-        });
-        return res;
-      }),
+      mails: state.mails.filter((mail: Message) => !action.payload.includes(mail.id)),
     };
   
   case PATCH_MESSAGE_DATA + "/fulfilled":

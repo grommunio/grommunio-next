@@ -6,7 +6,7 @@ import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, Draft
 import { withStyles } from '@mui/styles';
 import { useAppContext } from '../../azure/AppContext';
 import { useDispatch } from 'react-redux';
-import { deleteMessageData } from '../../actions/messages';
+import { deleteMessageData, moveMessageData } from '../../actions/messages';
 
 const styles = {
   button: {
@@ -42,6 +42,14 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => 
     }));
   }
 
+  const handleMailMove = destinationId => () => {
+    dispatch(moveMessageData({
+      app,
+      messages: selection.length > 0 ? selection : [openedMail],
+      destinationId,
+    }));
+  }
+
   return [
     <ActionButton
       key={0}
@@ -62,7 +70,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, folder }) => 
     </ActionButton>,
     <ActionButton
       key={2}
-      onClick={handlePlaceholder}
+      onClick={handleMailMove("archive")}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "success" : "secondary"}/>}
     >

@@ -75,3 +75,15 @@ export async function deleteMessage(authProvider: AuthCodeMSALBrowserAuthenticat
 
   return response?.message;
 }
+
+export async function moveMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  id: string, destinationId: string): Promise<string | undefined> {
+  ensureClient(authProvider);
+  
+  
+  const response = await graphClient! // Move to deleted items
+    .api('/me/messages/'+ id + "/move")
+    .post({ destinationId });
+
+  return response?.message;
+}
