@@ -90,7 +90,8 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         },
       })),
     }
-    postMessage(app.authProvider!, message, send);
+    postMessage(app.authProvider!, message, send)
+      .then(handleDraftClose);
   }
 
   const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
