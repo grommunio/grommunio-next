@@ -13,7 +13,7 @@ import { Editor } from '@tinymce/tinymce-react';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, EditOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
+import { CheckBoxOutlined, EditOutlined, FilterList, FlagOutlined, Forward, MailOutlineOutlined, PriorityHigh, PushPinOutlined, Reply } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import Hover from '../components/Hover';
@@ -69,6 +69,8 @@ const styles: any = {
   },
   mailActionsContainer: {
     marginBottom: 4,
+    display: 'flex',
+    justifyContent: 'flex-end',
   },
   filterRow: {
     display: 'flex',
@@ -236,6 +238,26 @@ function Messages({ classes }: MessagesProps) {
       label: 'FW: ' + selectedMsg?.subject,
       Component: NewMessage,
       initialState: selectedMsg || undefined,
+    };
+    copy.push(tab);
+    setMailTabs(copy);
+    setMailTab(tab);
+  }
+
+  const handleReply = () => {
+    const copy = [...mailTabs];
+    const tab: MailTab = {
+      ID: now(),
+      label: 'FW: ' + selectedMsg?.subject,
+      Component: NewMessage,
+      initialState: {
+        subject: "RE: " + selectedMsg?.subject,
+        toRecipients: selectedMsg?.toRecipients,
+        body: {
+          // TODO: Improve reply body (this already works really well)
+          content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
+        }
+      },
     };
     copy.push(tab);
     setMailTabs(copy);
@@ -469,6 +491,11 @@ function Messages({ classes }: MessagesProps) {
           </div>
           {mailTab?.ID === 1 && <Paper id="readonlyDiv" className={classes.tinyMceContainer}>
             {selectedMsg && <div id="mailActionsContainer" className={classes.mailActionsContainer}>
+              <Tooltip title={t("Forward")} placement="top">
+                <IconButton onClick={handleReply}>
+                  <Reply />
+                </IconButton>
+              </Tooltip>
               <Tooltip title={t("Forward")} placement="top">
                 <IconButton onClick={handleForward}>
                   <Forward />
