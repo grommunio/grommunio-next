@@ -57,6 +57,8 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
     });
   }
 
+  const handleClean = () => window.alert("Action cannot be performed on this mailbox");
+
   return [
     <ActionButton
       key={0}
@@ -93,7 +95,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
     </ActionButton>,
     <ActionButton
       key={69420}
-      onClick={handlePlaceholder}
+      onClick={handleClean}
       disabled={!mailsSelected}
       startIcon={<CleaningServicesOutlined />}
     >
