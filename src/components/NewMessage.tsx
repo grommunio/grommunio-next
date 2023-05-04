@@ -100,14 +100,11 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   }
 
   useEffect(() => {
-    console.log("weird effect call", toRecipients);
     if(selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
       selectedGABReceipients.map((contact: Contact) => {
         return contact.emailAddresses ? contact.emailAddresses[0].address : ''
       }).join(','));
   }, [selectedGABReceipients]);
-
-  console.log(toRecipients);
 
   return (
     <div className={classes.content}>

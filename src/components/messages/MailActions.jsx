@@ -19,7 +19,8 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   return (
     <Button
       className={classes.button}
-      color={color || "secondary"}
+      color={color || "inherit"}
+      style={color ? undefined : {color: 'white'}} // Can't be part of the class, because it would affect primary buttons too
       {...childProps}
     >
       {children}
