@@ -491,7 +491,7 @@ function Messages({ classes }: MessagesProps) {
             handleReply={handleReply}
             selectedMsg={selectedMsg}
           />}
-          {mailTabs.slice(1).map((tab, key) =>
+          {(mailTabs.length > 1 ? mailTabs.slice(1) : mailTabs).map((tab, key) =>
             <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
               {tab?.Component ? <tab.Component
                 initialState={tab.initialState}
