@@ -1,12 +1,13 @@
 import PropTypes from 'prop-types';
-import { Button } from '@mui/material';
+import { Button, MenuItem, Menu } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined,
-  FlagOutlined, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
+  FlagOutlined, KeyboardArrowDown, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
 import { withStyles } from '@mui/styles';
 import { useAppContext } from '../../azure/AppContext';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
+import { useState } from 'react';
 
 const styles = {
   button: {
@@ -32,7 +33,9 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
+  const { mailFolders } = useSelector(state => state.messages);
   const dispatch = useDispatch();
+  const [moveMenuAnchor, setMoveMenuAnchor] = useState(null);
 
   const handleMailDelete = () => {
     dispatch(deleteMessageData({
@@ -58,6 +61,14 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   }
 
   const handleClean = () => window.alert("Action cannot be performed on this mailbox");
+
+  const handleMove = (event) => {
+    setMoveMenuAnchor(event.currentTarget);
+  };
+
+  const handleMoveMenuClose = () => {
+    setMoveMenuAnchor(null);
+  };
 
   return [
     <ActionButton
@@ -103,9 +114,10 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
     </ActionButton>,
     <ActionButton
       key={4}
-      onClick={handlePlaceholder}
+      onClick={handleMove}
       disabled={!mailsSelected}
       startIcon={<DriveFileMoveOutlined color={mailsSelected ? "info" : "secondary"}/>}
+      endIcon={<KeyboardArrowDown />}
     >
       {t("Move")}
     </ActionButton>,
@@ -148,7 +160,22 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       startIcon={<PushPinOutlined color={mailsSelected ? "info" : "secondary"}/>}
     >
       {t("Pin")}
-    </ActionButton>
+    </ActionButton>,
+    <Menu
+      key={10}
+      anchorEl={moveMenuAnchor}
+      open={Boolean(moveMenuAnchor)}
+      onClose={handleMoveMenuClose}
+    >
+      {mailFolders.map((mailFolder, key) =>
+        <MenuItem
+          key={key}
+          onClick={handleMailMove(mailFolder.id)}
+        >
+          {mailFolder.displayName}
+        </MenuItem>
+      )}
+    </Menu>
   ];
 }
 
