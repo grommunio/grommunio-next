@@ -1,9 +1,10 @@
 import { withTranslation } from 'react-i18next';
 import { Menu, MenuItem} from '@mui/material';
-import { deleteMessageData } from '../../actions/messages';
+import { deleteMessageData, moveMessageData } from '../../actions/messages';
 import { useAppContext } from '../../azure/AppContext';
 import { useDispatch } from 'react-redux';
 
+// TODO: These actions are duplicated in the actionbar. Use a hook or HOC to deduplicate functions
 const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folder }) => {
   const app = useAppContext();
   const dispatch = useDispatch();
@@ -18,6 +19,14 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
     }));
   }
 
+  const handleMailMove = destinationId => () => {
+    dispatch(moveMessageData({
+      app,
+      messages: [openedMail],
+      destinationId,
+    }));
+  }
+
   return (
     <Menu
       open={isOpen}
@@ -26,6 +35,7 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
       anchorPosition={anchorPosition}
     >
       <MenuItem onClick={handleMailDelete}>{t("Delete")}</MenuItem>
+      <MenuItem onClick={handleMailMove("archive")}>{t("Archive")}</MenuItem>
     </Menu>
   );
 };
