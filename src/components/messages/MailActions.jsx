@@ -44,7 +44,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       app,
       messages: selection.length > 0 ? selection : [openedMail],
       // TODO: This does not work. Find way to convert non-english displayname
-      force: folder.displayname == "Deleted items"
+      force: folder?.displayname == "Deleted items"
     }));
   }
 

@@ -21,6 +21,7 @@ import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
 import { parseISODate } from '../utils';
 import MessagePaper from '../components/messages/MessagePaper';
+import MailContextMenu from '../components/messages/MailContextMenu';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -148,6 +149,11 @@ type MailTab = {
   initialState?: Message,
 };
 
+type ContextMenuCoords = {
+  top: number,
+  left: number,
+}
+
 function objectToCNF(filters: any) {
   return Object.entries(filters)
     .filter(e => e[1])
@@ -173,6 +179,8 @@ function Messages({ classes }: MessagesProps) {
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [mailTab, setMailTab] = useState<MailTab | null>(null);
   const [foldersVisible, setFoldersVisible] = useState<boolean>(true);
+  const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
+  const isContextMenuOpen = Boolean(contextMenuPosition);
   const dispatch = useTypeDispatch();
 
   // componentDidMount()
@@ -323,6 +331,22 @@ function Messages({ classes }: MessagesProps) {
 
   const handleFoldersToggle = () => setFoldersVisible(!foldersVisible);
 
+  const handleContextMenu = (msg: Message) => (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    const copy = [...mailTabs];
+    const tab = { ID: 1, label: msg.subject || '' };
+    if(selectedMsg === null) copy.unshift(tab);
+    else copy[0] = tab;
+    setMailTabs(copy);
+    setMailTab(tab);
+    setSelectedMsg(msg);
+    setContextMenuPosition({ top: e.clientY, left: e.clientX });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenuPosition(null);
+  };
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -402,6 +426,7 @@ function Messages({ classes }: MessagesProps) {
                 const checked = checkedMessages.includes(message);
                 return <Hover key={key}>
                   {(hover: boolean) => <ListItemButton
+                    onContextMenu={handleContextMenu(message)}
                     selected={checked || selectedMsg === message}
                     onClick={handleMailClick(message)}
                   >
@@ -502,6 +527,13 @@ function Messages({ classes }: MessagesProps) {
           )}
         </div>
       </div>
+      <MailContextMenu
+        isOpen={isContextMenuOpen}
+        onClose={handleCloseContextMenu}
+        anchorPosition={contextMenuPosition}
+        openedMail={selectedMsg}
+        folder={selectedFolder}
+      />
     </AuthenticatedView>
   );
 }
