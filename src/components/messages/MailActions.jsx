@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Button, MenuItem, Menu } from '@mui/material';
+import { Button, MenuItem, Menu, TextField } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined,
   FlagOutlined, KeyboardArrowDown, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
@@ -35,6 +35,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handlePlaceholder = (e) => e.stopPropagation();
   const { mailFolders } = useSelector(state => state.messages);
   const dispatch = useDispatch();
+  const [mailFolderFilter, setMailFolderFilter] = useState("");
   const [moveMenuAnchor, setMoveMenuAnchor] = useState(null);
 
   const handleMailDelete = () => {
@@ -69,6 +70,8 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handleMoveMenuClose = () => {
     setMoveMenuAnchor(null);
   };
+
+  const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
   return [
     <ActionButton
@@ -167,7 +170,16 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       open={Boolean(moveMenuAnchor)}
       onClose={handleMoveMenuClose}
     >
-      {mailFolders.map((mailFolder, key) =>
+      <MenuItem disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} /* Prevent 'select by typing' */>
+        <TextField
+          placeholder={t("Search folders")}
+          fullWidth
+          variant='standard'
+          onChange={handleFolderFilter}
+          value={mailFolderFilter}
+        />
+      </MenuItem>
+      {(mailFolderFilter ? mailFolders.filter(f => f.displayName.toLowerCase().includes(mailFolderFilter)) : mailFolders).map((mailFolder, key) =>
         <MenuItem
           key={key}
           onClick={handleMailMove(mailFolder.id)}
