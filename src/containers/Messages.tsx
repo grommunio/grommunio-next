@@ -172,6 +172,7 @@ function Messages({ classes }: MessagesProps) {
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [mailTab, setMailTab] = useState<MailTab | null>(null);
+  const [foldersVisible, setFoldersVisible] = useState<boolean>(true);
   const dispatch = useTypeDispatch();
 
   // componentDidMount()
@@ -320,6 +321,8 @@ function Messages({ classes }: MessagesProps) {
     setMailTabs(copy);
   }
 
+  const handleFoldersToggle = () => setFoldersVisible(!foldersVisible);
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -329,10 +332,11 @@ function Messages({ classes }: MessagesProps) {
         selection={checkedMessages}
         folder={selectedFolder}
         handleReply={handleReply}
+        handleFoldersToggle={handleFoldersToggle}
       />}
     >
       <div className={classes.content}>
-        <FolderList>
+        {foldersVisible && <FolderList>
           {mailFolders.map((folder: MailFolder, idx: number) => 
             <ListItem disablePadding key={idx}>
               <ListItemButton
@@ -349,7 +353,7 @@ function Messages({ classes }: MessagesProps) {
                 </Badge>
               </ListItemButton>
             </ListItem>)}
-        </FolderList>
+        </FolderList>}
         <div className={classes.flexContainer}>
           <div className={classes.filterRow}>
             <SearchTextfield

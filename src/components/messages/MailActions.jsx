@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
-import { Button, MenuItem, Menu, TextField } from '@mui/material';
+import { Button, MenuItem, Menu, TextField, IconButton } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined,
   FlagOutlined, KeyboardArrowDown, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
+import MenuIcon from '@mui/icons-material/Menu';
 import { withStyles } from '@mui/styles';
 import { useAppContext } from '../../azure/AppContext';
 import { useDispatch, useSelector } from 'react-redux';
@@ -29,7 +30,7 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   );
 });
 
-const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder }) => {
+const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
@@ -74,6 +75,9 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
   return [
+    <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }}>
+      <MenuIcon />
+    </IconButton>,
     <ActionButton
       key={0}
       onClick={handleNewMessage}
