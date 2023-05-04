@@ -218,7 +218,13 @@ function Messages({ classes }: MessagesProps) {
       ID: now(),
       label: 'FW: ' + selectedMsg?.subject,
       Component: NewMessage,
-      initialState: selectedMsg || undefined,
+      initialState: {
+        ...(selectedMsg || {}),
+        body: {
+          // TODO: Improve reply body (this already works really well)
+          content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
+        },
+      }
     };
     copy.push(tab);
     setMailTabs(copy);
