@@ -67,7 +67,7 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           </Typography>
         </div>
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
-          <Tooltip title={t("Forward")} placement="top">
+          <Tooltip title={t("Reply all")} placement="top">
             <IconButton onClick={handleReply}>
               <ReplyAll color="primary"/>
             </IconButton>
