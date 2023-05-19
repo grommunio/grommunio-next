@@ -62,11 +62,20 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+
+  //Handle Cc Recipient
+  const [toCcRecipients, setToCcRecipients] = useState(initialState?.ccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [toBccRecipients, setToBccRecipients] = useState(initialState?.bccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+
   const [subject, setSubject] = useState(initialState?.subject || "");
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
+    'setToCcRecipients': setToCcRecipients,
+    'setToBccRecipients': setToBccRecipients
   }
+
+
 
   const handleSend = (send: boolean) => () => {
     const message: Message = {
@@ -76,6 +85,16 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
       toRecipients: toRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      ccRecipients: toCcRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      bccRecipients: toBccRecipients.split(',').map((address: string) => ({
         emailAddress: {
           address,
         },
@@ -143,6 +162,34 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             fullWidth
           />
         </div>
+
+
+        <div className={classes.flexRow}>
+          <IconButton onClick={handleGAB}>
+            {t('Cc')}
+          </IconButton>
+          <TextField
+            className={classes.input}
+            label={t("CcRecipients")}
+            onChange={handleInput('setToCcRecipients')}
+            value={toCcRecipients}
+            fullWidth
+          />
+        </div>
+        <div className={classes.flexRow}>
+          <IconButton onClick={handleGAB}>
+            {t('BCc')}
+          </IconButton>
+          <TextField
+            className={classes.input}
+            label={t("BccRecipients")}
+            onChange={handleInput('setToBccRecipients')}
+            value={toBccRecipients}
+            fullWidth
+          />
+        </div>
+
+
         <TextField
           className={classes.input}
           label={t("Subject")}
