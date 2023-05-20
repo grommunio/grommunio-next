@@ -7,8 +7,9 @@ import { withStyles } from '@mui/styles';
 import { Button, IconButton, Paper, TextField } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
-import { Contact, Message } from 'microsoft-graph';
+import { Contact, Message, Importance, NullableOption, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { Delete, ImportContacts } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
@@ -62,24 +63,52 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [ccRecipients, setCcRecipients] = useState("");
+  const [bccRecipients, setBccRecipients] = useState("");
   const [subject, setSubject] = useState(initialState?.subject || "");
+  const [messageImportance, setMessageImportance] = useState<Importance>("normal")
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
+    'setCcRecipients': setCcRecipients,
+    'setBccRecipients': setBccRecipients,
+  }
+
+  const recipientsToValidRecipientFormat = (emails: string):  NullableOption<Recipient[]> => {
+    if (emails){
+      return emails.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      }))
+    }
+    return null
+  }
+
+  interface IExtraProps {
+    ccRecipients?: NullableOption<Recipient[]>;
+    bccRecipients?: NullableOption<Recipient[]>;
   }
 
   const handleSend = (send: boolean) => () => {
+    const extraProps: IExtraProps = {}
+
+    if (ccRecipients) {
+      extraProps["ccRecipients"] = recipientsToValidRecipientFormat(ccRecipients)
+    }
+    if (bccRecipients) {
+      extraProps["bccRecipients"] = recipientsToValidRecipientFormat(bccRecipients)
+    }
+
     const message: Message = {
       subject,
       body: {
         contentType: 'html',
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
-      toRecipients: toRecipients.split(',').map((address: string) => ({
-        emailAddress: {
-          address,
-        },
-      })),
+      toRecipients: recipientsToValidRecipientFormat(toRecipients),
+      importance: messageImportance,
+      ...extraProps,
     }
     postMessage(app.authProvider!, message, send)
       .then(handleDraftClose);
@@ -90,7 +119,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   }
 
   const handleSubject = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = (e.target as HTMLInputElement).value;
+    const { value } = (e.target as HTMLInputElement);
     setSubject(value);
     handleTabLabelChange(value);
   }
@@ -100,10 +129,12 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   }
 
   useEffect(() => {
-    if(selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
-      selectedGABReceipients.map((contact: Contact) => {
-        return contact.emailAddresses ? contact.emailAddresses[0].address : ''
-      }).join(','));
+    if (selectedGABReceipients.length > 0) {
+      setToRecipients(toRecipients + (toRecipients && ",") +
+          selectedGABReceipients.map((contact: Contact) => {
+            return contact.emailAddresses ? contact.emailAddresses[0].address : ''
+          }).join(','));
+    }
   }, [selectedGABReceipients]);
 
   return (
@@ -128,6 +159,9 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           <IconButton title={t('Discard') || ""} onClick={handleDraftClose /* TODO: Prompt confirmation dialog */}>
             <Delete />
           </IconButton>
+          <IconButton title={t('High Importance') || ""} onClick={() => setMessageImportance("high")}>
+            <PriorityHighIcon color='error' />
+          </IconButton>
         </div>
       </Paper>
       <Paper className={classes.tinyMceContainer}>
@@ -140,6 +174,30 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             label={t("Recipients")}
             onChange={handleInput('setToRecipients')}
             value={toRecipients}
+            fullWidth
+          />
+        </div>
+        <div className={classes.flexRow}>
+          <IconButton onClick={handleGAB}>
+            <ImportContacts />
+          </IconButton>
+          <TextField
+            className={classes.input}
+            label={t("Cc")}
+            onChange={handleInput('setCcRecipients')}
+            value={ccRecipients}
+            fullWidth
+          />
+        </div>
+        <div className={classes.flexRow}>
+          <IconButton onClick={handleGAB}>
+            <ImportContacts />
+          </IconButton>
+          <TextField
+            className={classes.input}
+            label={t("Bcc")}
+            onChange={handleInput('setBccRecipients')}
+            value={bccRecipients}
             fullWidth
           />
         </div>
