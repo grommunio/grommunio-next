@@ -11,6 +11,41 @@ import { zonedTimeToUtc } from 'date-fns-tz';
 import { Event } from 'microsoft-graph';
 import { ensureClient, graphClient } from './utils';
 
+export async function getAvailableCalendar(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  timeZone: string): Promise<Event[]> {
+  ensureClient(authProvider);
+
+
+  const response: PageCollection = await graphClient!
+    .api('/me/calendars')
+    .header('Prefer', `outlook.timezone="${timeZone}"`)
+    .get();
+
+  if (response["@odata.nextLink"]) {
+    // Presence of the nextLink property indicates more results are available
+    // Use a page iterator to get all results
+    const events: Event[] = [];
+
+    // Must include the time zone header in page
+    // requests too
+    const options: GraphRequestOptions = {
+      headers: { 'Prefer': `outlook.timezone="${timeZone}"` }
+    };
+
+    const pageIterator = new PageIterator(graphClient!, response, (event) => {
+      events.push(event);
+      return true;
+    }, options);
+
+    await pageIterator.iterate();
+
+    return events;
+  } else {
+
+    return response.value;
+  }
+}
+
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthenticationProvider,

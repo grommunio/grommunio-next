@@ -5,8 +5,30 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
-import { deleteEvent, getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
+import { deleteEvent, getUserWeekCalendar, getAvailableCalendar, patchEvent, postEvent } from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
+
+
+export const fetchEventsAvailableData = createAsyncThunk<
+  Event[],
+  AppContext
+>(
+  FETCH_EVENTS_DATA,
+  async (app: AppContext) => {
+    if (app.user) {
+      try {
+        const ianaTimeZones = findIana(app.user?.timeZone!);
+        const events = await getAvailableCalendar(app.authProvider!, ianaTimeZones[0].valueOf());
+        return events;
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+      }
+    }
+    return [];
+  }
+);
+
 
 
 export const fetchEventsData = createAsyncThunk<

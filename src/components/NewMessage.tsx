@@ -4,7 +4,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
-import { Button, IconButton, Paper, TextField } from '@mui/material';
+import { Button, IconButton, Paper, TextField, Checkbox, FormControlLabel } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message } from 'microsoft-graph';
@@ -62,9 +62,15 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [ccRecipients, setCcRecipients] = useState(initialState?.ccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [bccRecipients, setBccRecipients] = useState(initialState?.bccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [importance, setImportance] = useState(initialState?.importance || "low");
   const [subject, setSubject] = useState(initialState?.subject || "");
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
+    'setCcRecipients': setCcRecipients,
+    'setBccRecipients': setBccRecipients,
+    'setImportance': setImportance,
     'setSubject': setSubject,
   }
 
@@ -80,6 +86,17 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           address,
         },
       })),
+      ccRecipients: ccRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      bccRecipients: bccRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      importance: importance
     }
     postMessage(app.authProvider!, message, send)
       .then(handleDraftClose);
@@ -143,6 +160,21 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             fullWidth
           />
         </div>
+        <TextField
+          className={classes.input}
+          label={t("CC")}
+          onChange={handleInput('setCcRecipients')}
+          value={subject}
+          fullWidth
+        />
+        <TextField
+          className={classes.input}
+          label={t("BCC")}
+          onChange={handleInput('setBccRecipients')}
+          value={subject}
+          fullWidth
+        />
+        <FormControlLabel control={<Checkbox onChange={evt=>evt.target.checked?setImportance('high'):null} />} label="Mark as important" />
         <TextField
           className={classes.input}
           label={t("Subject")}

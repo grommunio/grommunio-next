@@ -3,27 +3,35 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { fetchEventsData } from '../actions/calendar';
 import { useTypeDispatch } from '../store';
 import ScheduleCalendar from './calendar/Scheduler';
 import AuthenticatedView from '../components/AuthenticatedView';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import TextField from '@mui/material/TextField';
+import { StaticDatePicker } from '@mui/x-date-pickers/StaticDatePicker';
 import { withTranslation } from 'react-i18next';
 import { Button } from '@mui/material';
 
 const styles: any = {
+  calendarContainer: {
+    display: 'flex',
+    flexDirection: 'row'
+  }
 };
 
-function Calendar({ t }: any) {
+function Calendar({ classes, t }: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
+  const [value, setValue] = useState<any>(new Date('2023-04-07'));
 
   useEffect(() => {
     dispatch(fetchEventsData(app));
   }, [app.authProvider]);
-
 
   return (
     <AuthenticatedView
@@ -34,7 +42,20 @@ function Calendar({ t }: any) {
         </Button>
       ]}
     >
-      <ScheduleCalendar app={app}/>
+      <div className={classes.calendarContainer}>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <StaticDatePicker
+            orientation="landscape"
+            openTo="day"
+            value={value}
+            onChange={(newValue) => {
+              setValue(newValue);
+            }}
+            renderInput={(params) => <TextField {...params} />}
+          />
+        </LocalizationProvider>
+        <ScheduleCalendar app={app}/>
+      </div>
     </AuthenticatedView>
   );
 }

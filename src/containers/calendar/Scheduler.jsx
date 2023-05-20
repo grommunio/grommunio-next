@@ -8,6 +8,7 @@ import {
   Toolbar,
   MonthView,
   WeekView,
+  DayView,
   ViewSwitcher,
   Appointments,
   AppointmentTooltip,
@@ -437,6 +438,7 @@ class ScheduleCalendar extends React.PureComponent {
             onEditingAppointmentChange={this.onEditingAppointmentChange}
             onAddedAppointmentChange={this.onAddedAppointmentChange}
           />
+          <DayView />
           <WeekView
             startDayHour={startDayHour}
             endDayHour={endDayHour}
