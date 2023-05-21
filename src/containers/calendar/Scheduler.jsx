@@ -43,6 +43,11 @@ import {
   patchEventData,
   postEventData,
 } from "../../actions/calendar";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { CalendarPicker } from "@mui/x-date-pickers/CalendarPicker";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import grey from "../../colors/grey";
 
 const PREFIX = "Demo";
 const classes = {
@@ -56,6 +61,7 @@ const classes = {
   icon: `${PREFIX}-icon`,
   textField: `${PREFIX}-textField`,
   addButton: `${PREFIX}-addButton`,
+  currentDate: `${PREFIX}-currentDate`,
 };
 
 const StyledDiv = styled("div")(({ theme }) => ({
@@ -104,6 +110,27 @@ const StyledFab = styled(Fab)(({ theme }) => ({
     right: theme.spacing(4),
   },
 }));
+
+const leftCalender = {
+  currentDate: {
+    width: "28%",
+    borderRight: "1px solid black",
+    borderColor: grey.A100,
+  },
+  date: {
+    display: "flex",
+    marginTop: 10,
+    marginLeft: 15,
+    width: "50%",
+    cursor: "pointer",
+  },
+  dateText: {
+    marginBottom: "auto",
+    marginTop: "auto",
+    marginLeft: 10,
+  },
+};
+
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -310,6 +337,7 @@ class ScheduleCalendar extends React.PureComponent {
       startDayHour: 8,
       endDayHour: 22,
       isNewAppointment: false,
+      showDate: false,
     };
 
     this.currentViewName = props.currentViewName;
@@ -434,6 +462,34 @@ class ScheduleCalendar extends React.PureComponent {
     });
   }
 
+  toggleShowDate() {
+    const { showDate } = this.state;
+    this.setState({ showDate: !showDate });
+  }
+
+  calDayAndMonth() {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const d = new Date();
+    let currentMonth = months[d.getMonth()];
+    const currentYear = d.getFullYear();
+
+    return [currentMonth, currentYear];
+  }
+
   render() {
     const {
       currentDate,
@@ -442,11 +498,36 @@ class ScheduleCalendar extends React.PureComponent {
       editingFormVisible,
       startDayHour,
       endDayHour,
+      showDate,
     } = this.state;
+    const month = this.calDayAndMonth()[0];
+    const year = this.calDayAndMonth()[1];
 
-    const { currentViewName } = this.props;
+    const { currentViewName, leftCalenderToggle } = this.props;
     return (
-      <Paper>
+      <Paper style={{ display: "flex" }}>
+        {leftCalenderToggle && (
+          <div style={leftCalender.currentDate}>
+            <div style={leftCalender.date}>
+              {!showDate ? (
+                <KeyboardArrowRightIcon onClick={() => this.toggleShowDate()} />
+              ) : (
+                <KeyboardArrowDownIcon onClick={() => this.toggleShowDate()} />
+              )}
+
+              {!showDate && (
+                <div style={leftCalender.dateText}>
+                  {month} {year}
+                </div>
+              )}
+            </div>
+            {showDate && (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <CalendarPicker />
+              </LocalizationProvider>
+            )}
+          </div>
+        )}
         <Scheduler data={data}>
           <ViewState
             currentDate={currentDate}

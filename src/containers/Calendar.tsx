@@ -11,10 +11,11 @@ import { useTypeDispatch } from "../store";
 import ScheduleCalendar from "./calendar/Scheduler";
 import AuthenticatedView from "../components/AuthenticatedView";
 import { withTranslation } from "react-i18next";
-import { Button } from "@mui/material";
+import { Button, IconButton } from "@mui/material";
 import TodayIcon from "@mui/icons-material/Today";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import MenuIcon from "@mui/icons-material/Menu";
 import grey from "../colors/grey";
 
 const styles: any = {
@@ -37,10 +38,6 @@ const styles: any = {
   },
 };
 
-type SwitcherProps = {
-  currentViewNameChange: (name: string) => void;
-};
-
 type CalenderProps = {
   classes: any;
   t: any;
@@ -50,20 +47,31 @@ function Calendar({ classes, t }: CalenderProps) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
   const [currentViewName, setCurrentViewName] = useState("Week");
+  const [leftCalenderToggle, setLeftCalenderToggle] = useState(false);
 
   const viewNameChange = (name: string) => {
     setCurrentViewName(name);
   };
+  const handleLeftCalenderToggle = () => {
+    setLeftCalenderToggle(!leftCalenderToggle);
+  };
 
-  const ExternalViewSwitcher = ({ currentViewNameChange }: SwitcherProps) => (
+  const ExternalViewSwitcher = () => (
     <div className={classes.btnContainer}>
+      <IconButton
+        onClick={() => handleLeftCalenderToggle()}
+        style={{ marginRight: 8 }}
+      >
+        <MenuIcon />
+      </IconButton>
+      ,
       <Button key={0} variant="contained" color="primary">
         {"New event"}
       </Button>
       <div
         key={1}
         className={classes.boxContainer}
-        onClick={() => currentViewNameChange("Day")}
+        onClick={() => viewNameChange("Day")}
       >
         <TodayIcon />
         {"Day"}
@@ -72,7 +80,7 @@ function Calendar({ classes, t }: CalenderProps) {
       <div
         key={2}
         className={classes.boxContainer}
-        onClick={() => currentViewNameChange("Week")}
+        onClick={() => viewNameChange("Week")}
       >
         <CalendarViewWeekIcon />
         {"Week"}
@@ -81,7 +89,7 @@ function Calendar({ classes, t }: CalenderProps) {
       <div
         key={3}
         className={classes.boxContainer}
-        onClick={() => currentViewNameChange("Month")}
+        onClick={() => viewNameChange("Month")}
       >
         <CalendarMonthIcon />
         {"Month"}
@@ -96,11 +104,13 @@ function Calendar({ classes, t }: CalenderProps) {
   return (
     <AuthenticatedView
       header={t("Calendar")}
-      actions={[
-        <ExternalViewSwitcher currentViewNameChange={viewNameChange} />,
-      ]}
+      actions={[<ExternalViewSwitcher />]}
     >
-      <ScheduleCalendar app={app} currentViewName={currentViewName} />
+      <ScheduleCalendar
+        app={app}
+        currentViewName={currentViewName}
+        leftCalenderToggle={leftCalenderToggle}
+      />
     </AuthenticatedView>
   );
 }
