@@ -4,10 +4,17 @@ import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
   FETCH_EVENTS_DATA,
+  FETCH_USER_CALENDER_DATA,
 } from '../actions/types';
+
+interface IUserCalender {
+  id: string;
+  name: string;
+}
 
 const defaultState = {
   events: [],
+  calender: [],
 };
 
 //TODO: Properly implement this function
@@ -35,6 +42,12 @@ function calendarReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       events: action.payload ? formatEvents(action.payload) : [],
+    };
+
+  case FETCH_USER_CALENDER_DATA + "/fulfilled":
+    return {
+      ...state,
+      calendar: action.payload ? action.payload.map(({id, name}: IUserCalender) => ({id, name})) : [],
     };
 
   default:

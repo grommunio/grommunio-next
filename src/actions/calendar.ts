@@ -12,7 +12,7 @@ import {
   postEvent,
   getUserCalendar,
 } from "../api/calendar";
-import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA } from "./types";
 
 
 export const fetchEventsData = createAsyncThunk<
@@ -134,7 +134,7 @@ function formatEvent(rawEvent: any): Event {
 }
 
 export const fetchUserCalenders = createAsyncThunk<Event[], AppContext>(
-  FETCH_EVENTS_DATA,
+  FETCH_USER_CALENDER_DATA,
   async (app: AppContext) => {
     if (app.user) {
       try {

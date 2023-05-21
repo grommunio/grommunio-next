@@ -46,6 +46,8 @@ import {
   postEventData,
   fetchUserCalenders,
 } from "../../actions/calendar";
+import { Box, ListItemButton, ListItemText } from "@mui/material";
+import { KeyboardArrowDown } from "@mui/icons-material";
 
 const PREFIX = "Demo";
 const classes = {
@@ -100,6 +102,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
     display: "flex",
   },
 }));
+
 const StyledFab = styled(Fab)(({ theme }) => ({
   [`&.${classes.addButton}`]: {
     position: "absolute",
@@ -107,6 +110,11 @@ const StyledFab = styled(Fab)(({ theme }) => ({
     right: theme.spacing(4),
   },
 }));
+
+const StyledTable = styled(MonthView)(({ theme }) => ({
+  
+}))
+
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -365,7 +373,7 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidMount() {
     const { fetchUserCalenders, app } = this.props;
-    fetchUserCalenders(app);
+    fetchUserCalenders(app)
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -451,24 +459,23 @@ class ScheduleCalendar extends React.PureComponent {
     } = this.state;
 
     return (
-      <Paper>
-        <Grid container spacing={2}>
+      <Paper sx={{flex: 1}}>
+        <Grid container spacing={2} height="100%">
           {
             this.props.showSideBar && (
               <Grid item xs={3}>
                 <LocalizationProvider dateAdapter={AdapterMoment}>
                   <DateCalendar />
                 </LocalizationProvider>
+                <hr />
+                <UserCalenders data={this.props.calendar} />
               </Grid>
             )
           }
 
           <Grid item xs={this.props.showSideBar ? 9 : 12}>
             <Scheduler data={data}>
-              <ViewState
-                currentDate={currentDate}
-                currentViewName={this.props.calenderView}
-              />
+              <ViewState currentDate={currentDate} currentViewName={this.props.calenderView} />
               <EditingState
                 onCommitChanges={this.commitChanges}
                 onEditingAppointmentChange={this.onEditingAppointmentChange}
@@ -476,15 +483,13 @@ class ScheduleCalendar extends React.PureComponent {
               />
               <DayView />
               <WeekView startDayHour={startDayHour} endDayHour={endDayHour} />
-              <MonthView />
+              <StyledTable>
+                <MonthView />
+              </StyledTable>
               <AllDayPanel />
               <EditRecurrenceMenu />
               <Appointments />
-              <AppointmentTooltip
-                showOpenButton
-                showCloseButton
-                showDeleteButton
-              />
+              <AppointmentTooltip showOpenButton showCloseButton showDeleteButton />
               <Toolbar />
               <DateNavigator />
               <TodayButton />
@@ -546,6 +551,7 @@ const mapStateToProps = (state) => {
   const { calendar } = state;
   return {
     events: calendar.events,
+    calendar: calendar.calendar,
   };
 };
 
@@ -557,5 +563,26 @@ const mapDispatchToProps = (dispatch) => {
     fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
   };
 };
+
+
+const UserCalenders = ({data}) => {
+  const [open, setOpen] = React.useState(true);
+
+  return (
+    <Box sx={{ pb: open ? 2 : 0 }}>
+      <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
+        <KeyboardArrowDown sx={{ mr: -1, transform: open ? 'rotate(0)' : 'rotate(-90deg)', transition: '0.2s' }} />
+        <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
+      </ListItemButton>
+      {open &&
+        data?.map((item) => (
+          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }}>
+            <ListItemText primary={item.name} primaryTypographyProps={{ml: 2}} />
+          </ListItemButton>
+        ))}
+    </Box>
+  )
+}
+
 
 export default connect(mapStateToProps, mapDispatchToProps)(ScheduleCalendar);
