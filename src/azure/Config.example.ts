@@ -4,7 +4,7 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 const config = {
-  appId: 'de5267b8-6fcd-48b3-8071-79364613549a',
+  appId: 'YOUR_APP_ID',
   redirectUri: 'http://localhost:3000',
   scopes: [
     'user.read',
