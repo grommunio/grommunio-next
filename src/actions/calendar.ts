@@ -5,7 +5,13 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
-import { deleteEvent, getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
+import {
+  deleteEvent,
+  getUserWeekCalendar,
+  patchEvent,
+  postEvent,
+  getUserCalendar,
+} from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
 
 
@@ -37,44 +43,44 @@ type postEventDataParams = {
 export const postEventData = createAsyncThunk<
   Event | boolean,
   postEventDataParams
-  >(
-    POST_EVENT_DATA,
-    async ({ event, app }: postEventDataParams) => {
-      if (app.user) {
-        try {
-          const res = await postEvent(app.authProvider!, formatEvent(event));
-          return res;
-        } catch (err) {
-          const error = err as Error;
-          console.error(error);
-          app.displayError!(error.message);
-          return false;
-        }
+>(
+  POST_EVENT_DATA,
+  async ({ event, app }: postEventDataParams) => {
+    if (app.user) {
+      try {
+        const res = await postEvent(app.authProvider!, formatEvent(event));
+        return res;
+      } catch (err) {
+        const error = err as Error;
+        console.error(error);
+        app.displayError!(error.message);
+        return false;
       }
-      return false;
     }
-  );
+    return false;
+  }
+);
 
 export const patchEventData = createAsyncThunk<
   Event | boolean,
   postEventDataParams
-  >(
-    PATCH_EVENT_DATA,
-    async ({ event, app }: postEventDataParams) => {
-      if (app.user) {
-        try {
-          const res = await patchEvent(app.authProvider!, formatEvent(event));
-          return res;
-        } catch (err) {
-          const error = err as Error;
-          console.error(error);
-          app.displayError!(error.message);
-          return false;
-        }
+>(
+  PATCH_EVENT_DATA,
+  async ({ event, app }: postEventDataParams) => {
+    if (app.user) {
+      try {
+        const res = await patchEvent(app.authProvider!, formatEvent(event));
+        return res;
+      } catch (err) {
+        const error = err as Error;
+        console.error(error);
+        app.displayError!(error.message);
+        return false;
       }
-      return false;
     }
-  );
+    return false;
+  }
+);
 
 
 type deleteEventDataParams = {
@@ -85,23 +91,23 @@ type deleteEventDataParams = {
 export const deleteEventData = createAsyncThunk<
   Event | boolean,
   deleteEventDataParams
-  >(
-    PATCH_EVENT_DATA,
-    async ({ eventId, app }: deleteEventDataParams) => {
-      if (app.user) {
-        try {
-          const res = await deleteEvent(app.authProvider!, eventId);
-          return res;
-        } catch (err) {
-          const error = err as Error;
-          console.error(error);
-          app.displayError!(error.message);
-          return false;
-        }
+>(
+  PATCH_EVENT_DATA,
+  async ({ eventId, app }: deleteEventDataParams) => {
+    if (app.user) {
+      try {
+        const res = await deleteEvent(app.authProvider!, eventId);
+        return res;
+      } catch (err) {
+        const error = err as Error;
+        console.error(error);
+        app.displayError!(error.message);
+        return false;
       }
-      return false;
     }
-  );
+    return false;
+  }
+);
 
 
 function formatEvent(rawEvent: any): Event {
@@ -124,5 +130,20 @@ function formatEvent(rawEvent: any): Event {
     location: {
       displayName: location,
     },
-  }
+  };
 }
+
+export const fetchUserCalenders = createAsyncThunk<Event[], AppContext>(
+  FETCH_EVENTS_DATA,
+  async (app: AppContext) => {
+    if (app.user) {
+      try {
+        return await getUserCalendar(app.authProvider!);
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+      }
+    }
+    return [];
+  }
+);

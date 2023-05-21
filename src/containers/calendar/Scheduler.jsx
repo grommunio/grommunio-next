@@ -44,6 +44,7 @@ import {
   deleteEventData,
   patchEventData,
   postEventData,
+  fetchUserCalenders,
 } from "../../actions/calendar";
 
 const PREFIX = "Demo";
@@ -363,7 +364,8 @@ class ScheduleCalendar extends React.PureComponent {
   }
 
   componentDidMount() {
-
+    const { fetchUserCalenders, app } = this.props;
+    fetchUserCalenders(app);
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -552,6 +554,7 @@ const mapDispatchToProps = (dispatch) => {
     postEvent: async (params) => await dispatch(postEventData(params)),
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
+    fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
   };
 };
 
