@@ -214,7 +214,7 @@ function Messages({ classes }: MessagesProps) {
     const tab = { ID: 1, label: msg.subject || '' };
     if(selectedMsg === null) copy.unshift(tab);
     else copy[0] = tab;
-    setSelectedMsg(msg);
+    setSelectedMsg({...msg});
     setMailTabs(copy);
     setMailTab(tab);
     // Set isRead
@@ -427,7 +427,7 @@ function Messages({ classes }: MessagesProps) {
                 return <Hover key={key}>
                   {(hover: boolean) => <ListItemButton
                     onContextMenu={handleContextMenu(message)}
-                    selected={checked || selectedMsg === message}
+                    selected={checked || selectedMsg?.id === message.id}
                     onClick={handleMailClick(message)}
                   >
                     {hover || checkedMessages.length > 0 ? <ListItemIcon>

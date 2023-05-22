@@ -36,13 +36,9 @@ function messagesReducer(state = defaultState, action: AnyAction) {
   case PATCH_MESSAGE_DATA + "/fulfilled":
     return {
       ...state,
-      mails: state.mails.map((mail: Message) => {
-        if(mail.id === action.payload.id) {
-          // Shallow merge is necessary to keep the selected mail in the list
-          return Object.assign(mail, action.payload);
-        } else return mail;
-      }),
-    }
+      mails: state.mails.map((mail: Message) => mail.id === action.payload.id ?
+        {...mail, ...action.payload} : mail),
+    };
 
   default:
     return state;
