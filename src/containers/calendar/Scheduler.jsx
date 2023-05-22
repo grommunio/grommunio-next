@@ -40,6 +40,7 @@ import Create from "@mui/icons-material/Create";
 import { connect } from "react-redux";
 import {
   deleteEventData,
+  fetchCalendersData,
   patchEventData,
   postEventData,
 } from "../../actions/calendar";
@@ -390,6 +391,11 @@ class ScheduleCalendar extends React.PureComponent {
     this.appointmentForm.update();
   }
 
+  componentDidMount() {
+    const { getCalenders, app } = this.props;
+    getCalenders(app);
+  }
+
   onEditingAppointmentChange(editingAppointment) {
     this.setState({ editingAppointment });
   }
@@ -604,6 +610,7 @@ const mapStateToProps = (state) => {
   const { calendar } = state;
   return {
     events: calendar.events,
+    calendars: calendar.calendars,
   };
 };
 
@@ -612,6 +619,7 @@ const mapDispatchToProps = (dispatch) => {
     postEvent: async (params) => await dispatch(postEventData(params)),
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
+    getCalenders: async (params) => await dispatch(fetchCalendersData(params)),
   };
 };
 
