@@ -16,19 +16,9 @@ import TodayIcon from "@mui/icons-material/Today";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MenuIcon from "@mui/icons-material/Menu";
-import grey from "../colors/grey";
 
 const styles: any = {
   boxContainer: {
-    display: "flex",
-    alignItems: "end",
-    alignSelf: "end",
-    justifyContent: "space-between",
-    border: "1px solid black",
-    width: "7%",
-    borderRadius: 5,
-    backgroundColor: grey.A100,
-    padding: 10,
     marginLeft: 10,
     marginRight: 10,
     cursor: "pointer",
@@ -64,36 +54,18 @@ function Calendar({ classes, t }: CalenderProps) {
       >
         <MenuIcon />
       </IconButton>
-      ,
       <Button key={0} variant="contained" color="primary">
         {"New event"}
       </Button>
-      <div
-        key={1}
-        className={classes.boxContainer}
-        onClick={() => viewNameChange("Day")}
-      >
-        <TodayIcon />
-        {"Day"}
-      </div>
-      ,
-      <div
-        key={2}
-        className={classes.boxContainer}
-        onClick={() => viewNameChange("Week")}
-      >
-        <CalendarViewWeekIcon />
-        {"Week"}
-      </div>
-      ,
-      <div
-        key={3}
-        className={classes.boxContainer}
-        onClick={() => viewNameChange("Month")}
-      >
-        <CalendarMonthIcon />
-        {"Month"}
-      </div>
+      <Button color="secondary" className={classes.boxContainer} variant="outlined"  startIcon={<TodayIcon />} onClick={() => viewNameChange("Day")}>
+        Day
+      </Button>
+      <Button color="secondary" className={classes.boxContainer} variant="outlined"  startIcon={<CalendarViewWeekIcon />} onClick={() => viewNameChange("Week")}>
+        Week
+      </Button>
+      <Button color="secondary" className={classes.boxContainer} variant="outlined"  startIcon={<CalendarMonthIcon />} onClick={() => viewNameChange("Month")}>
+        Month
+      </Button>
     </div>
   );
 

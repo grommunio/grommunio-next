@@ -13,7 +13,11 @@ import { Delete, ImportContacts } from "@mui/icons-material";
 import { useDispatch } from "react-redux";
 import { setGABOpen } from "../actions/gab";
 import { useTypeSelector } from "../store";
-import { blue } from "@mui/material/colors";
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import grey from "../colors/grey";
 
 const styles: any = (theme: any) => ({
   content: {
@@ -53,11 +57,10 @@ const styles: any = (theme: any) => ({
     alignSelf: "center",
     padding: 7,
     height: 35,
-    color: blue[300],
     marginLeft: "0.5%",
     marginRight: "0.5%",
     "&:hover": {
-      backgroundColor: blue[300],
+      backgroundColor: grey.A200,
       color: "#ffffff",
       cursor: "pointer",
     },
@@ -100,6 +103,7 @@ function NewMessage({
   const [subject, setSubject] = useState(initialState?.subject || "");
   const [toggleCc, setToggleCc] = useState(false);
   const [toggleBcc, setToggleBcc] = useState(false);
+  const [importance, setImportance] = useState("");
   const stateFuncs: any = {
     setToRecipients: setToRecipients,
     setSubject: setSubject,
@@ -110,7 +114,7 @@ function NewMessage({
   const handleSend = (send: boolean) => () => {
     const message: Message = {
       subject,
-      //importance: "high",
+      importance:  importance === "high" ? "high" : importance === "low" ? "low" : importance === "normal" ? "normal" : "normal",
       body: {
         contentType: "html",
         content: editorRef.current ? editorRef.current.getContent() : "",
@@ -120,16 +124,16 @@ function NewMessage({
           address,
         },
       })),
-      bccRecipients: toBcc.split(",").map((address: string) => ({
+      bccRecipients: toBcc.length > 0 ? toBcc.split(",").map((address: string) => ({
         emailAddress: {
           address,
         },
-      })),
-      ccRecipients: toCc.split(",").map((address: string) => ({
+      })) : undefined,
+      ccRecipients: toCc.length > 0 ? toCc.split(",").map((address: string) => ({
         emailAddress: {
           address,
         },
-      })),
+      })) : undefined,
     };
     postMessage(app.authProvider!, message, send).then(handleDraftClose);
   };
@@ -155,6 +159,9 @@ function NewMessage({
 
   const handleToggleBcc = () => {
     setToggleBcc(!toggleBcc);
+  };
+  const handleChange = (event: SelectChangeEvent) => {
+    setImportance(event.target.value);
   };
 
   useEffect(() => {
@@ -214,13 +221,33 @@ function NewMessage({
             Bcc
           </div>
         </div>
-        <TextField
-          className={classes.input}
-          label={t("Subject")}
-          onChange={handleSubject}
-          value={subject}
-          fullWidth
-        />
+        <div className={classes.flexRow}>
+          <TextField
+            className={classes.input}
+            label={t("Subject")}
+            onChange={handleSubject}
+            value={subject}
+            fullWidth
+          />
+          <FormControl sx={{ m: 1, minWidth: 80 }}>
+            <InputLabel id="demo-simple-select-autowidth-label">
+             importance
+            </InputLabel>
+            <Select
+              labelId="demo-simple-select-autowidth-label"
+              id="demo-simple-select-autowidth"
+              value={importance}
+              onChange={handleChange}
+              autoWidth
+              label="importance"
+            >
+              <MenuItem value={"high"}>high</MenuItem>
+              <MenuItem value={"low"}>low</MenuItem>
+              <MenuItem value={"normal"}>normal</MenuItem>
+            </Select>
+          </FormControl>
+        </div>
+
         {toggleCc && (
           <TextField
             className={classes.input}
