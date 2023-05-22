@@ -75,11 +75,19 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
   return [
+<<<<<<< HEAD
     <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }} key={0} >
       <MenuIcon />
     </IconButton>,
     <ActionButton
       key={1}
+=======
+    <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }}>
+      <MenuIcon />
+    </IconButton>,
+    <ActionButton
+      key={0}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handleNewMessage}
       variant='contained'
       color="primary"
@@ -88,7 +96,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("New message")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={2}
+=======
+      key={1}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handleMailDelete}
       disabled={!mailsSelected}
       startIcon={<DeleteOutlineOutlined />}
@@ -96,7 +108,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Delete")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={3}
+=======
+      key={2}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handleMailMove("archive")}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "success" : "secondary"}/>}
@@ -104,7 +120,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Archive")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={4}
+=======
+      key={3}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "error" : "secondary"}/>}
@@ -120,7 +140,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Clean")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={6}
+=======
+      key={4}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handleMove}
       disabled={!mailsSelected}
       startIcon={<DriveFileMoveOutlined color={mailsSelected ? "info" : "secondary"}/>}
@@ -129,7 +153,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Move")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={7}
+=======
+      key={5}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handleReply}
       disabled={selection.length > 1 || !openedMail /* TODO: this is still a bit buggy */} 
       startIcon={<ReplyAllOutlined color={mailsSelected ? "primary" : "secondary"}/>}
@@ -137,7 +165,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Reply all")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={8}
+=======
+      key={6}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handleReadToggle}
       disabled={!mailsSelected}
       startIcon={<DraftsOutlined />}
@@ -145,7 +177,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Read/Unread")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={9}
+=======
+      key={7}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<DraftsOutlined />}
@@ -153,7 +189,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Categorize")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={15}
+=======
+      key={8}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<FlagOutlined color={mailsSelected ? "error" : "secondary"}/>}
@@ -161,7 +201,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Flag")}
     </ActionButton>,
     <ActionButton
+<<<<<<< HEAD
       key={10}
+=======
+      key={9}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<PushPinOutlined color={mailsSelected ? "info" : "secondary"}/>}
@@ -169,14 +213,23 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Pin")}
     </ActionButton>,
     <Menu
+<<<<<<< HEAD
       key={11}
+=======
+      key={10}
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
       anchorEl={moveMenuAnchor}
       open={Boolean(moveMenuAnchor)}
       onClose={handleMoveMenuClose}
     >
+<<<<<<< HEAD
       <MenuItem disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} key={12}/* Prevent 'select by typing' */>
         <TextField 
           key={13}
+=======
+      <MenuItem disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} /* Prevent 'select by typing' */>
+        <TextField
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
           placeholder={t("Search folders")}
           fullWidth
           variant='standard'

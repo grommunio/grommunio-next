@@ -59,6 +59,7 @@ export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthe
     return response.value;
   }
 }
+<<<<<<< HEAD
 export async function getAvailableCalendars(authProvider: AuthCodeMSALBrowserAuthenticationProvider
 ): Promise<Event[]> {
   ensureClient(authProvider);
@@ -69,6 +70,8 @@ export async function getAvailableCalendars(authProvider: AuthCodeMSALBrowserAut
 
   return response.value;
 }
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 // </GetUserWeekCalendarSnippet>
 
 // <CreateEventSnippet>
@@ -102,6 +105,7 @@ export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticatio
     .delete();
 }
 
+<<<<<<< HEAD
 // export async function getEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
 //   newEvent: Event): Promise<Event> {
 //   ensureClient(authProvider);
@@ -113,3 +117,5 @@ export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticatio
 //     .api('/me/calendars')
 //     .get(newEvent);
 // }
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15

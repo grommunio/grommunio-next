@@ -2,11 +2,19 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
+<<<<<<< HEAD
 import { Calendar, Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
 import { deleteEvent, getUserWeekCalendar, getAvailableCalendars ,patchEvent, postEvent } from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER } from "./types";
+=======
+import { Event } from "microsoft-graph";
+import { findIana } from "windows-iana";
+import { AppContext } from "../azure/AppContext";
+import { deleteEvent, getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 
 
 export const fetchEventsData = createAsyncThunk<
@@ -29,6 +37,7 @@ export const fetchEventsData = createAsyncThunk<
   }
 );
 
+<<<<<<< HEAD
 export const fetchAvailableCalendars = createAsyncThunk<
   Calendar[],
   AppContext
@@ -48,6 +57,8 @@ export const fetchAvailableCalendars = createAsyncThunk<
   }
 );
 
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 type postEventDataParams = {
   app: AppContext,
   event: Event,

@@ -3,7 +3,11 @@
 import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
+<<<<<<< HEAD
   FETCH_EVENTS_DATA, FETCH_USER_CALENDER,
+=======
+  FETCH_EVENTS_DATA,
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 } from '../actions/types';
 
 const defaultState = {
@@ -36,11 +40,14 @@ function calendarReducer(state = defaultState, action: AnyAction) {
       ...state,
       events: action.payload ? formatEvents(action.payload) : [],
     };
+<<<<<<< HEAD
   case FETCH_USER_CALENDER + "/fulfilled":
     return {
       ...state,
       mails: action.payload ?? [],
     };
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 
   default:
     return state;

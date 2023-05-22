@@ -446,7 +446,6 @@ class ScheduleCalendar extends React.PureComponent {
               endDate: new Date(currentDate).setHours(startDayHour + 1),
             });
           }}
-
         >
           <AddIcon />
         </StyledFab>

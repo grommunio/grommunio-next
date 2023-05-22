@@ -5,12 +5,19 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { Button, IconButton, Paper, TextField } from '@mui/material';
+<<<<<<< HEAD
 import withTinyMCE from './hocs/withTinyMCE';
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
+<<<<<<< HEAD
 import { Delete, ImportContacts, StarBorderOutlined, StarOutlined } from '@mui/icons-material';
+=======
+import { Delete, ImportContacts } from '@mui/icons-material';
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
 import { useTypeSelector } from '../store';
@@ -62,16 +69,22 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
+<<<<<<< HEAD
   const [importance, setImportance] = useState(false);
   const [ccRecipients, setCCRecipients] = useState(initialState?.ccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [bccRecipients, setBCCRecipients] = useState(initialState?.bccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [subject, setSubject] = useState(initialState?.subject || "");
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
+<<<<<<< HEAD
     'setBCCRecipients': setBCCRecipients,
     'setCCRecipients': setCCRecipients
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
   }
 
   const handleSend = (send: boolean) => () => {
@@ -86,6 +99,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           address,
         },
       })),
+<<<<<<< HEAD
       ccRecipients: ccRecipients.split(',').map((address: string) => ({
         emailAddress: {
           address,
@@ -101,6 +115,12 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     postMessage(app.authProvider!, message, send)
       .then(handleDraftClose);
   };
+=======
+    }
+    postMessage(app.authProvider!, message, send)
+      .then(handleDraftClose);
+  }
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 
   const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
     stateFuncs[stateFunc]((e.target as HTMLInputElement).value);
@@ -111,16 +131,20 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     setSubject(value);
     handleTabLabelChange(value);
   }
+<<<<<<< HEAD
   
   const toggleImportance = () => {
     setImportance(!importance);
   };
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 
   const handleGAB = () => {
     dispatch(setGABOpen(true));
   }
 
   useEffect(() => {
+<<<<<<< HEAD
     if (selectedGABReceipients.length > 0) {
       const selectedEmails = selectedGABReceipients.map((contact: Contact) => {
         return contact.emailAddresses ? contact.emailAddresses[0].address : ''
@@ -143,6 +167,13 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     }
   }, [selectedGABReceipients]);
   
+=======
+    if(selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
+      selectedGABReceipients.map((contact: Contact) => {
+        return contact.emailAddresses ? contact.emailAddresses[0].address : ''
+      }).join(','));
+  }, [selectedGABReceipients]);
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 
   return (
     <div className={classes.content}>
@@ -170,9 +201,12 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
       </Paper>
       <Paper className={classes.tinyMceContainer}>
         <div className={classes.flexRow}>
+<<<<<<< HEAD
           <IconButton onClick={toggleImportance}>
             {importance ? <StarOutlined /> : <StarBorderOutlined />}
           </IconButton>
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
           <IconButton onClick={handleGAB}>
             <ImportContacts />
           </IconButton>
@@ -183,6 +217,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={toRecipients}
             fullWidth
           />
+<<<<<<< HEAD
           <TextField
             className={classes.input}
             label={t("CC")}
@@ -197,6 +232,8 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={bccRecipients}
             fullWidth
           />
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
         </div>
         <TextField
           className={classes.input}
@@ -212,8 +249,11 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           init={{
             id: 'tinyMCE-editor',
             language: i18n.language,
+<<<<<<< HEAD
             skin: "oxide-dark",
             content_css: "dark",
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
             content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
           }}
         />
@@ -222,5 +262,9 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   );
 }
 
+<<<<<<< HEAD
 withTinyMCE(NewMessage)
+=======
+
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 export default withStyles(styles)(NewMessage);

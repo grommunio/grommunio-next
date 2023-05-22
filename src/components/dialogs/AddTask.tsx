@@ -9,7 +9,10 @@ import { Dialog, DialogTitle, DialogContent, TextField,
 import { withTranslation } from 'react-i18next';
 import { TodoTask } from 'microsoft-graph';
 import { useAppContext } from '../../azure/AppContext';
+<<<<<<< HEAD
 import withTinyMCE from '../hocs/withTinyMCE';
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 import { Editor } from '@tinymce/tinymce-react';
 import { postTaskData } from '../../actions/tasks';
 import { useTypeDispatch } from '../../store';
@@ -90,9 +93,13 @@ function AddTask(props: any) {
               initialValue={''}
               init={{
                 width: "100%",
+<<<<<<< HEAD
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                 skin: "oxide-dark",
                 content_css: "dark"
+=======
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
               }}
             />
           </Grid>
@@ -118,5 +125,9 @@ function AddTask(props: any) {
   );
 }
 
+<<<<<<< HEAD
 withTinyMCE(AddTask)
+=======
+
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 export default withTranslation()(withStyles(styles)(AddTask));

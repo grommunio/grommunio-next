@@ -9,7 +9,10 @@ import { Dialog, DialogTitle, DialogContent,
 import { withTranslation } from 'react-i18next';
 import { Message } from 'microsoft-graph';
 import { useAppContext } from '../../azure/AppContext';
+<<<<<<< HEAD
 import withTinyMCE from '../hocs/withTinyMCE';
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 import { Editor } from '@tinymce/tinymce-react';
 import { useTypeDispatch } from '../../store';
 import { postNoteData } from '../../actions/notes';
@@ -62,8 +65,11 @@ function AddNote(props: any) {
                 width: "100%",
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                 auto_focus: true,
+<<<<<<< HEAD
                 skin: "oxide-dark",
                 content_css: "dark"                
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
               }}
             />
           </Grid>
@@ -88,5 +94,9 @@ function AddNote(props: any) {
   );
 }
 
+<<<<<<< HEAD
 withTinyMCE(AddNote);
+=======
+
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 export default withTranslation()(withStyles(styles)(AddNote));

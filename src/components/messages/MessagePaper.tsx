@@ -5,7 +5,10 @@ import { Forward, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
+<<<<<<< HEAD
 import withTinyMCE from "../hocs/withTinyMCE";
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 import { Editor } from '@tinymce/tinymce-react';
 import { useTranslation } from "react-i18next";
 import { useRef } from "react";
@@ -91,8 +94,11 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
             menubar: false,
             readonly: true,
             toolbar: '',
+<<<<<<< HEAD
             skin: "oxide-dark",
             content_css: "dark",
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
             plugins: ['wordcount'],
             width: '100%',
             height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
@@ -103,5 +109,8 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
   ;
 }
 
+<<<<<<< HEAD
 withTinyMCE(MessagePaper)
+=======
+>>>>>>> b3f9afc4dddec9a0202d97ae468d825ea3b12a15
 export default withStyles(styles)(MessagePaper);
