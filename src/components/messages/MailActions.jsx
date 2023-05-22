@@ -10,19 +10,23 @@ import { useDispatch, useSelector } from 'react-redux';
 import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
 import { useState } from 'react';
 
-const styles = {
+const styles = theme => ({
   button: {
     marginRight: 8,
     textTransform: 'none',
   },
-}
+  plainButton: {
+    marginRight: 8,
+    textTransform: 'none',
+    color: theme.palette.textPrimary,
+  },
+});
 
 const ActionButton = withStyles(styles)(({ classes, children, color, ...childProps }) => {
   return (
     <Button
-      className={classes.button}
+      className={color ? classes.button : classes.plainButton}
       color={color || "inherit"}
-      style={color ? undefined : {color: 'white'}} // Can't be part of the class, because it would affect primary buttons too
       {...childProps}
     >
       {children}
