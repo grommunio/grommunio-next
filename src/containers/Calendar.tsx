@@ -80,7 +80,7 @@ function Calendar({classes, t}: CalenderProps) {
       header={t("Calendar")}
       actions={[<ExternalViewSwitcher />]}
     >
-       <ScheduleCalendar app={app} currentViewName={currentViewName}
+      <ScheduleCalendar app={app} currentViewName={currentViewName}
         leftCalenderToggle={leftCalenderToggle}/>
     </AuthenticatedView>
   );

@@ -119,7 +119,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           },
         }))
         : undefined,
-    ccRecipients:
+      ccRecipients:
       toCc.length > 0
         ? toCc.split(",").map((address: string) => ({
           emailAddress: {
@@ -200,21 +200,14 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={toRecipients}
             fullWidth
           />
-           <div className={classes.messageCopy} onClick={handleToggleCc}>
+          <div className={classes.messageCopy} onClick={handleToggleCc}>
             Cc
           </div>
           <div className={classes.messageCopy} onClick={handleToggleBcc}>
             Bcc
           </div>
         </div>
-        <TextField
-          className={classes.input}
-          label={t("Subject")}
-          onChange={handleSubject}
-          value={subject}
-          fullWidth
-        />
-         <div className={classes.flexRow}>
+        <div className={classes.flexRow}>
           <TextField
             className={classes.input}
             label={t("Subject")}

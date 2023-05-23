@@ -489,7 +489,7 @@ class ScheduleCalendar extends React.PureComponent {
     const { currentViewName, leftCalenderToggle } = this.props;
 
     return (
-        <Paper style={{ display: "flex" }}>
+      <Paper style={{ display: "flex" }}>
         {leftCalenderToggle && (
           <div style={leftCalender.currentDate}>
             <div style={leftCalender.date}>

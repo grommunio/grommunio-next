@@ -39,7 +39,7 @@ function calendarReducer(state = defaultState, action: AnyAction) {
       events: action.payload ? formatEvents(action.payload) : [],
     };
 
-    case FETCH_CALENDERS_DATA + "/fulfilled":
+  case FETCH_CALENDERS_DATA + "/fulfilled":
     return {
       ...state,
       calendars: action.payload ? action.payload : [],
