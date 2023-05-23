@@ -8,7 +8,7 @@ import { GraphRequestOptions, PageCollection, PageIterator } from '@microsoft/mi
 import { AuthCodeMSALBrowserAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser';
 import { endOfWeek, startOfWeek } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
-import { Event } from 'microsoft-graph';
+import { Calendar, Event } from 'microsoft-graph';
 import { ensureClient, graphClient } from './utils';
 
 
@@ -92,3 +92,12 @@ export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticatio
     .delete();
 }
 
+export async function getCalenders(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Calendar[]> {
+  ensureClient(authProvider);
+  
+  const response: PageCollection = await graphClient!
+    .api('/me/calendars')
+    .get();
+
+  return response.value;
+}
