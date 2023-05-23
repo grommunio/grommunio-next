@@ -3,11 +3,13 @@
 import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
+  FETCH_CALENDERS_DATA,
   FETCH_EVENTS_DATA,
 } from '../actions/types';
 
 const defaultState = {
   events: [],
+  calendars: []
 };
 
 //TODO: Properly implement this function
@@ -35,6 +37,12 @@ function calendarReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       events: action.payload ? formatEvents(action.payload) : [],
+    };
+
+    case FETCH_CALENDERS_DATA + "/fulfilled":
+    return {
+      ...state,
+      calendars: action.payload ? action.payload : [],
     };
 
   default:

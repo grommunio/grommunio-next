@@ -8,7 +8,7 @@ import {
   Toolbar,
   MonthView,
   WeekView,
-  ViewSwitcher,
+  DayView,
   Appointments,
   AppointmentTooltip,
   AppointmentForm,
@@ -38,7 +38,12 @@ import Close from '@mui/icons-material/Close';
 import CalendarToday from '@mui/icons-material/CalendarToday';
 import Create from '@mui/icons-material/Create';
 import { connect } from 'react-redux';
-import { deleteEventData, patchEventData, postEventData } from '../../actions/calendar';
+import { deleteEventData, fetchCalendersData, patchEventData, postEventData } from '../../actions/calendar';
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { CalendarPicker } from "@mui/x-date-pickers/CalendarPicker";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import grey from "../../colors/grey";
 
 const PREFIX = 'Demo';
 const classes = {
@@ -100,6 +105,26 @@ const StyledFab = styled(Fab)(({ theme }) => ({
     right: theme.spacing(4),
   },
 }));
+
+const leftCalender = {
+  currentDate: {
+    width: "28%",
+    borderRight: "1px solid black",
+    borderColor: grey.A100,
+  },
+  date: {
+    display: "flex",
+    marginTop: 10,
+    marginLeft: 15,
+    width: "50%",
+    cursor: "pointer",
+  },
+  dateText: {
+    marginBottom: "auto",
+    marginTop: "auto",
+    marginLeft: 10,
+  },
+};
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -299,6 +324,7 @@ class ScheduleCalendar extends React.PureComponent {
       startDayHour: 8,
       endDayHour: 22,
       isNewAppointment: false,
+      showDate: false
     };
 
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
@@ -339,6 +365,11 @@ class ScheduleCalendar extends React.PureComponent {
         cancelAppointment,
       };
     });
+  }
+
+  componentDidMount() {
+    const { getCalenders, app } = this.props;
+    getCalenders(app);
   }
 
   componentDidUpdate() {
@@ -414,6 +445,34 @@ class ScheduleCalendar extends React.PureComponent {
     });
   }
 
+  toggleShowDate() {
+    const { showDate } = this.state;
+    this.setState({ showDate: !showDate });
+  }
+
+  calDayAndMonth() {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const d = new Date();
+    let currentMonth = months[d.getMonth()];
+    const currentYear = d.getFullYear();
+
+    return [currentMonth, currentYear];
+  }
+
   render() {
     const {
       currentDate,
@@ -422,15 +481,43 @@ class ScheduleCalendar extends React.PureComponent {
       editingFormVisible,
       startDayHour,
       endDayHour,
+      showDate
     } = this.state;
 
+    const month = this.calDayAndMonth()[0];
+    const year = this.calDayAndMonth()[1];
+    const { currentViewName, leftCalenderToggle } = this.props;
+
     return (
-      <Paper>
+        <Paper style={{ display: "flex" }}>
+        {leftCalenderToggle && (
+          <div style={leftCalender.currentDate}>
+            <div style={leftCalender.date}>
+              {!showDate ? (
+                <KeyboardArrowRightIcon onClick={() => this.toggleShowDate()} />
+              ) : (
+                <KeyboardArrowDownIcon onClick={() => this.toggleShowDate()} />
+              )}
+
+              {!showDate && (
+                <div style={leftCalender.dateText}>
+                  {month} {year}
+                </div>
+              )}
+            </div>
+            {showDate && (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <CalendarPicker />
+              </LocalizationProvider>
+            )}
+          </div>
+        )}
         <Scheduler
           data={data}
         >
           <ViewState
             currentDate={currentDate}
+            currentViewName={currentViewName}
           />
           <EditingState
             onCommitChanges={this.commitChanges}
@@ -442,6 +529,7 @@ class ScheduleCalendar extends React.PureComponent {
             endDayHour={endDayHour}
           />
           <MonthView />
+          <DayView />
           <AllDayPanel />
           <EditRecurrenceMenu />
           <Appointments />
@@ -453,7 +541,6 @@ class ScheduleCalendar extends React.PureComponent {
           <Toolbar />
           <DateNavigator />
           <TodayButton />
-          <ViewSwitcher />
           <AppointmentForm
             overlayComponent={this.appointmentForm}
             visible={editingFormVisible}
@@ -515,6 +602,7 @@ const mapDispatchToProps = dispatch => {
     postEvent: async params => await dispatch(postEventData(params)),
     patchEvent: async params => await dispatch(patchEventData(params)),
     deleteEvent: async params => await dispatch(deleteEventData(params)),
+    getCalenders: async (params) => await dispatch(fetchCalendersData(params))
   }
 }
 
