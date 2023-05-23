@@ -10,23 +10,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
 import { useState } from 'react';
 
-const styles = theme => ({
+const styles = {
   button: {
     marginRight: 8,
     textTransform: 'none',
   },
-  plainButton: {
-    marginRight: 8,
-    textTransform: 'none',
-    color: theme.palette.textPrimary,
-  },
-});
+}
 
 const ActionButton = withStyles(styles)(({ classes, children, color, ...childProps }) => {
   return (
     <Button
-      className={color ? classes.button : classes.plainButton}
+      className={classes.button}
       color={color || "inherit"}
+      style={color ? undefined : {color: 'white'}} // Can't be part of the class, because it would affect primary buttons too
       {...childProps}
     >
       {children}
@@ -79,11 +75,11 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
   return [
-    <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }}>
+    <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }} key={0} >
       <MenuIcon />
     </IconButton>,
     <ActionButton
-      key={0}
+      key={1}
       onClick={handleNewMessage}
       variant='contained'
       color="primary"
@@ -92,7 +88,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("New message")}
     </ActionButton>,
     <ActionButton
-      key={1}
+      key={2}
       onClick={handleMailDelete}
       disabled={!mailsSelected}
       startIcon={<DeleteOutlineOutlined />}
@@ -100,7 +96,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Delete")}
     </ActionButton>,
     <ActionButton
-      key={2}
+      key={3}
       onClick={handleMailMove("archive")}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "success" : "secondary"}/>}
@@ -108,7 +104,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Archive")}
     </ActionButton>,
     <ActionButton
-      key={3}
+      key={4}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "error" : "secondary"}/>}
@@ -124,7 +120,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Clean")}
     </ActionButton>,
     <ActionButton
-      key={4}
+      key={6}
       onClick={handleMove}
       disabled={!mailsSelected}
       startIcon={<DriveFileMoveOutlined color={mailsSelected ? "info" : "secondary"}/>}
@@ -178,7 +174,10 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       open={Boolean(moveMenuAnchor)}
       onClose={handleMoveMenuClose}
     >
-      <MenuItem disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} /* Prevent 'select by typing' */>
+      <MenuItem disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} key={12} >
+        <TextField 
+          key={13} disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} />
+        <TextField disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} />
         <TextField
           placeholder={t("Search folders")}
           fullWidth

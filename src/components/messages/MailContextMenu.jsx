@@ -1,6 +1,6 @@
 import { withTranslation } from 'react-i18next';
 import { Menu, MenuItem} from '@mui/material';
-import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
+import { deleteMessageData, moveMessageData } from '../../actions/messages';
 import { useAppContext } from '../../azure/AppContext';
 import { useDispatch } from 'react-redux';
 
@@ -27,12 +27,6 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
     }));
   }
 
-  const handleMarkAsUnread = () => {
-    [openedMail].forEach(message => {
-      dispatch(patchMessageData({app, message, specificProps: { isRead: false }}));
-    });
-  }
-
   return (
     <Menu
       open={isOpen}
@@ -42,7 +36,6 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
     >
       <MenuItem onClick={handleMailDelete}>{t("Delete")}</MenuItem>
       <MenuItem onClick={handleMailMove("archive")}>{t("Archive")}</MenuItem>
-      <MenuItem onClick={handleMarkAsUnread}>{t("Mark as unread")}</MenuItem>
     </Menu>
   );
 };

@@ -5,11 +5,12 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { Button, IconButton, Paper, TextField } from '@mui/material';
+import withTinyMCE from './hocs/withTinyMCE';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
-import { Delete, ImportContacts } from '@mui/icons-material';
+import { Delete, ImportContacts, StarBorderOutlined, StarOutlined } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
 import { useTypeSelector } from '../store';
@@ -61,11 +62,16 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
+  const [importance, setImportance] = useState(false);
+  const [ccRecipients, setCCRecipients] = useState(initialState?.ccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [bccRecipients, setBCCRecipients] = useState(initialState?.bccRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [subject, setSubject] = useState(initialState?.subject || "");
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
+    'setBCCRecipients': setBCCRecipients,
+    'setCCRecipients': setCCRecipients
   }
 
   const handleSend = (send: boolean) => () => {
@@ -80,10 +86,21 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           address,
         },
       })),
-    }
+      ccRecipients: ccRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      bccRecipients: bccRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      importance: importance ? 'high' : 'normal',
+    };
     postMessage(app.authProvider!, message, send)
       .then(handleDraftClose);
-  }
+  };
 
   const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
     stateFuncs[stateFunc]((e.target as HTMLInputElement).value);
@@ -94,16 +111,36 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     setSubject(value);
     handleTabLabelChange(value);
   }
+  
+  const toggleImportance = () => {
+    setImportance(!importance);
+  };
 
   const handleGAB = () => {
     dispatch(setGABOpen(true));
   }
 
   useEffect(() => {
-    if(selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
-      selectedGABReceipients.map((contact: Contact) => {
+    if (selectedGABReceipients.length > 0) {
+      const selectedEmails = selectedGABReceipients.map((contact: Contact) => {
         return contact.emailAddresses ? contact.emailAddresses[0].address : ''
-      }).join(','));
+      }).join(',');
+  
+      setToRecipients((prevToRecipients) => {
+        const existingToRecipients = prevToRecipients.split(',').filter((address: string) => address.trim() !== '');
+        return existingToRecipients.concat(selectedEmails).join(',');
+      });
+  
+      setCCRecipients((prevCCRecipients) => {
+        const existingCCRecipients = prevCCRecipients.split(',').filter((address: string) => address.trim() !== '');
+        return existingCCRecipients.concat(selectedEmails).join(',');
+      });
+  
+      setBCCRecipients((prevBCCRecipients) => {
+        const existingBCCRecipients = prevBCCRecipients.split(',').filter((address: string) => address.trim() !== '');
+        return existingBCCRecipients.concat(selectedEmails).join(',');
+      });
+    }
   }, [selectedGABReceipients]);
 
   return (
@@ -132,6 +169,9 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
       </Paper>
       <Paper className={classes.tinyMceContainer}>
         <div className={classes.flexRow}>
+          <IconButton onClick={toggleImportance}>
+            {importance ? <StarOutlined /> : <StarBorderOutlined />}
+          </IconButton>
           <IconButton onClick={handleGAB}>
             <ImportContacts />
           </IconButton>
@@ -142,6 +182,21 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={toRecipients}
             fullWidth
           />
+          <TextField
+            className={classes.input}
+            label={t("CC")}
+            onChange={handleInput('setCCRecipients')}
+            value={ccRecipients}
+            fullWidth
+          />
+          <TextField
+            className={classes.input}
+            label={t("BCC")}
+            onChange={handleInput('setBCCRecipients')}
+            value={bccRecipients}
+            fullWidth
+          />
+
         </div>
         <TextField
           className={classes.input}
@@ -157,6 +212,8 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           init={{
             id: 'tinyMCE-editor',
             language: i18n.language,
+            skin: "oxide-dark",
+            content_css: "dark",
             content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
           }}
         />
@@ -165,5 +222,5 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   );
 }
 
-
+withTinyMCE(NewMessage)
 export default withStyles(styles)(NewMessage);

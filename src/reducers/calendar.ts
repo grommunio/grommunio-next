@@ -2,9 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
-import {
-  FETCH_EVENTS_DATA,
-} from '../actions/types';
+import { FETCH_USER_CALENDER,  FETCH_EVENTS_DATA} from '../actions/types';
 
 const defaultState = {
   events: [],
@@ -35,6 +33,12 @@ function calendarReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       events: action.payload ? formatEvents(action.payload) : [],
+    };
+
+  case FETCH_USER_CALENDER + "/fulfilled":
+    return {
+      ...state,
+      mails: action.payload ?? [],
     };
 
   default:

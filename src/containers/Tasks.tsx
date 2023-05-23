@@ -8,6 +8,7 @@ import { useTypeDispatch, useTypeSelector } from '../store';
 import { deleteTaskData, deleteTaskListData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
 import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
+import withTinyMCE from '../components/hocs/withTinyMCE';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
 import { Delete } from '@mui/icons-material';
@@ -164,6 +165,8 @@ function Tasks({ t, classes }: any) {
             onDirty={() => setDirty(true)}
             init={{
               height: 400,
+              skin: "oxide-dark",
+              content_css: "dark",
               content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
             }}
           />}
@@ -192,4 +195,5 @@ function Tasks({ t, classes }: any) {
   );
 }
 
+withTinyMCE(Tasks);
 export default withTranslation()(withStyles(styles)(Tasks));

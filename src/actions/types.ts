@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2022 grommunio GmbH 
 
 export const AUTH_LOGIN = 'AUTH_LOGIN';
 export const AUTH_URL = 'AUTH_URL';
@@ -12,6 +12,7 @@ export const DELETE_NOTES_DATA = 'DELETE_NOTES_DATA';
 export const FETCH_CONTACTS_DATA = 'FETCH_CONTACTS_DATA';
 
 export const FETCH_EVENTS_DATA = 'FETCH_EVENTS_DATA';
+export const FETCH_USER_CALENDER = 'FETCH_USER_CALENDER';
 export const FETCH_MAILS_DATA = 'FETCH_MAILS_DATA';
 export const FETCH_MAIL_FOLDERS_DATA = 'FETCH_MAIL_FOLDERS_DATA';
 export const FETCH_TASKS_DATA = 'FETCH_TASKS_DATA';

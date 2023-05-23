@@ -78,7 +78,6 @@ function TopBar(props: any) {
       position='fixed'
       className={classes.appbar}
       sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-
     >
       <Toolbar className={classes.toolbar}>
         <img

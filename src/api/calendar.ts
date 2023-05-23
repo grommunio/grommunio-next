@@ -59,6 +59,17 @@ export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthe
     return response.value;
   }
 }
+
+export async function getAvailableCalendars(authProvider: AuthCodeMSALBrowserAuthenticationProvider
+): Promise<Event[]> {
+  ensureClient(authProvider);
+  
+  const response: PageCollection = await graphClient!
+    .api('/me/calendars')
+    .get();
+
+  return response.value;
+}
 // </GetUserWeekCalendarSnippet>
 
 // <CreateEventSnippet>
@@ -91,4 +102,3 @@ export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticatio
     .api('/me/events/' + event)
     .delete();
 }
-

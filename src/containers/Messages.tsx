@@ -182,7 +182,27 @@ function Messages({ classes }: MessagesProps) {
   const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
   const isContextMenuOpen = Boolean(contextMenuPosition);
   const dispatch = useTypeDispatch();
-
+  
+  const sortMailFolders = (folders: MailFolder[]): MailFolder[] => {
+    return folders.sort((a, b): any => {
+      if (a.displayName === 'Inbox') {
+        return -1; // Return -1 to ensure Inbox comes first
+      } else if (b.displayName === 'Inbox') {
+        return 1; // Return 1 to ensure Inbox comes first
+      } else if (a.displayName === 'Deleted Items') {
+        return 1; // Return -1 to ensure Inbox comes first
+      } else if (b.displayName === 'Deleted Items') {
+        return -1; // Return 1 to ensure Inbox comes first
+      }
+      const aDisplayName = a.displayName;
+      const bDisplayName = b.displayName;
+      // If folders are not Inbox, sort them alphabetically
+      if(aDisplayName !=null && bDisplayName !=null){
+        return aDisplayName.localeCompare(bDisplayName)
+      }
+    });
+  };
+  
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchMessagesData({app}));
@@ -214,7 +234,7 @@ function Messages({ classes }: MessagesProps) {
     const tab = { ID: 1, label: msg.subject || '' };
     if(selectedMsg === null) copy.unshift(tab);
     else copy[0] = tab;
-    setSelectedMsg({...msg});
+    setSelectedMsg(msg);
     setMailTabs(copy);
     setMailTab(tab);
     // Set isRead
@@ -249,6 +269,9 @@ function Messages({ classes }: MessagesProps) {
       initialState: {
         subject: "RE: " + selectedMsg?.subject,
         toRecipients: selectedMsg?.toRecipients,
+        bccRecipients: selectedMsg?.bccRecipients,
+        ccRecipients: selectedMsg?.ccRecipients,
+
         body: {
           // TODO: Improve reply body (this already works really well)
           content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
@@ -350,18 +373,19 @@ function Messages({ classes }: MessagesProps) {
   return (
     <AuthenticatedView
       header={t("Messages")}
-      actions={<MailActions
+      actions={[<MailActions
+        key ={0}
         handleNewMessage={handleNewMessage}
         openedMail={selectedMsg}
         selection={checkedMessages}
         folder={selectedFolder}
         handleReply={handleReply}
         handleFoldersToggle={handleFoldersToggle}
-      />}
+      />]}
     >
       <div className={classes.content}>
         {foldersVisible && <FolderList>
-          {mailFolders.map((folder: MailFolder, idx: number) => 
+          {sortMailFolders(mailFolders).map((folder: MailFolder, idx: number) => 
             <ListItem disablePadding key={idx}>
               <ListItemButton
                 onClick={handleMailFolderClick(folder)}
@@ -427,7 +451,7 @@ function Messages({ classes }: MessagesProps) {
                 return <Hover key={key}>
                   {(hover: boolean) => <ListItemButton
                     onContextMenu={handleContextMenu(message)}
-                    selected={checked || selectedMsg?.id === message.id}
+                    selected={checked || selectedMsg === message}
                     onClick={handleMailClick(message)}
                   >
                     {hover || checkedMessages.length > 0 ? <ListItemIcon>
@@ -522,7 +546,7 @@ function Messages({ classes }: MessagesProps) {
                 initialState={tab.initialState}
                 handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)}
                 handleDraftClose={handleDraftClose(key + 1)}
-              />: null}
+              />: <></>}
             </TabPanel>
           )}
         </div>

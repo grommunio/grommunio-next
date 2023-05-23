@@ -2,21 +2,8 @@
 import * as React from 'react';
 import { styled } from '@mui/material/styles';
 import Paper from '@mui/material/Paper';
-import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import {
-  Scheduler,
-  Toolbar,
-  MonthView,
-  WeekView,
-  ViewSwitcher,
-  Appointments,
-  AppointmentTooltip,
   AppointmentForm,
-  DragDropProvider,
-  EditRecurrenceMenu,
-  AllDayPanel,
-  TodayButton,
-  DateNavigator,
 } from '@devexpress/dx-react-scheduler-material-ui';
 import { connectProps } from '@devexpress/dx-react-core';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -103,6 +90,7 @@ const StyledFab = styled(Fab)(({ theme }) => ({
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
+    
 
     this.state = {
       appointmentChanges: {},
@@ -360,6 +348,8 @@ class ScheduleCalendar extends React.PureComponent {
     this.setState({ editingAppointment: undefined, isNewAppointment: true });
   }
 
+
+
   setDeletedAppointmentId(id) {
     this.setState({ deletedAppointmentId: id });
   }
@@ -417,51 +407,12 @@ class ScheduleCalendar extends React.PureComponent {
   render() {
     const {
       currentDate,
-      data,
       confirmationVisible,
-      editingFormVisible,
       startDayHour,
-      endDayHour,
     } = this.state;
 
     return (
       <Paper>
-        <Scheduler
-          data={data}
-        >
-          <ViewState
-            currentDate={currentDate}
-          />
-          <EditingState
-            onCommitChanges={this.commitChanges}
-            onEditingAppointmentChange={this.onEditingAppointmentChange}
-            onAddedAppointmentChange={this.onAddedAppointmentChange}
-          />
-          <WeekView
-            startDayHour={startDayHour}
-            endDayHour={endDayHour}
-          />
-          <MonthView />
-          <AllDayPanel />
-          <EditRecurrenceMenu />
-          <Appointments />
-          <AppointmentTooltip
-            showOpenButton
-            showCloseButton
-            showDeleteButton
-          />
-          <Toolbar />
-          <DateNavigator />
-          <TodayButton />
-          <ViewSwitcher />
-          <AppointmentForm
-            overlayComponent={this.appointmentForm}
-            visible={editingFormVisible}
-            onVisibilityChange={this.toggleEditingFormVisibility}
-          />
-          <DragDropProvider />
-        </Scheduler>
-
         <Dialog
           open={confirmationVisible}
           onClose={this.cancelDelete}

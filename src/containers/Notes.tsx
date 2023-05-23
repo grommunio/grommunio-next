@@ -7,6 +7,7 @@ import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { Button, IconButton, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
 import { Message } from 'microsoft-graph';
+import withTinyMCE from '../components/hocs/withTinyMCE';
 import { Editor } from '@tinymce/tinymce-react';
 import { Delete } from '@mui/icons-material';
 import { withTranslation } from 'react-i18next';
@@ -121,6 +122,8 @@ function Notes({ t, classes }: any) {
               onDirty={() => setDirty(true)}
               init={{
                 width: '100%',
+                skin: "oxide-dark",
+                content_css: "dark",
                 height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
               }}
@@ -145,4 +148,5 @@ function Notes({ t, classes }: any) {
   );
 }
 
+withTinyMCE(Notes);
 export default withTranslation()(withStyles(styles)(Notes));
