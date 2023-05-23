@@ -4,11 +4,18 @@ import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
   FETCH_EVENTS_DATA,
+  FETCH_USER_CALENDARS_DATA,
 } from '../actions/types';
 
 const defaultState = {
   events: [],
+  calendar: [],
 };
+
+interface UserCalendarsData {
+  id: string;
+  name: string;
+}
 
 //TODO: Properly implement this function
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,10 +38,16 @@ function formatEvents(rawEvents: Array<Event>) {
 function calendarReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_EVENTS_DATA + "/fulfilled":
+  case `${FETCH_EVENTS_DATA}/fulfilled`:
     return {
       ...state,
       events: action.payload ? formatEvents(action.payload) : [],
+    };
+  
+  case `${FETCH_USER_CALENDARS_DATA}/fulfilled`:
+    return {
+      ...state,
+      calendar: action.payload ? action.payload.map(({id, name}: UserCalendarsData) => ({id, name})) : [],
     };
 
   default:

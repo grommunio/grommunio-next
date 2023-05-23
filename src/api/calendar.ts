@@ -61,6 +61,15 @@ export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthe
 }
 // </GetUserWeekCalendarSnippet>
 
+// Get Users available calender
+export async function getUserCalendars(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Event[]> {
+  ensureClient(authProvider);
+  const response: PageCollection = await graphClient!
+    .api('/me/calendars')
+    .get();
+  return response.value;
+}
+
 // <CreateEventSnippet>
 export async function postEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
   newEvent: Event): Promise<Event> {

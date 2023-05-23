@@ -6,9 +6,9 @@ import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
 import {
   Scheduler,
   Toolbar,
+  DayView,
   MonthView,
   WeekView,
-  ViewSwitcher,
   Appointments,
   AppointmentTooltip,
   AppointmentForm,
@@ -31,6 +31,7 @@ import Button from '@mui/material/Button';
 import Fab from '@mui/material/Fab';
 import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
+import { ViewDayOutlined, ViewWeekOutlined, DateRangeOutlined, CalendarMonthOutlined } from '@mui/icons-material';
 import TextField from '@mui/material/TextField';
 import LocationOn from '@mui/icons-material/LocationOn';
 import Notes from '@mui/icons-material/Notes';
@@ -39,6 +40,10 @@ import CalendarToday from '@mui/icons-material/CalendarToday';
 import Create from '@mui/icons-material/Create';
 import { connect } from 'react-redux';
 import { deleteEventData, patchEventData, postEventData } from '../../actions/calendar';
+import { t } from 'i18next';
+import { ButtonGroup } from '@mui/material';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 
 const PREFIX = 'Demo';
 const classes = {
@@ -100,6 +105,61 @@ const StyledFab = styled(Fab)(({ theme }) => ({
     right: theme.spacing(4),
   },
 }));
+
+export const ExternalViewSwitcher = ({ currentViewName, onChange }) => {
+  const handleButtonClick = (viewName) => {
+    onChange(viewName);
+  };
+
+  return (
+    <ButtonGroup
+      variant='outlined'
+      aria-label="Views"
+      style={{flexDirection: 'row', padding: 5, marginBottom: 10, marginLeft: 10, position: 'relative', top: 5 }}
+    >
+      <Button
+        value="Day"
+        label="Day"
+        color="primary"
+        startIcon={<ViewDayOutlined />}
+        onClick={() => handleButtonClick('Day')}
+        variant={currentViewName === 'Day' ? 'contained' : 'outlined'}
+      >
+        {t("Day")}
+      </Button>
+      <Button
+        value="Week"
+        label="Week"
+        color="primary"
+        startIcon={<ViewWeekOutlined />}
+        onClick={() => handleButtonClick('Week')}
+        variant={currentViewName === 'Week' ? 'contained' : 'outlined'}
+      >
+        {t("Week")}
+      </Button>
+      <Button
+        value="WorkWeek"
+        label="Work Week"
+        color="primary"
+        startIcon={<DateRangeOutlined />}
+        onClick={() => handleButtonClick('WorkWeek')}
+        variant={currentViewName === 'WorkWeek' ? 'contained' : 'outlined'}
+      >
+        {t("Work Week")}
+      </Button>
+      <Button
+        value="Month"
+        label="Month"
+        color="primary"
+        startIcon={<CalendarMonthOutlined />}
+        onClick={() => handleButtonClick('Month')}
+        variant={currentViewName === 'Month' ? 'contained' : 'outlined'}
+      >
+        {t("Month")}
+      </Button>
+    </ButtonGroup>
+  );
+};
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -392,15 +452,15 @@ class ScheduleCalendar extends React.PureComponent {
       const { postEvent, patchEvent, app } = this.props;
       let { data } = state;
       if (added) {
-        postEvent({event: added, app: app});
+        postEvent({ event: added, app: app });
         const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
         data = [...data, { id: startingAddedId, ...added }];
       }
       if (changed) {
         data = data.map(appointment => {
-          if(changed[appointment.id]) {
+          if (changed[appointment.id]) {
             const event = { ...appointment, ...changed[appointment.id] };
-            patchEvent({event, app: app});
+            patchEvent({ event, app: app });
             return event;
           }
           return appointment;
@@ -414,6 +474,12 @@ class ScheduleCalendar extends React.PureComponent {
     });
   }
 
+  state = {
+    date: new Date(),
+  }
+
+  onChange = date => this.setState({ date })
+
   render() {
     const {
       currentDate,
@@ -425,80 +491,98 @@ class ScheduleCalendar extends React.PureComponent {
     } = this.state;
 
     return (
-      <Paper>
-        <Scheduler
-          data={data}
-        >
-          <ViewState
-            currentDate={currentDate}
-          />
-          <EditingState
-            onCommitChanges={this.commitChanges}
-            onEditingAppointmentChange={this.onEditingAppointmentChange}
-            onAddedAppointmentChange={this.onAddedAppointmentChange}
-          />
-          <WeekView
-            startDayHour={startDayHour}
-            endDayHour={endDayHour}
-          />
-          <MonthView />
-          <AllDayPanel />
-          <EditRecurrenceMenu />
-          <Appointments />
-          <AppointmentTooltip
-            showOpenButton
-            showCloseButton
-            showDeleteButton
-          />
-          <Toolbar />
-          <DateNavigator />
-          <TodayButton />
-          <ViewSwitcher />
-          <AppointmentForm
-            overlayComponent={this.appointmentForm}
-            visible={editingFormVisible}
-            onVisibilityChange={this.toggleEditingFormVisibility}
-          />
-          <DragDropProvider />
-        </Scheduler>
+      <React.Fragment>
+        <Paper style={{ display: 'flex', flexDirection: 'row' }}>
+          <div style={{ width: 260, paddingRight: 5, paddingLeft: 5 }}>
+            {this.props.toggleSide && <Calendar
+              onChange={this.onChange}
+              value={currentDate}
+              
+            />}
+          </div>
+          <Paper>
+            <Scheduler
+              data={data}
+            >
+              <ViewState
+                currentDate={currentDate}
+                currentViewName={this.props.currentViewName}
+              />
+              <EditingState
+                onCommitChanges={this.commitChanges}
+                onEditingAppointmentChange={this.onEditingAppointmentChange}
+                onAddedAppointmentChange={this.onAddedAppointmentChange}
+              />
+              <DayView />
+              <WeekView
+                startDayHour={startDayHour}
+                endDayHour={endDayHour}
+              />
+              <WeekView
+                name='WorkWeek'
+                startDayHour={startDayHour}
+                endDayHour={endDayHour}
+                excludedDays={[0, 6]}
+              />
+              <MonthView />
+              <AllDayPanel />
+              <EditRecurrenceMenu />
+              <Appointments />
+              <AppointmentTooltip
+                showOpenButton
+                showCloseButton
+                showDeleteButton
+              />
+              <Toolbar />
+              <DateNavigator />
+              <TodayButton />
+              <AppointmentForm
+                overlayComponent={this.appointmentForm}
+                visible={editingFormVisible}
+                onVisibilityChange={this.toggleEditingFormVisibility}
+              />
+              <DragDropProvider />
+            </Scheduler>
 
-        <Dialog
-          open={confirmationVisible}
-          onClose={this.cancelDelete}
-        >
-          <DialogTitle>
-            Delete Appointment
-          </DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this appointment?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={this.toggleConfirmationVisible} color="primary" variant="outlined">
-              Cancel
-            </Button>
-            <Button onClick={this.commitDeletedAppointment} color="secondary" variant="outlined">
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+            <Dialog
+              open={confirmationVisible}
+              onClose={this.cancelDelete}
+            >
+              <DialogTitle>
+                Delete Appointment
+              </DialogTitle>
+              <DialogContent>
+                <DialogContentText>
+                  Are you sure you want to delete this appointment?
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={this.toggleConfirmationVisible} color="primary" variant="outlined">
+                  Cancel
+                </Button>
+                <Button onClick={this.commitDeletedAppointment} color="secondary" variant="outlined">
+                  Delete
+                </Button>
+              </DialogActions>
+            </Dialog>
 
-        <StyledFab
-          color="secondary"
-          className={classes.addButton}
-          onClick={() => {
-            this.setState({ editingFormVisible: true });
-            this.onEditingAppointmentChange(undefined);
-            this.onAddedAppointmentChange({
-              startDate: new Date(currentDate).setHours(startDayHour),
-              endDate: new Date(currentDate).setHours(startDayHour + 1),
-            });
-          }}
-        >
-          <AddIcon />
-        </StyledFab>
-      </Paper>
+            <StyledFab
+              color="secondary"
+              className={classes.addButton}
+              onClick={() => {
+                this.setState({ editingFormVisible: true });
+                this.onEditingAppointmentChange(undefined);
+                this.onAddedAppointmentChange({
+                  startDate: new Date(currentDate).setHours(startDayHour),
+                  endDate: new Date(currentDate).setHours(startDayHour + 1),
+                });
+              }}
+            >
+              <AddIcon />
+            </StyledFab>
+          </Paper>
+        </Paper>
+      </React.Fragment>
     );
   }
 }

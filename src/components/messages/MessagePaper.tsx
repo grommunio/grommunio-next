@@ -65,6 +65,9 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           <Typography variant="body1">
             {t("To")}: {selectedMsg.toRecipients?.map(recip => recip.emailAddress?.address).join(", ")}
           </Typography>
+          {selectedMsg.ccRecipients && selectedMsg.ccRecipients.length !== 0  && (<Typography variant="body1">
+            {t("Cc")}: {selectedMsg.ccRecipients?.map(carboncopy => carboncopy.emailAddress?.address).join(", ")}
+          </Typography>)}
         </div>
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
           <Tooltip title={t("Reply all")} placement="top">

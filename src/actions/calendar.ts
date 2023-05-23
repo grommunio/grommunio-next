@@ -5,9 +5,27 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
-import { deleteEvent, getUserWeekCalendar, patchEvent, postEvent } from "../api/calendar";
-import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA } from "./types";
+import { deleteEvent, getUserWeekCalendar, patchEvent, postEvent, getUserCalendars } from "../api/calendar";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDARS_DATA } from "./types";
 
+
+export const fetchUserCalendars = createAsyncThunk<
+  Event[],
+  AppContext
+>(
+  FETCH_USER_CALENDARS_DATA,
+  async (app: AppContext) => {
+    if (app.user) {
+      try {
+        return await getUserCalendars(app.authProvider!);
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+      }
+    }
+    return [];
+  }
+);
 
 export const fetchEventsData = createAsyncThunk<
   Event[],
