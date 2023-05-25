@@ -4,13 +4,28 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
-import { Button, IconButton, Paper, TextField, Select, InputLabel, SelectChangeEvent, FormControl, MenuItem, InputAdornment } from '@mui/material';
+import {
+  Button,
+  IconButton,
+  Paper,
+  TextField,
+  Select,
+  InputLabel,
+  SelectChangeEvent,
+  FormControl,
+  MenuItem,
+  InputAdornment,
+  ButtonGroup,
+  Backdrop,
+  Alert,
+  AlertTitle
+} from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message, Importance } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
-import { Delete, ImportContacts, Save, PriorityHigh, ArrowDownward } from '@mui/icons-material';
+import { Delete, ImportContacts, Save, PriorityHigh, ArrowDownward, HighlightOffSharp } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { setGABOpen } from '../actions/gab';
 import { useTypeSelector } from '../store';
@@ -68,9 +83,6 @@ const styles: any = (theme: any) => ({
     borderRadius: '8px',
     justifyContent: 'center',
   },
-  ccHovered: {
-    backgroundColor: '#0395f1',
-  },
 });
 
 type MessagesProps = {
@@ -89,7 +101,6 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [ccRecipients, setCcRecipients] = useState(initialState?.ccRecipients?.map(carboncopy => carboncopy.emailAddress?.address || "").join(",") || "");
   const [bccRecipients, setBccRecipients] = useState(initialState?.bccRecipients?.map(blindcarboncopy => blindcarboncopy.emailAddress?.address || "").join(",") || "");
-
   const [subject, setSubject] = useState(initialState?.subject || "");
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
@@ -100,8 +111,9 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
 
   const [isCcVisible, setIsCcVisible] = useState(false);
   const [isBccVisible, setIsBccVisible] = useState(false);
-  const [isCcHovered, setIsCcHovered] = useState(false);
-  const [isBccHovered, setIsBccHovered] = useState(false);
+  const [toFieldEmpty, setToFieldEmpty] = useState(true);
+  const [bccFieldEmpty, setBccFieldEmpty] = useState(true);
+  const [ccFieldEmpty, setCcFieldEmpty] = useState(true);
   const [selectedOption, setSelectedOption] = useState('');
   const [importance, setImportance] = useState<Importance>("normal");
 
@@ -118,11 +130,71 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   };
 
   const handleCcClick = () => {
-    setIsCcVisible(!isCcVisible);
+    setIsCcVisible(true);
   };
 
   const handleBccClick = () => {
-    setIsBccVisible(!isBccVisible);
+    setIsBccVisible(true);
+  };
+
+  const handleCcRemove = () => {
+    setIsCcVisible(false);
+  };
+
+  const handleBccRemove = () => {
+    setIsBccVisible(false);
+  };
+
+  const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+    stateFuncs[stateFunc](value);
+
+    if (value.length > 0) {
+      setToFieldEmpty(false);
+    } else {
+      setToFieldEmpty(true);
+    }
+  };
+
+  const handleInputBcc = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+    stateFuncs[stateFunc](value);
+
+    if (value.length > 0) {
+      setBccFieldEmpty(false);
+    } else {
+      setBccFieldEmpty(true);
+    }
+  };
+
+  const handleInputCc = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+    stateFuncs[stateFunc](value);
+
+    if (value.length > 0) {
+      setCcFieldEmpty(false);
+    } else {
+      setCcFieldEmpty(true);
+    }
+  };
+
+  const handleSubject = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+    setSubject(value);
+    handleTabLabelChange(value);
+  }
+
+  const [open, setOpen] = useState(false);
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleSendClick = () => {
+    if (!toFieldEmpty) {
+      return handleSend(true)();
+    } else {
+      setOpen(true);
+    }
   };
 
   const handleSend = (send: boolean) => () => {
@@ -137,30 +209,28 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           address,
         },
       })),
-      ccRecipients: ccRecipients.split(',').map((address: string) => ({
-        emailAddress: {
-          address,
-        },
-      })),
-      bccRecipients: bccRecipients.split(',').map((address: string) => ({
-        emailAddress: {
-          address,
-        },
-      })),
-      importance: importance
+      importance: importance,
+      ...(ccFieldEmpty
+        ? {}
+        : {
+          ccRecipients: ccRecipients.split(',').map((address: string) => ({
+            emailAddress: {
+              address,
+            },
+          })),
+        }),
+      ...(bccFieldEmpty
+        ? {}
+        : {
+          bccRecipients: bccRecipients.split(',').map((address: string) => ({
+            emailAddress: {
+              address,
+            },
+          })),
+        }),
     }
     postMessage(app.authProvider!, message, send)
       .then(handleDraftClose);
-  }
-
-  const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
-    stateFuncs[stateFunc]((e.target as HTMLInputElement).value);
-  }
-
-  const handleSubject = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = (e.target as HTMLInputElement).value;
-    setSubject(value);
-    handleTabLabelChange(value);
   }
 
   const handleGAB = () => {
@@ -168,7 +238,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   }
 
   useEffect(() => {
-    if(selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
+    if (selectedGABReceipients.length > 0) setToRecipients(toRecipients + (toRecipients && ",") +
       selectedGABReceipients.map((contact: Contact) => {
         return contact.emailAddresses ? contact.emailAddresses[0].address : ''
       }).join(','));
@@ -177,6 +247,15 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   return (
     <div className={classes.content}>
       <Paper className={classes.actions}>
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={open}
+        >
+          <Alert severity="info" onClose={handleClose}>
+            <AlertTitle>Error</AlertTitle>
+            Please, specify at least <strong>one recipient</strong>
+          </Alert>
+        </Backdrop>
         <Button
           onClick={handleSend(false)}
           variant='outlined'
@@ -188,7 +267,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         </Button>
         <Button
           className={classes.button}
-          onClick={handleSend(true)}
+          onClick={handleSendClick}
           variant='contained'
           color="primary"
           endIcon={<SendIcon />}
@@ -209,28 +288,10 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           </Select>
         </FormControl>
         <div className={classes.iconButtonRow}>
-          {!isCcVisible && (<div
-            className={`${classes.cc} ${isCcHovered ? classes.ccHovered : ''}`}
-            onClick={handleCcClick}
-            onMouseEnter={() => setIsCcHovered(true)}
-            onMouseLeave={() => setIsCcHovered(false)}
-          >
-            <p>
-              Cc
-            </p>
-          </div>
-          )}
-          {!isBccVisible && (<div
-            className={`${classes.cc} ${isBccHovered ? classes.ccHovered : ''}`}
-            onClick={handleBccClick}
-            onMouseEnter={() => setIsBccHovered(true)}
-            onMouseLeave={() => setIsBccHovered(false)}
-          >
-            <p>
-              Bcc
-            </p>
-          </div>
-          )}
+          <ButtonGroup variant="text" aria-label="text button group">
+            {!isCcVisible && (<Button onClick={handleCcClick} color='primary'>Cc</Button>)}
+            {!isBccVisible && (<Button onClick={handleBccClick} color='primary'>Bcc</Button>)}
+          </ButtonGroup>
           <IconButton title={t('Discard') || ""} onClick={handleDraftClose /* TODO: Prompt confirmation dialog */}>
             <Delete />
           </IconButton>
@@ -253,31 +314,53 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           </div>
           {isCcVisible && (
             <div className={classes.flexRow}>
-              <IconButton onClick={handleGAB}>
+              <IconButton>
                 <ImportContacts />
               </IconButton>
               <TextField
                 className={classes.input}
                 label={t("Cc")}
-                onChange={handleInput('setCcRecipients')}
+                onChange={handleInputCc('setCcRecipients')}
                 value={ccRecipients}
                 fullWidth
                 size='small'
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleCcRemove}>
+                        <HighlightOffSharp
+                          sx={{ fontSize: 20 }}
+                        />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
             </div>
           )}
           {isBccVisible && (
             <div className={classes.flexRow}>
-              <IconButton onClick={handleGAB}>
+              <IconButton>
                 <ImportContacts />
               </IconButton>
               <TextField
                 className={classes.input}
                 label={t("Bcc")}
-                onChange={handleInput('setBccRecipients')}
+                onChange={handleInputBcc('setBccRecipients')}
                 value={bccRecipients}
                 fullWidth
                 size='small'
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleBccRemove}>
+                        <HighlightOffSharp
+                          sx={{ fontSize: 20 }}
+                        />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
             </div>
           )}
