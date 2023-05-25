@@ -63,9 +63,14 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [subject, setSubject] = useState(initialState?.subject || "");
+  const [ccRecipients, setCcRecipients] = useState('');
+  const [bccRecipients, setBccRecipients] = useState('');
+  const [highImportance, setHighImportance] = useState(false);
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
+    'setCcRecipients': setCcRecipients,
+    'setBccRecipients': setBccRecipients,
   }
 
   const handleSend = (send: boolean) => () => {
@@ -80,6 +85,17 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           address,
         },
       })),
+      ccRecipients: ccRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      bccRecipients: bccRecipients.split(',').map((address: string) => ({
+        emailAddress: {
+          address,
+        },
+      })),
+      importance: highImportance ? 'high' : 'normal',
     }
     postMessage(app.authProvider!, message, send)
       .then(handleDraftClose);
@@ -145,11 +161,36 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         </div>
         <TextField
           className={classes.input}
+          label={t('CC')}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setCcRecipients(e.target.value)}
+          value={ccRecipients}
+          fullWidth
+        />
+        <TextField
+          className={classes.input}
+          label={t('BCC')}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setBccRecipients(e.target.value)}
+          value={bccRecipients}
+          fullWidth
+        />
+        <TextField
+          className={classes.input}
           label={t("Subject")}
           onChange={handleSubject}
           value={subject}
           fullWidth
         />
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              name="highImportance"
+              checked={highImportance}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setHighImportance(e.target.checked)}
+            />
+            High Importance
+          </label>
+        </div>
         <Editor
           tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
           onInit={(evt, editor) => editorRef.current = editor}

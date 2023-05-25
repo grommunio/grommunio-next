@@ -1,72 +1,107 @@
-import PropTypes from 'prop-types';
-import { Button, MenuItem, Menu, TextField, IconButton } from '@mui/material';
-import { withTranslation } from 'react-i18next';
-import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, DraftsOutlined, DriveFileMoveOutlined,
-  FlagOutlined, KeyboardArrowDown, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { withStyles } from '@mui/styles';
-import { useAppContext } from '../../azure/AppContext';
-import { useDispatch, useSelector } from 'react-redux';
-import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
-import { useState } from 'react';
+import PropTypes from "prop-types";
+import { Button, MenuItem, Menu, TextField, IconButton } from "@mui/material";
+import { withTranslation } from "react-i18next";
+import {
+  ArchiveOutlined,
+  CleaningServicesOutlined,
+  DeleteOutlineOutlined,
+  DraftsOutlined,
+  DriveFileMoveOutlined,
+  FlagOutlined,
+  KeyboardArrowDown,
+  MailOutlineOutlined,
+  PushPinOutlined,
+  ReplyAllOutlined,
+} from "@mui/icons-material";
+import MenuIcon from "@mui/icons-material/Menu";
+import { withStyles } from "@mui/styles";
+import { useAppContext } from "../../azure/AppContext";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  deleteMessageData,
+  moveMessageData,
+  patchMessageData,
+} from "../../actions/messages";
+import { useState } from "react";
 
-const styles = theme => ({
+const styles = (theme) => ({
   button: {
     marginRight: 8,
-    textTransform: 'none',
+    textTransform: "none",
   },
   plainButton: {
     marginRight: 8,
-    textTransform: 'none',
+    textTransform: "none",
     color: theme.palette.textPrimary,
   },
 });
 
-const ActionButton = withStyles(styles)(({ classes, children, color, ...childProps }) => {
-  return (
-    <Button
-      className={color ? classes.button : classes.plainButton}
-      color={color || "inherit"}
-      {...childProps}
-    >
-      {children}
-    </Button>
-  );
-});
+const ActionButton = withStyles(styles)(
+  ({ classes, children, color, ...childProps }) => {
+    return (
+      <Button
+        className={color ? classes.button : classes.plainButton}
+        color={color || "inherit"}
+        {...childProps}
+      >
+        {children}
+      </Button>
+    );
+  }
+);
 
-const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle }) => {
+const MailActions = ({
+  t,
+  openedMail,
+  selection,
+  handleNewMessage,
+  handleReply,
+  folder,
+  handleFoldersToggle,
+}) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
-  const { mailFolders } = useSelector(state => state.messages);
+  const { mailFolders } = useSelector((state) => state.messages);
   const dispatch = useDispatch();
   const [mailFolderFilter, setMailFolderFilter] = useState("");
   const [moveMenuAnchor, setMoveMenuAnchor] = useState(null);
 
   const handleMailDelete = () => {
-    dispatch(deleteMessageData({
-      app,
-      messages: selection.length > 0 ? selection : [openedMail],
-      // TODO: This does not work. Find way to convert non-english displayname
-      force: folder?.displayname == "Deleted items"
-    }));
-  }
+    dispatch(
+      deleteMessageData({
+        app,
+        messages: selection.length > 0 ? selection : [openedMail],
+        // TODO: This does not work. Find way to convert non-english displayname
+        force: folder?.displayname == "Deleted items",
+      })
+    );
+  };
 
-  const handleMailMove = destinationId => () => {
-    dispatch(moveMessageData({
-      app,
-      messages: selection.length > 0 ? selection : [openedMail],
-      destinationId,
-    }));
-  }
+  const handleMailMove = (destinationId) => () => {
+    dispatch(
+      moveMessageData({
+        app,
+        messages: selection.length > 0 ? selection : [openedMail],
+        destinationId,
+      })
+    );
+  };
 
   const handleReadToggle = () => {
-    (selection.length > 0 ? selection : [openedMail]).forEach(message => {
-      dispatch(patchMessageData({app, message, specificProps: { isRead: !message.isRead }}));
+    (selection.length > 0 ? selection : [openedMail]).forEach((message) => {
+      dispatch(
+        patchMessageData({
+          app,
+          message,
+          specificProps: { isRead: !message.isRead },
+        })
+      );
     });
-  }
+  };
 
-  const handleClean = () => window.alert("Action cannot be performed on this mailbox");
+  const handleClean = () =>
+    window.alert("Action cannot be performed on this mailbox");
 
   const handleMove = (event) => {
     setMoveMenuAnchor(event.currentTarget);
@@ -76,7 +111,8 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
     setMoveMenuAnchor(null);
   };
 
-  const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
+  const handleFolderFilter = (e) =>
+    setMailFolderFilter(e.target.value.toLowerCase());
 
   return [
     <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }}>
@@ -85,7 +121,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
     <ActionButton
       key={0}
       onClick={handleNewMessage}
-      variant='contained'
+      variant="contained"
       color="primary"
       startIcon={<MailOutlineOutlined />}
     >
@@ -103,7 +139,9 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       key={2}
       onClick={handleMailMove("archive")}
       disabled={!mailsSelected}
-      startIcon={<ArchiveOutlined color={mailsSelected ? "success" : "secondary"}/>}
+      startIcon={
+        <ArchiveOutlined color={mailsSelected ? "success" : "secondary"} />
+      }
     >
       {t("Archive")}
     </ActionButton>,
@@ -111,7 +149,9 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       key={3}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
-      startIcon={<ArchiveOutlined color={mailsSelected ? "error" : "secondary"}/>}
+      startIcon={
+        <ArchiveOutlined color={mailsSelected ? "error" : "secondary"} />
+      }
     >
       {t("Report")}
     </ActionButton>,
@@ -127,7 +167,9 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       key={4}
       onClick={handleMove}
       disabled={!mailsSelected}
-      startIcon={<DriveFileMoveOutlined color={mailsSelected ? "info" : "secondary"}/>}
+      startIcon={
+        <DriveFileMoveOutlined color={mailsSelected ? "info" : "secondary"} />
+      }
       endIcon={<KeyboardArrowDown />}
     >
       {t("Move")}
@@ -135,8 +177,13 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
     <ActionButton
       key={5}
       onClick={handleReply}
-      disabled={selection.length > 1 || !openedMail /* TODO: this is still a bit buggy */} 
-      startIcon={<ReplyAllOutlined color={mailsSelected ? "primary" : "secondary"}/>}
+      disabled={
+        selection.length > 1 ||
+        !openedMail /* TODO: this is still a bit buggy */
+      }
+      startIcon={
+        <ReplyAllOutlined color={mailsSelected ? "primary" : "secondary"} />
+      }
     >
       {t("Reply all")}
     </ActionButton>,
@@ -160,7 +207,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       key={8}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
-      startIcon={<FlagOutlined color={mailsSelected ? "error" : "secondary"}/>}
+      startIcon={<FlagOutlined color={mailsSelected ? "error" : "secondary"} />}
     >
       {t("Flag")}
     </ActionButton>,
@@ -168,7 +215,9 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       key={9}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
-      startIcon={<PushPinOutlined color={mailsSelected ? "info" : "secondary"}/>}
+      startIcon={
+        <PushPinOutlined color={mailsSelected ? "info" : "secondary"} />
+      }
     >
       {t("Pin")}
     </ActionButton>,
@@ -178,26 +227,32 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       open={Boolean(moveMenuAnchor)}
       onClose={handleMoveMenuClose}
     >
-      <MenuItem disableRipple disableTouchRipple onKeyDown={(e) => e.stopPropagation()} /* Prevent 'select by typing' */>
+      <MenuItem
+        disableRipple
+        disableTouchRipple
+        onKeyDown={(e) => e.stopPropagation()} /* Prevent 'select by typing' */
+      >
         <TextField
           placeholder={t("Search folders")}
           fullWidth
-          variant='standard'
+          variant="standard"
           onChange={handleFolderFilter}
           value={mailFolderFilter}
         />
       </MenuItem>
-      {(mailFolderFilter ? mailFolders.filter(f => f.displayName.toLowerCase().includes(mailFolderFilter)) : mailFolders).map((mailFolder, key) =>
-        <MenuItem
-          key={key}
-          onClick={handleMailMove(mailFolder.id)}
-        >
+      {(mailFolderFilter
+        ? mailFolders.filter((f) =>
+            f.displayName.toLowerCase().includes(mailFolderFilter)
+          )
+        : mailFolders
+      ).map((mailFolder, key) => (
+        <MenuItem key={key} onClick={handleMailMove(mailFolder.id)}>
           {mailFolder.displayName}
         </MenuItem>
-      )}
-    </Menu>
+      ))}
+    </Menu>,
   ];
-}
+};
 
 MailActions.propTypes = {
   t: PropTypes.func.isRequired,

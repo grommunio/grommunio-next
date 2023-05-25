@@ -4,11 +4,18 @@ import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
   FETCH_EVENTS_DATA,
+  FETCH_CALENDARS_REQUEST,
+  FETCH_CALENDARS_SUCCESS,
+  FETCH_CALENDARS_FAILURE,
 } from '../actions/types';
 
 const defaultState = {
   events: [],
+  calendars: [],
+  loading: false,
+  error: null,
 };
+
 
 //TODO: Properly implement this function
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -36,7 +43,24 @@ function calendarReducer(state = defaultState, action: AnyAction) {
       ...state,
       events: action.payload ? formatEvents(action.payload) : [],
     };
-
+  case FETCH_CALENDARS_REQUEST:
+    return {
+      ...state,
+      loading: true,
+      error: null,
+    };
+  case FETCH_CALENDARS_SUCCESS:
+    return {
+      ...state,
+      loading: false,
+      calendars: action.payload,
+    };
+  case FETCH_CALENDARS_FAILURE:
+    return {
+      ...state,
+      loading: false,
+      error: action.error,
+    };
   default:
     return state;
   }
