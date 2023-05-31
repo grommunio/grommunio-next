@@ -5,99 +5,131 @@ import { Forward, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
-import { Editor } from '@tinymce/tinymce-react';
+import { Editor } from "@tinymce/tinymce-react";
 import { useTranslation } from "react-i18next";
 import { useRef } from "react";
+import "../../App.css";
 
 const styles: any = {
   root: {
-    display: 'flex',
+    display: "flex",
     flex: 1,
     padding: 16,
   },
   tinyMceContainer: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     flex: 1,
   },
   mailActionsContainer: {
-    display: 'flex',
+    display: "flex",
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   header: {
-    display: 'flex',
-    margin: '4px 0 8px 0',
+    display: "flex",
+    margin: "4px 0 8px 0",
+    background:'blue'
   },
   flexRow: {
-    display: 'flex',
+    display: "flex",
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent:"center",
+    background:"black",
+    overflow:"hidden"
   },
   avatarContainer: {
     marginRight: 16,
   },
-}
+};
 
 type MessageProps = {
   classes: any;
-  selectedMsg: Message | null,
-  handleForward: () => void,
-  handleReply: () => void,
-}
+  selectedMsg: Message | null;
+  handleForward: () => void;
+  handleReply: () => void;
+};
 
-function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: MessageProps) {
+function MessagePaper({
+  classes,
+  handleForward,
+  handleReply,
+  selectedMsg,
+}: MessageProps) {
   const { t } = useTranslation();
   const editorRef = useRef({});
-  const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
-  return <Paper className={classes.root}>
-    <div className={classes.avatarContainer}>
-      <Avatar sx={{ width: 48, height: 48 }}>
-        <Typography variant='body1'>{names[0][0]}{names[names.length - 1][0]}</Typography>
-      </Avatar>
-    </div>
-    <div className={classes.tinyMceContainer}>
-      {selectedMsg && <div className={classes.header}>
-        <div>
+  const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [
+    " ",
+    " ",
+  ];
+  return (
+    <Paper className={classes.root}>
+      <div className={classes.avatarContainer}>
+        <Avatar sx={{ width: 48, height: 48 }}>
           <Typography variant="body1">
-            {selectedMsg.from?.emailAddress?.name || ''} &lt;{selectedMsg.from?.emailAddress?.address || ''}&gt;
+            {names[0][0]}
+            {names[names.length - 1][0]}
           </Typography>
-          <Typography variant="body1">
-            {t("To")}: {selectedMsg.toRecipients?.map(recip => recip.emailAddress?.address).join(", ")}
-          </Typography>
-        </div>
-        <div id="mailActionsContainer" className={classes.mailActionsContainer}>
-          <Tooltip title={t("Reply all")} placement="top">
-            <IconButton onClick={handleReply}>
-              <ReplyAll color="primary"/>
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t("Forward")} placement="top">
-            <IconButton onClick={handleForward}>
-              <Forward color="primary"/>
-            </IconButton>
-          </Tooltip>
-        </div>
-      </div>}
-      {selectedMsg?.body?.content && <div className={classes.flexRow}>
-        <Editor
-          tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-          onInit={(evt, editor) => editorRef.current = editor}
-          initialValue={selectedMsg?.body?.content}
-          disabled
-          init={{
-            disabled: true,
-            menubar: false,
-            readonly: true,
-            toolbar: '',
-            plugins: ['wordcount'],
-            width: '100%',
-            height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
-          }}
-        /></div>}
-    </div>
-  </Paper>
-  ;
+        </Avatar>
+      </div>
+      <div className={classes.tinyMceContainer}>
+        {selectedMsg && (
+          <div className={classes.header}>
+            <div>
+              <Typography variant="body1">
+                {selectedMsg.from?.emailAddress?.name || ""} &lt;
+                {selectedMsg.from?.emailAddress?.address || ""}&gt;
+              </Typography>
+              <Typography variant="body1">
+                {t("To")}:{" "}
+                {selectedMsg.toRecipients
+                  ?.map((recip) => recip.emailAddress?.address)
+                  .join(", ")}
+              </Typography>
+            </div>
+            <div
+              id="mailActionsContainer"
+              className={classes.mailActionsContainer}
+            >
+              <Tooltip title={t("Reply all")} placement="top">
+                <IconButton onClick={handleReply}>
+                  <ReplyAll color="primary" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t("Forward")} placement="top">
+                <IconButton onClick={handleForward}>
+                  <Forward color="primary" />
+                </IconButton>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+        {selectedMsg?.body?.content && (
+          <div className={classes.flexRow}>
+            <Editor
+              tinymceScriptSrc={
+                process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
+              }
+              onInit={(evt, editor) => (editorRef.current = editor)}
+              initialValue={selectedMsg?.body?.content}
+              disabled
+              init={{
+                disabled: true,
+                menubar: false,
+                readonly: true,
+                toolbar: "",
+                content_css: "../../App.css",
+                plugins: ["wordcount"],
+                width: "100%",
+                height: "100%", // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </Paper>
+  );
 }
 
 export default withStyles(styles)(MessagePaper);

@@ -36,3 +36,7 @@
     transform: rotate(360deg);
   }
 }
+
+.tox-tinymce {
+  background-color: #000 !important;
+}
