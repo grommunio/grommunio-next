@@ -2,7 +2,6 @@
 import * as React from "react";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
-import Grid from "@mui/material/Grid";
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { ViewState, EditingState } from "@devexpress/dx-react-scheduler";
 import {
@@ -111,9 +110,6 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   },
 }));
 
-const StyledTable = styled(MonthView)(({ theme }) => ({
-  
-}))
 
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
@@ -460,48 +456,39 @@ class ScheduleCalendar extends React.PureComponent {
 
     return (
       <Paper sx={{flex: 1}}>
-        <Grid container spacing={2} height="100%">
-          {
-            this.props.showSideBar && (
-              <Grid item xs={3}>
-                <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <DateCalendar />
-                </LocalizationProvider>
-                <hr />
-                <UserCalenders data={this.props.calendar} />
-              </Grid>
-            )
-          }
-
-          <Grid item xs={this.props.showSideBar ? 9 : 12}>
-            <Scheduler data={data}>
-              <ViewState currentDate={currentDate} currentViewName={this.props.calenderView} />
-              <EditingState
-                onCommitChanges={this.commitChanges}
-                onEditingAppointmentChange={this.onEditingAppointmentChange}
-                onAddedAppointmentChange={this.onAddedAppointmentChange}
-              />
-              <DayView />
-              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} />
-              <StyledTable>
-                <MonthView />
-              </StyledTable>
-              <AllDayPanel />
-              <EditRecurrenceMenu />
-              <Appointments />
-              <AppointmentTooltip showOpenButton showCloseButton showDeleteButton />
-              <Toolbar />
-              <DateNavigator />
-              <TodayButton />
-              <AppointmentForm
-                overlayComponent={this.appointmentForm}
-                visible={editingFormVisible}
-                onVisibilityChange={this.toggleEditingFormVisibility}
-              />
-              <DragDropProvider />
-            </Scheduler>
-          </Grid>
-        </Grid>
+        <div style={{ display: 'flex' }}>
+          {this.props.showSideBar && <div>
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <DateCalendar />
+            </LocalizationProvider>
+            <hr />
+            <UserCalenders data={this.props.calendar} />
+          </div>}
+          <Scheduler data={data}>
+            <ViewState currentDate={currentDate} currentViewName={this.props.calenderView} />
+            <EditingState
+              onCommitChanges={this.commitChanges}
+              onEditingAppointmentChange={this.onEditingAppointmentChange}
+              onAddedAppointmentChange={this.onAddedAppointmentChange}
+            />
+            <DayView />
+            <WeekView startDayHour={startDayHour} endDayHour={endDayHour} />
+            <MonthView />
+            <AllDayPanel />
+            <EditRecurrenceMenu />
+            <Appointments />
+            <AppointmentTooltip showOpenButton showCloseButton showDeleteButton />
+            <Toolbar />
+            <DateNavigator />
+            <TodayButton />
+            <AppointmentForm
+              overlayComponent={this.appointmentForm}
+              visible={editingFormVisible}
+              onVisibilityChange={this.toggleEditingFormVisibility}
+            />
+            <DragDropProvider />
+          </Scheduler>
+        </div>
 
         <Dialog open={confirmationVisible} onClose={this.cancelDelete}>
           <DialogTitle>Delete Appointment</DialogTitle>

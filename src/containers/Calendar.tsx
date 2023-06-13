@@ -38,18 +38,18 @@ function Calendar({ t }: any) {
         <IconButton onClick={() => SetShowCalenderSidebar(!showCalenderSidebar)}>
           <HorizontalSplitIcon />
         </IconButton>,
-        <Button key={0} variant='contained' color="primary">
+        <Button sx={{ marginX: 1 }} key={0} variant='contained' color="primary">
           {"New event"}
         </Button>,
-        <IconButton onClick={() => setCalenderView("Day")}>
-          <ViewDayIcon /> Day
-        </IconButton>,
-        <IconButton onClick={() => setCalenderView("Week")}>
-          <DateRangeIcon /> Week
-        </IconButton>,
-        <IconButton onClick={() => setCalenderView("Month")}>
-          <CalendarMonthIcon /> Month
-        </IconButton>,
+        <Button onClick={() => setCalenderView("Day")} startIcon={<ViewDayIcon />}>
+          Day
+        </Button>,
+        <Button onClick={() => setCalenderView("Week")} startIcon={<DateRangeIcon />}>
+          Week
+        </Button>,
+        <Button onClick={() => setCalenderView("Month")} startIcon={<CalendarMonthIcon />}>
+          Month
+        </Button>,
       ]}
     >
       <ScheduleCalendar app={app} calenderView={calenderView} showSideBar={showCalenderSidebar} />
