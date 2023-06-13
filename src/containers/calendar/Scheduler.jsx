@@ -1,14 +1,16 @@
 /* eslint-disable max-classes-per-file */
-import * as React from 'react';
-import { styled } from '@mui/material/styles';
-import Paper from '@mui/material/Paper';
-import { ViewState, EditingState } from '@devexpress/dx-react-scheduler';
+import * as React from "react";
+import { styled } from "@mui/material/styles";
+import Paper from "@mui/material/Paper";
+import Grid from "@mui/material/Grid";
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+import { ViewState, EditingState } from "@devexpress/dx-react-scheduler";
 import {
   Scheduler,
   Toolbar,
+  DayView,
   MonthView,
   WeekView,
-  ViewSwitcher,
   Appointments,
   AppointmentTooltip,
   AppointmentForm,
@@ -17,30 +19,37 @@ import {
   AllDayPanel,
   TodayButton,
   DateNavigator,
-} from '@devexpress/dx-react-scheduler-material-ui';
-import { connectProps } from '@devexpress/dx-react-core';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import Fab from '@mui/material/Fab';
-import IconButton from '@mui/material/IconButton';
-import AddIcon from '@mui/icons-material/Add';
-import TextField from '@mui/material/TextField';
-import LocationOn from '@mui/icons-material/LocationOn';
-import Notes from '@mui/icons-material/Notes';
-import Close from '@mui/icons-material/Close';
-import CalendarToday from '@mui/icons-material/CalendarToday';
-import Create from '@mui/icons-material/Create';
-import { connect } from 'react-redux';
-import { deleteEventData, patchEventData, postEventData } from '../../actions/calendar';
+} from "@devexpress/dx-react-scheduler-material-ui";
+import { connectProps } from "@devexpress/dx-react-core";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
+import Fab from "@mui/material/Fab";
+import IconButton from "@mui/material/IconButton";
+import AddIcon from "@mui/icons-material/Add";
+import TextField from "@mui/material/TextField";
+import LocationOn from "@mui/icons-material/LocationOn";
+import Notes from "@mui/icons-material/Notes";
+import Close from "@mui/icons-material/Close";
+import CalendarToday from "@mui/icons-material/CalendarToday";
+import Create from "@mui/icons-material/Create";
+import { connect } from "react-redux";
+import {
+  deleteEventData,
+  patchEventData,
+  postEventData,
+  fetchUserCalenders,
+} from "../../actions/calendar";
+import { Box, ListItemButton, ListItemText } from "@mui/material";
+import { KeyboardArrowDown } from "@mui/icons-material";
 
-const PREFIX = 'Demo';
+const PREFIX = "Demo";
 const classes = {
   content: `${PREFIX}-content`,
   header: `${PREFIX}-header`,
@@ -54,36 +63,36 @@ const classes = {
   addButton: `${PREFIX}-addButton`,
 };
 
-const StyledDiv = styled('div')(({ theme }) => ({
+const StyledDiv = styled("div")(({ theme }) => ({
   [`& .${classes.icon}`]: {
     margin: theme.spacing(2, 0),
     marginRight: theme.spacing(2),
   },
   [`& .${classes.header}`]: {
-    overflow: 'hidden',
+    overflow: "hidden",
     paddingTop: theme.spacing(0.5),
   },
   [`& .${classes.textField}`]: {
-    width: '100%',
+    width: "100%",
   },
   [`& .${classes.content}`]: {
     padding: theme.spacing(2),
     paddingTop: 0,
   },
   [`& .${classes.closeButton}`]: {
-    float: 'right',
+    float: "right",
   },
   [`& .${classes.picker}`]: {
     margin: theme.spacing(2),
   },
   [`& .${classes.wrapper}`]: {
-    display: 'flex',
-    justifyContent: 'space-between',
+    display: "flex",
+    justifyContent: "space-between",
     padding: theme.spacing(1, 0),
   },
   [`& .${classes.buttonGroup}`]: {
-    display: 'flex',
-    justifyContent: 'flex-end',
+    display: "flex",
+    justifyContent: "flex-end",
     padding: theme.spacing(0, 2),
   },
   [`& .${classes.button}`]: {
@@ -93,13 +102,19 @@ const StyledDiv = styled('div')(({ theme }) => ({
     display: "flex",
   },
 }));
+
 const StyledFab = styled(Fab)(({ theme }) => ({
   [`&.${classes.addButton}`]: {
-    position: 'absolute',
+    position: "absolute",
     bottom: theme.spacing(3),
     right: theme.spacing(4),
   },
 }));
+
+const StyledTable = styled(MonthView)(({ theme }) => ({
+  
+}))
+
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -137,9 +152,9 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       ...this.getAppointmentData(),
       ...this.getAppointmentChanges(),
     };
-    if (type === 'deleted') {
+    if (type === "deleted") {
       commitChanges({ [type]: appointment.id });
-    } else if (type === 'changed') {
+    } else if (type === "changed") {
       commitChanges({ [type]: { [appointment.id]: appointment } });
     } else {
       commitChanges({ [type]: appointment });
@@ -165,30 +180,37 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       ...appointmentChanges,
     };
     const isNewAppointment = appointmentData.id === undefined;
-    const applyChanges = () => this.commitAppointment(isNewAppointment ? 'added' : 'changed');
+    const applyChanges = () =>
+      this.commitAppointment(isNewAppointment ? "added" : "changed");
 
-    const textEditorProps = field => ({
-      variant: 'outlined',
-      onChange: ({ target: change }) => this.changeAppointment({
-        field: [field], changes: change.value,
-      }),
-      value: displayAppointmentData[field] || '',
+    const textEditorProps = (field) => ({
+      variant: "outlined",
+      onChange: ({ target: change }) =>
+        this.changeAppointment({
+          field: [field],
+          changes: change.value,
+        }),
+      value: displayAppointmentData[field] || "",
       label: field[0].toUpperCase() + field.slice(1),
       className: classes.textField,
     });
 
-    const pickerEditorProps = field => ({
+    const pickerEditorProps = (field) => ({
       // keyboard: true,
       value: displayAppointmentData[field],
-      onChange: date => this.changeAppointment({
-        field: [field], changes: date ? date.toDate() : new Date(displayAppointmentData[field]),
-      }),
+      onChange: (date) =>
+        this.changeAppointment({
+          field: [field],
+          changes: date
+            ? date.toDate()
+            : new Date(displayAppointmentData[field]),
+        }),
       ampm: false,
-      inputFormat: 'DD/MM/YYYY HH:mm',
+      inputFormat: "DD/MM/YYYY HH:mm",
       onError: () => null,
     });
-    const startDatePickerProps = pickerEditorProps('startDate');
-    const endDatePickerProps = pickerEditorProps('endDate');
+    const startDatePickerProps = pickerEditorProps("startDate");
+    const endDatePickerProps = pickerEditorProps("endDate");
     const cancelChanges = () => {
       this.setState({
         appointmentChanges: {},
@@ -206,16 +228,18 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       >
         <StyledDiv>
           <div className={classes.header}>
-            <IconButton className={classes.closeButton} onClick={cancelChanges} size="large">
+            <IconButton
+              className={classes.closeButton}
+              onClick={cancelChanges}
+              size="large"
+            >
               <Close color="action" />
             </IconButton>
           </div>
           <div className={classes.content}>
             <div className={classes.wrapper}>
               <Create className={classes.icon} color="action" />
-              <TextField
-                {...textEditorProps('subject')}
-              />
+              <TextField {...textEditorProps("subject")} />
             </div>
             <div className={classes.wrapper}>
               <CalendarToday className={classes.icon} color="action" />
@@ -223,16 +247,20 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 <div className={classes.flexRow}>
                   <DateTimePicker
                     label="Start Date"
-                    renderInput={
-                      props => <TextField sx={{ mr: 2 }} className={classes.picker} {...props} />
-                    }
+                    renderInput={(props) => (
+                      <TextField
+                        sx={{ mr: 2 }}
+                        className={classes.picker}
+                        {...props}
+                      />
+                    )}
                     {...startDatePickerProps}
                   />
                   <DateTimePicker
                     label="End Date"
-                    renderInput={
-                      props => <TextField className={classes.picker} {...props} />
-                    }
+                    renderInput={(props) => (
+                      <TextField className={classes.picker} {...props} />
+                    )}
                     {...endDatePickerProps}
                   />
                 </div>
@@ -240,17 +268,11 @@ class AppointmentFormContainerBasic extends React.PureComponent {
             </div>
             <div className={classes.wrapper}>
               <LocationOn className={classes.icon} color="action" />
-              <TextField
-                {...textEditorProps('location')}
-              />
+              <TextField {...textEditorProps("location")} />
             </div>
             <div className={classes.wrapper}>
               <Notes className={classes.icon} color="action" />
-              <TextField
-                {...textEditorProps('notes')}
-                multiline
-                rows="6"
-              />
+              <TextField {...textEditorProps("notes")} multiline rows="6" />
             </div>
           </div>
           <div className={classes.buttonGroup}>
@@ -261,7 +283,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 className={classes.button}
                 onClick={() => {
                   visibleChange();
-                  this.commitAppointment('deleted');
+                  this.commitAppointment("deleted");
                 }}
               >
                 Delete
@@ -276,7 +298,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 applyChanges();
               }}
             >
-              {isNewAppointment ? 'Create' : 'Save'}
+              {isNewAppointment ? "Create" : "Save"}
             </Button>
           </div>
         </StyledDiv>
@@ -303,10 +325,12 @@ class ScheduleCalendar extends React.PureComponent {
 
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
     this.commitDeletedAppointment = this.commitDeletedAppointment.bind(this);
-    this.toggleEditingFormVisibility = this.toggleEditingFormVisibility.bind(this);
+    this.toggleEditingFormVisibility =
+      this.toggleEditingFormVisibility.bind(this);
 
     this.commitChanges = this.commitChanges.bind(this);
-    this.onEditingAppointmentChange = this.onEditingAppointmentChange.bind(this);
+    this.onEditingAppointmentChange =
+      this.onEditingAppointmentChange.bind(this);
     this.onAddedAppointmentChange = this.onAddedAppointmentChange.bind(this);
     this.appointmentForm = connectProps(AppointmentFormContainerBasic, () => {
       const {
@@ -318,9 +342,11 @@ class ScheduleCalendar extends React.PureComponent {
         previousAppointment,
       } = this.state;
 
-      const currentAppointment = data
-        .filter(appointment => editingAppointment && appointment.id === editingAppointment.id)[0]
-        || addedAppointment;
+      const currentAppointment =
+        data.filter(
+          (appointment) =>
+            editingAppointment && appointment.id === editingAppointment.id
+        )[0] || addedAppointment;
       const cancelAppointment = () => {
         if (isNewAppointment) {
           this.setState({
@@ -343,6 +369,11 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidUpdate() {
     this.appointmentForm.update();
+  }
+
+  componentDidMount() {
+    const { fetchUserCalenders, app } = this.props;
+    fetchUserCalenders(app)
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -379,9 +410,11 @@ class ScheduleCalendar extends React.PureComponent {
   commitDeletedAppointment() {
     this.setState((state) => {
       const { data, deletedAppointmentId } = state;
-      const nextData = data.filter(appointment => appointment.id !== deletedAppointmentId);
+      const nextData = data.filter(
+        (appointment) => appointment.id !== deletedAppointmentId
+      );
       const { deleteEvent, app } = this.props;
-      deleteEvent({eventId: deletedAppointmentId, app})
+      deleteEvent({ eventId: deletedAppointmentId, app });
       return { data: nextData, deletedAppointmentId: null };
     });
     this.toggleConfirmationVisible();
@@ -392,15 +425,16 @@ class ScheduleCalendar extends React.PureComponent {
       const { postEvent, patchEvent, app } = this.props;
       let { data } = state;
       if (added) {
-        postEvent({event: added, app: app});
-        const startingAddedId = data.length > 0 ? data[data.length - 1].id + 1 : 0;
+        postEvent({ event: added, app: app });
+        const startingAddedId =
+          data.length > 0 ? data[data.length - 1].id + 1 : 0;
         data = [...data, { id: startingAddedId, ...added }];
       }
       if (changed) {
-        data = data.map(appointment => {
-          if(changed[appointment.id]) {
+        data = data.map((appointment) => {
+          if (changed[appointment.id]) {
             const event = { ...appointment, ...changed[appointment.id] };
-            patchEvent({event, app: app});
+            patchEvent({ event, app: app });
             return event;
           }
           return appointment;
@@ -425,60 +459,70 @@ class ScheduleCalendar extends React.PureComponent {
     } = this.state;
 
     return (
-      <Paper>
-        <Scheduler
-          data={data}
-        >
-          <ViewState
-            currentDate={currentDate}
-          />
-          <EditingState
-            onCommitChanges={this.commitChanges}
-            onEditingAppointmentChange={this.onEditingAppointmentChange}
-            onAddedAppointmentChange={this.onAddedAppointmentChange}
-          />
-          <WeekView
-            startDayHour={startDayHour}
-            endDayHour={endDayHour}
-          />
-          <MonthView />
-          <AllDayPanel />
-          <EditRecurrenceMenu />
-          <Appointments />
-          <AppointmentTooltip
-            showOpenButton
-            showCloseButton
-            showDeleteButton
-          />
-          <Toolbar />
-          <DateNavigator />
-          <TodayButton />
-          <ViewSwitcher />
-          <AppointmentForm
-            overlayComponent={this.appointmentForm}
-            visible={editingFormVisible}
-            onVisibilityChange={this.toggleEditingFormVisibility}
-          />
-          <DragDropProvider />
-        </Scheduler>
+      <Paper sx={{flex: 1}}>
+        <Grid container spacing={2} height="100%">
+          {
+            this.props.showSideBar && (
+              <Grid item xs={3}>
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <DateCalendar />
+                </LocalizationProvider>
+                <hr />
+                <UserCalenders data={this.props.calendar} />
+              </Grid>
+            )
+          }
 
-        <Dialog
-          open={confirmationVisible}
-          onClose={this.cancelDelete}
-        >
-          <DialogTitle>
-            Delete Appointment
-          </DialogTitle>
+          <Grid item xs={this.props.showSideBar ? 9 : 12}>
+            <Scheduler data={data}>
+              <ViewState currentDate={currentDate} currentViewName={this.props.calenderView} />
+              <EditingState
+                onCommitChanges={this.commitChanges}
+                onEditingAppointmentChange={this.onEditingAppointmentChange}
+                onAddedAppointmentChange={this.onAddedAppointmentChange}
+              />
+              <DayView />
+              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} />
+              <StyledTable>
+                <MonthView />
+              </StyledTable>
+              <AllDayPanel />
+              <EditRecurrenceMenu />
+              <Appointments />
+              <AppointmentTooltip showOpenButton showCloseButton showDeleteButton />
+              <Toolbar />
+              <DateNavigator />
+              <TodayButton />
+              <AppointmentForm
+                overlayComponent={this.appointmentForm}
+                visible={editingFormVisible}
+                onVisibilityChange={this.toggleEditingFormVisibility}
+              />
+              <DragDropProvider />
+            </Scheduler>
+          </Grid>
+        </Grid>
+
+        <Dialog open={confirmationVisible} onClose={this.cancelDelete}>
+          <DialogTitle>Delete Appointment</DialogTitle>
           <DialogContent>
             <DialogContentText>
               Are you sure you want to delete this appointment?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.toggleConfirmationVisible} color="primary" variant="outlined">
+            <Button
+              onClick={this.toggleConfirmationVisible}
+              color="primary"
+              variant="outlined"
+            >
               Cancel
             </Button>
-            <Button onClick={this.commitDeletedAppointment} color="secondary" variant="outlined">
+            <Button
+              onClick={this.commitDeletedAppointment}
+              color="secondary"
+              variant="outlined"
+            >
               Delete
             </Button>
           </DialogActions>
@@ -503,19 +547,42 @@ class ScheduleCalendar extends React.PureComponent {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   const { calendar } = state;
   return {
     events: calendar.events,
-  }
+    calendar: calendar.calendar,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    postEvent: async (params) => await dispatch(postEventData(params)),
+    patchEvent: async (params) => await dispatch(patchEventData(params)),
+    deleteEvent: async (params) => await dispatch(deleteEventData(params)),
+    fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
+  };
+};
+
+
+const UserCalenders = ({data}) => {
+  const [open, setOpen] = React.useState(true);
+
+  return (
+    <Box sx={{ pb: open ? 2 : 0 }}>
+      <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
+        <KeyboardArrowDown sx={{ mr: -1, transform: open ? 'rotate(0)' : 'rotate(-90deg)', transition: '0.2s' }} />
+        <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
+      </ListItemButton>
+      {open &&
+        data?.map((item) => (
+          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }}>
+            <ListItemText primary={item.name} primaryTypographyProps={{ml: 2}} />
+          </ListItemButton>
+        ))}
+    </Box>
+  )
 }
 
-const mapDispatchToProps = dispatch => {
-  return {
-    postEvent: async params => await dispatch(postEventData(params)),
-    patchEvent: async params => await dispatch(patchEventData(params)),
-    deleteEvent: async params => await dispatch(deleteEventData(params)),
-  }
-}
 
 export default connect(mapStateToProps, mapDispatchToProps)(ScheduleCalendar);

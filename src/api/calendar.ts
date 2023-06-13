@@ -92,3 +92,8 @@ export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticatio
     .delete();
 }
 
+export async function getUserCalendar(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Event[]> {
+  ensureClient(authProvider);
+  const response: PageCollection = await graphClient!.api('/me/calendars').get();
+  return response.value;
+}
