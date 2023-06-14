@@ -2,13 +2,13 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import React from 'react';
-import { Divider, FormControl, Grid, TextField, Typography } from '@mui/material';
+import { Divider, Grid, Paper, TextField, Typography } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { withTranslation } from 'react-i18next';
 
 const styles = (theme: any) => ({
-  form: {
-    width: '100%',
+  paper: {
+    padding: 16,
   },
   input: {
     margin: theme.spacing(1),
@@ -49,7 +49,7 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
   });
   
   return (
-    <FormControl className={classes.form}>
+    <Paper className={classes.paper}>
       <div className={classes.flexRow}>
         <Typography variant="h6">{t('Name')}</Typography>
       </div>
@@ -130,12 +130,14 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
         </Grid>
       </Grid>
       <Divider className={classes.divider}/>
-      <TextField
-        {...tfProps("Comment", 'personalNotes')}
-        multiline
-        rows={4}
-      />
-    </FormControl>
+      <Grid item xs={12} className={classes.gridItem}>
+        <TextField
+          {...tfProps("Comment", 'personalNotes')}
+          multiline
+          rows={4}
+        />
+      </Grid>
+    </Paper>
   );
 }
 

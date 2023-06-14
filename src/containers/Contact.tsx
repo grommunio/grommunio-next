@@ -13,9 +13,7 @@ import { Button } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 
 const styles: any = {
-  formContainer: {
-    margin: 8,
-  }
+
 };
 
 function Contact({ classes, t }: any) {
