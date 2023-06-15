@@ -3,7 +3,7 @@
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
-import { MailFolder, Message } from "microsoft-graph";
+import { CategoryColor, MailFolder, Message } from "microsoft-graph";
 import { buildQuery } from "../utils";
 import { ensureClient, graphClient } from "./utils";
 
@@ -99,3 +99,14 @@ export async function copyMessage(authProvider: AuthCodeMSALBrowserAuthenticatio
 
   return response?.message;
 }
+
+export async function mailCategories(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<CategoryColor[]> {
+  ensureClient(authProvider);
+  
+  const response = await graphClient!
+    .api("/me/outlook/masterCategories")
+    .get();
+
+  return response.value;
+}
+

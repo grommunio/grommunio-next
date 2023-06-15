@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { fetchMailFoldersData, fetchMessagesData, patchMessageData } from '../actions/messages';
+import { fetchMailFoldersData, fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
   MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
@@ -187,6 +187,7 @@ function Messages({ classes }: MessagesProps) {
   useEffect(() => {
     dispatch(fetchMessagesData({app}));
     dispatch(fetchMailFoldersData(app));
+    dispatch(fetchMessageCategories(app));
   }, []);
 
   const debouncedSearch = debounce(async (search: string, folderid?: string) => {

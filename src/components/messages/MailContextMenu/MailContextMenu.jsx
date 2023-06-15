@@ -5,6 +5,7 @@ import { useAppContext } from '../../../azure/AppContext';
 import { useDispatch } from 'react-redux';
 import { withStyles } from '@mui/styles';
 import CopyMailMenuItem from './CopyMailMenuItem';
+import CategorizeMailMenuItem from './CategorizeMailMenuItem';
 
 const styles = {
   backdrop: {
@@ -52,7 +53,8 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
       <MenuItem onClick={handleMailDelete}>{t("Delete")}</MenuItem>
       <MenuItem onClick={handleMailMove("archive")}>{t("Archive")}</MenuItem>
       <MenuItem onClick={handleMarkAsUnread}>{t("Mark as unread")}</MenuItem>
-      <CopyMailMenuItem />
+      <CopyMailMenuItem openedMail={openedMail}/>
+      <CategorizeMailMenuItem openedMail={openedMail}/>
     </Menu>
   );
 };

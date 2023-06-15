@@ -3,13 +3,17 @@
 import { AnyAction } from 'redux'
 import {
   DELETE_MESSAGE_DATA,
-  FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, PATCH_MESSAGE_DATA,
+  FETCH_MAILS_DATA,
+  FETCH_MAIL_FOLDERS_DATA,
+  PATCH_MESSAGE_DATA,
+  FETCH_MESSAGE_CATEGORIES,
 } from '../actions/types';
 import { Message } from 'microsoft-graph';
 
 const defaultState = {
   mails: [],
   mailFolders: [],
+  categories: [],
 };
 
 function messagesReducer(state = defaultState, action: AnyAction) {
@@ -38,6 +42,12 @@ function messagesReducer(state = defaultState, action: AnyAction) {
       ...state,
       mails: state.mails.map((mail: Message) => mail.id === action.payload.id ?
         {...mail, ...action.payload} : mail),
+    };
+
+  case FETCH_MESSAGE_CATEGORIES + "/fulfilled":
+    return {
+      ...state,
+      categories: action.payload ?? [],
     };
 
   default:

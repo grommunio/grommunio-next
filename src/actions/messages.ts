@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { MailFolder, Message } from "microsoft-graph";
-import { deleteMessage, getMailFolders, getUserMessages, moveMessage, patchMessage } from "../api/messages";
+import { CategoryColor, MailFolder, Message } from "microsoft-graph";
+import { deleteMessage, getMailFolders, getUserMessages, mailCategories, moveMessage, patchMessage } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
-import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, PATCH_MESSAGE_DATA } from "./types";
+import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA } from "./types";
 
 type fetchMessagesDataArgTypes = {
   app: AppContext,
@@ -135,5 +135,24 @@ export const moveMessageData = createAsyncThunk<
       }
     }
     return succ;
+  }
+);
+
+export const fetchMessageCategories = createAsyncThunk<
+  CategoryColor[],
+  AppContext
+>(
+  FETCH_MESSAGE_CATEGORIES,
+  async (app: AppContext) => {
+    if (app.user) {
+      try {
+        const categories = await mailCategories(app.authProvider!);
+        return categories;
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+      }
+    }
+    return [];
   }
 );
