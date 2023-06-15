@@ -34,23 +34,23 @@ function Calendar({ t }: any) {
   return (
     <AuthenticatedView
       header={t("Calendar")}
-      actions={[
+      actions={<>
         <IconButton onClick={() => SetShowCalenderSidebar(!showCalenderSidebar)}>
           <HorizontalSplitIcon />
-        </IconButton>,
-        <Button sx={{ marginX: 1 }} key={0} variant='contained' color="primary">
+        </IconButton>
+        <Button sx={{ marginX: 1 }} variant='contained' color="primary">
           {"New event"}
-        </Button>,
+        </Button>
         <Button onClick={() => setCalenderView("Day")} startIcon={<ViewDayIcon />}>
           Day
-        </Button>,
+        </Button>
         <Button onClick={() => setCalenderView("Week")} startIcon={<DateRangeIcon />}>
           Week
-        </Button>,
+        </Button>
         <Button onClick={() => setCalenderView("Month")} startIcon={<CalendarMonthIcon />}>
           Month
-        </Button>,
-      ]}
+        </Button>
+      </>}
     >
       <ScheduleCalendar app={app} calenderView={calenderView} showSideBar={showCalenderSidebar} />
     </AuthenticatedView>

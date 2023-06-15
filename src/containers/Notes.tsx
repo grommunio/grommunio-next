@@ -84,7 +84,7 @@ function Notes({ t, classes }: any) {
   return (
     <AuthenticatedView
       header={t("Notes")}
-      actions={[
+      actions={
         <Button
           key={-1}
           onClick={handleAddNote(true)}
@@ -92,7 +92,7 @@ function Notes({ t, classes }: any) {
           color="primary"
         >
           {t("New note")}
-        </Button>]}
+        </Button>}
     >
       <div className={classes.content}>
         <FolderList>

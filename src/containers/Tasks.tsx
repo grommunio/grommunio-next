@@ -103,7 +103,7 @@ function Tasks({ t, classes }: any) {
   return (
     <AuthenticatedView
       header={t("Tasks")}
-      actions={[<Button
+      actions={<Button
         key={0}
         onClick={handleAddingTask(true)}
         variant='contained'
@@ -111,7 +111,7 @@ function Tasks({ t, classes }: any) {
         disabled={!selectedTaskList}
       >
         {t("New task")}
-      </Button>]}
+      </Button>}
     >
       <div className={classes.content}>
         <FolderList>

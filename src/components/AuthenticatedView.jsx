@@ -14,7 +14,7 @@ const styles = {
 }
 
 function AuthenticatedView({
-  classes, children, actions=[]
+  classes, children, actions=null
 }) {
 
   return (

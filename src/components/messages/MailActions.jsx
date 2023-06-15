@@ -78,102 +78,90 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
 
   const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
-  return [
+  return <>
     <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }}>
       <MenuIcon />
-    </IconButton>,
+    </IconButton>
     <ActionButton
-      key={0}
       onClick={handleNewMessage}
       variant='contained'
       color="primary"
       startIcon={<MailOutlineOutlined />}
     >
       {t("New message")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={1}
       onClick={handleMailDelete}
       disabled={!mailsSelected}
       startIcon={<DeleteOutlineOutlined />}
     >
       {t("Delete")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={2}
       onClick={handleMailMove("archive")}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "success" : "secondary"}/>}
     >
       {t("Archive")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={3}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<ArchiveOutlined color={mailsSelected ? "error" : "secondary"}/>}
     >
       {t("Report")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={69420}
       onClick={handleClean}
       disabled={!mailsSelected}
       startIcon={<CleaningServicesOutlined />}
     >
       {t("Clean")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={4}
       onClick={handleMove}
       disabled={!mailsSelected}
       startIcon={<DriveFileMoveOutlined color={mailsSelected ? "info" : "secondary"}/>}
       endIcon={<KeyboardArrowDown />}
     >
       {t("Move")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={5}
       onClick={handleReply}
       disabled={selection.length > 1 || !openedMail /* TODO: this is still a bit buggy */} 
       startIcon={<ReplyAllOutlined color={mailsSelected ? "primary" : "secondary"}/>}
     >
       {t("Reply all")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={6}
       onClick={handleReadToggle}
       disabled={!mailsSelected}
       startIcon={<DraftsOutlined />}
     >
       {t("Read/Unread")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={7}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<DraftsOutlined />}
     >
       {t("Categorize")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={8}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<FlagOutlined color={mailsSelected ? "error" : "secondary"}/>}
     >
       {t("Flag")}
-    </ActionButton>,
+    </ActionButton>
     <ActionButton
-      key={9}
       onClick={handlePlaceholder}
       disabled={!mailsSelected}
       startIcon={<PushPinOutlined color={mailsSelected ? "info" : "secondary"}/>}
     >
       {t("Pin")}
-    </ActionButton>,
+    </ActionButton>
     <Menu
-      key={10}
       anchorEl={moveMenuAnchor}
       open={Boolean(moveMenuAnchor)}
       onClose={handleMoveMenuClose}
@@ -196,7 +184,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
         </MenuItem>
       )}
     </Menu>
-  ];
+  </>;
 }
 
 MailActions.propTypes = {

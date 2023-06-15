@@ -45,11 +45,10 @@ function Contacts({ classes }: any) {
   return (
     <AuthenticatedView
       header={t('Contacts')}
-      actions={[
-        <Button key={0} onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
-          {t("New contact")}
-        </Button>
-      ]}
+      actions={<Button onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
+        {t("New contact")}
+      </Button>
+      }
     >
       <Paper className={classes.paper}>
         <Table>
