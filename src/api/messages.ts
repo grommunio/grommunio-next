@@ -81,8 +81,20 @@ export async function moveMessage(authProvider: AuthCodeMSALBrowserAuthenticatio
   ensureClient(authProvider);
   
   
-  const response = await graphClient! // Move to deleted items
+  const response = await graphClient!
     .api('/me/messages/'+ id + "/move")
+    .post({ destinationId });
+
+  return response?.message;
+}
+
+export async function copyMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  id: string, destinationId: string): Promise<string | undefined> {
+  ensureClient(authProvider);
+  
+  
+  const response = await graphClient!
+    .api('/me/messages/'+ id + "/copy")
     .post({ destinationId });
 
   return response?.message;
