@@ -1,11 +1,10 @@
 import { withTranslation } from 'react-i18next';
 import { Menu, MenuItem } from '@mui/material';
-import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
-import { useAppContext } from '../../azure/AppContext';
+import { deleteMessageData, moveMessageData, patchMessageData } from '../../../actions/messages';
+import { useAppContext } from '../../../azure/AppContext';
 import { useDispatch } from 'react-redux';
-import { copyMessage } from '../../api/messages';
 import { withStyles } from '@mui/styles';
-import NestedMenuItem from '../menu/NestedMenuItem';
+import CopyMailMenuItem from './CopyMailMenuItem';
 
 const styles = {
   backdrop: {
@@ -42,14 +41,6 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
     });
   }
 
-  const handleCopy = destinationId => () => {
-    copyMessage(
-      app.authProvider,
-      openedMail.id,
-      destinationId,
-    );
-  }
-
   return (
     <Menu
       open={isOpen}
@@ -61,13 +52,7 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
       <MenuItem onClick={handleMailDelete}>{t("Delete")}</MenuItem>
       <MenuItem onClick={handleMailMove("archive")}>{t("Archive")}</MenuItem>
       <MenuItem onClick={handleMarkAsUnread}>{t("Mark as unread")}</MenuItem>
-      <NestedMenuItem
-        label={t("Copy")}
-      >
-        <MenuItem onClick={handleCopy("inbox")}>{t("Inbox")}</MenuItem>
-        <MenuItem onClick={handleCopy("deletedItems")}>{t("Deleted items")}</MenuItem>
-        <MenuItem onClick={handleCopy("archive")}>{t("Archive")}</MenuItem>
-      </NestedMenuItem>
+      <CopyMailMenuItem />
     </Menu>
   );
 };

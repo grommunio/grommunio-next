@@ -21,7 +21,7 @@ import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
 import { parseISODate } from '../utils';
 import MessagePaper from '../components/messages/MessagePaper';
-import MailContextMenu from '../components/messages/MailContextMenu';
+import MailContextMenu from '../components/messages/MailContextMenu/MailContextMenu';
 
 const styles: any = (theme: any) => ({
   content: {
