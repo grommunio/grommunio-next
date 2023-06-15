@@ -29,10 +29,10 @@ const CategorizeMailMenuItem = ({ t, openedMail }) => {
   return <NestedMenuItem
     label={t("Categorize")}
   >
-    {categories.map(({ id, displayName, color }, key) =>
+    {categories.map(({ displayName, color }, key) =>
       <MenuItem
         key={key}
-        onClick={handleCategorize(id)}
+        onClick={handleCategorize(displayName)}
       >
         <ListItemIcon>
           <Sell color="inherit" style={{ color: getMessageCategoryColor(color) }} /* TODO: Parse proper color */ />
