@@ -562,8 +562,8 @@ const UserCalenders = ({data}) => {
         <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
       </ListItemButton>
       {open &&
-        data?.map((item) => (
-          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }}>
+        data?.map((item, key) => (
+          <ListItemButton key={key} sx={{ py: 0, minHeight: 32 }}>
             <ListItemText primary={item.name} primaryTypographyProps={{ml: 2}} />
           </ListItemButton>
         ))}
