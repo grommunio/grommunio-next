@@ -5,6 +5,7 @@ import { withTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { patchMessageData } from "../../../actions/messages";
 import { Sell } from "@mui/icons-material";
+import { getMessageCategoryColor } from "../../../utils";
 
 
 const CategorizeMailMenuItem = ({ t, openedMail }) => {
@@ -34,7 +35,7 @@ const CategorizeMailMenuItem = ({ t, openedMail }) => {
         onClick={handleCategorize(id)}
       >
         <ListItemIcon>
-          <Sell color="inherit" style={{ color }} /* TODO: Parse proper color */ />
+          <Sell color="inherit" style={{ color: getMessageCategoryColor(color) }} /* TODO: Parse proper color */ />
         </ListItemIcon>
         {displayName}
       </MenuItem>

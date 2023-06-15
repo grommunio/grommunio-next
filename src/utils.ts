@@ -79,3 +79,17 @@ export function parseISODate(isoDateString: string) {
   // TODO: Get locale
   return moment(isoDateString).format('l'); // TODO: Format date depending on time since received
 }
+
+
+export function getMessageCategoryColor(pseudoColor: string) {
+  switch(pseudoColor) {
+  case "preset0": return 'red';
+  case "preset1": return 'orange';
+  case "preset3": return 'yellow';
+  case "preset4": return 'green';
+  case "preset7": return 'blue';
+  case "preset8": return 'purple';
+  // TODO: Add all preset colors
+  default: return "white";
+  }
+}
