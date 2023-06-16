@@ -21,6 +21,7 @@ import NewMessage from '../components/NewMessage';
 import MessagePaper from '../components/messages/MessagePaper';
 import MailContextMenu from '../components/messages/MailContextMenu/MailContextMenu';
 import MessageListItem from '../components/messages/MessageListItem';
+import AddCategory from '../components/dialogs/AddCategory';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -146,6 +147,7 @@ function Messages({ classes }: MessagesProps) {
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [mailTab, setMailTab] = useState<MailTab | null>(null);
   const [foldersVisible, setFoldersVisible] = useState<boolean>(true);
+  const [addingCategory, setAddingCategory] = useState<boolean>(false);
   const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
   const isContextMenuOpen = Boolean(contextMenuPosition);
   const dispatch = useTypeDispatch();
@@ -313,6 +315,10 @@ function Messages({ classes }: MessagesProps) {
     setContextMenuPosition(null);
   };
 
+  const handleAddCategory = (open: boolean) => () => {
+    setAddingCategory(open);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -446,6 +452,11 @@ function Messages({ classes }: MessagesProps) {
         anchorPosition={contextMenuPosition}
         openedMail={selectedMsg}
         folder={selectedFolder}
+        handleAddCategory={handleAddCategory}
+      />
+      <AddCategory
+        open={addingCategory}
+        onClose={handleAddCategory(false)}
       />
     </AuthenticatedView>
   );

@@ -7,8 +7,10 @@ import {
   FETCH_MAIL_FOLDERS_DATA,
   PATCH_MESSAGE_DATA,
   FETCH_MESSAGE_CATEGORIES,
+  POST_MESSAGE_CATEGORY,
 } from '../actions/types';
 import { Message } from 'microsoft-graph';
+import { addItem } from '../utils';
 
 const defaultState = {
   mails: [],
@@ -49,6 +51,12 @@ function messagesReducer(state = defaultState, action: AnyAction) {
       ...state,
       categories: action.payload ?? [],
     };
+
+  case POST_MESSAGE_CATEGORY + "/fulfilled":
+    return {
+      ...state,
+      categories: addItem(state.categories, action.payload),
+    }
 
   default:
     return state;

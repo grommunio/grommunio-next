@@ -6,6 +6,7 @@ import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-
 import { CategoryColor, MailFolder, Message } from "microsoft-graph";
 import { buildQuery } from "../utils";
 import { ensureClient, graphClient } from "./utils";
+import { MessageCategory } from "../types/messages";
 
 export async function getUserMessages(authProvider: AuthCodeMSALBrowserAuthenticationProvider, folderid = 'inbox', params={}): Promise<Message[]> {
   ensureClient(authProvider);
@@ -110,3 +111,13 @@ export async function mailCategories(authProvider: AuthCodeMSALBrowserAuthentica
   return response.value;
 }
 
+export async function postMailCategory(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+  category: MessageCategory): Promise<MessageCategory> {
+  ensureClient(authProvider);
+
+  const response = await graphClient!
+    .api("/me/outlook/masterCategories")
+    .post(category);
+
+  return response;
+}

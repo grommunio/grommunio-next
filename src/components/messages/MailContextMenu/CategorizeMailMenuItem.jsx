@@ -4,12 +4,12 @@ import { useAppContext } from "../../../azure/AppContext";
 import { withTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { patchMessageData } from "../../../actions/messages";
-import { Check, Sell } from "@mui/icons-material";
+import { Add, Check, Sell } from "@mui/icons-material";
 import { getMessageCategoryColor } from "../../../utils";
 import { useState } from "react";
 
 
-const CategorizeMailMenuItem = ({ t, openedMail }) => {
+const CategorizeMailMenuItem = ({ t, openedMail, handleAddCategory }) => {
   const app = useAppContext();
   const dispatch = useDispatch();
   const [mail, setMail] = useState(openedMail);
@@ -49,6 +49,10 @@ const CategorizeMailMenuItem = ({ t, openedMail }) => {
         {mail.categories.includes(displayName) && <Check fontSize="small"/>}
       </MenuItem>
     )}
+    <MenuItem onClick={handleAddCategory(true)}>
+      <ListItemIcon><Add /></ListItemIcon>
+      <ListItemText>{t("New category")}</ListItemText>
+    </MenuItem>
   </NestedMenuItem>;
 }
 

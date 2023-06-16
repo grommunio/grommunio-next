@@ -106,7 +106,7 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
             </div>
           </div>
           <div className={classes.mailPreview}>{message.bodyPreview}</div>
-          {message.categories?.map((cat: string) => <CategoryChip color={cat} />)}
+          {message.categories?.map((cat: string, key: number) => <CategoryChip key={key} color={cat} />)}
         </>}
         primaryTypographyProps={{
           className: classes.mailListItemTitle,

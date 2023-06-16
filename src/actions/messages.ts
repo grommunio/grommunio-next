@@ -3,9 +3,10 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { CategoryColor, MailFolder, Message } from "microsoft-graph";
-import { deleteMessage, getMailFolders, getUserMessages, mailCategories, moveMessage, patchMessage } from "../api/messages";
+import { deleteMessage, getMailFolders, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
-import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA } from "./types";
+import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
+import { MessageCategory } from "../types/messages";
 
 type fetchMessagesDataArgTypes = {
   app: AppContext,
@@ -154,5 +155,29 @@ export const fetchMessageCategories = createAsyncThunk<
       }
     }
     return [];
+  }
+);
+
+type postMessageCategoryProps = {
+  app: AppContext,
+  category: MessageCategory
+}
+
+export const postMessageCategory = createAsyncThunk<
+  MessageCategory | boolean,
+  postMessageCategoryProps
+>(
+  POST_MESSAGE_CATEGORY,
+  async ({app, category}: postMessageCategoryProps) => {
+    if (app.user) {
+      try {
+        const result = await postMailCategory(app.authProvider!, category);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        app.displayError!(error.message);
+      }
+    }
+    return false;
   }
 );

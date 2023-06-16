@@ -14,7 +14,7 @@ const styles = {
 }
 
 // TODO: These actions are duplicated in the actionbar. Use a hook or HOC to deduplicate functions
-const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folder }) => {
+const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folder, handleAddCategory }) => {
   const app = useAppContext();
   const dispatch = useDispatch();
 
@@ -54,7 +54,7 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
       <MenuItem onClick={handleMailMove("archive")}>{t("Archive")}</MenuItem>
       <MenuItem onClick={handleMarkAsUnread}>{t("Mark as unread")}</MenuItem>
       <CopyMailMenuItem openedMail={openedMail}/>
-      <CategorizeMailMenuItem openedMail={openedMail}/>
+      <CategorizeMailMenuItem openedMail={openedMail} handleAddCategory={handleAddCategory}/>
     </Menu>
   );
 };
