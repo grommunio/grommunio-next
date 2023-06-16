@@ -6,22 +6,21 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
-import { Avatar, Badge, Button, Checkbox, IconButton, List, ListItem, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Menu,
-  MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
+import { Badge, Button, IconButton, List, ListItem, ListItemButton, ListItemText, Menu,
+  MenuItem, Paper, Tab, Tabs } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, EditOutlined, FilterList, FlagOutlined, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from '@mui/icons-material';
+import { CheckBoxOutlined, EditOutlined, FilterList } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
-import Hover from '../components/Hover';
 import MailActions from '../components/messages/MailActions';
 import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
-import { parseISODate } from '../utils';
 import MessagePaper from '../components/messages/MessagePaper';
 import MailContextMenu from '../components/messages/MailContextMenu/MailContextMenu';
+import MessageListItem from '../components/messages/MessageListItem';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -65,12 +64,6 @@ const styles: any = (theme: any) => ({
   menu: {
     margin: 0,
   },
-  mailListItemTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    minHeight: 30,
-    justifyContent: 'space-between'
-  },
   mailListHeader: {
     padding: 4,
     display: 'flex',
@@ -109,32 +102,6 @@ const styles: any = (theme: any) => ({
     fontWeight: theme.typography.fontWeightBold,
     fontSize: theme.typography.pxToRem(15),
   },
-  mailSender: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: 220,
-  },
-  mailPreview: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: 312,
-  },
-  mailSubjectContainer: {
-    display: 'flex',
-  },
-  mailSubject: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: 256,
-  },
-  mailDate: {
-    flex: 1,
-    display: 'flex',
-    justifyContent: 'flex-end',
-  }
 });
 
 type MessagesProps = {
@@ -297,8 +264,6 @@ function Messages({ classes }: MessagesProps) {
     setCheckedMessages(copy);
   }
 
-  const handlePlaceholder = (e: React.MouseEvent<HTMLElement>) => e.stopPropagation();
-
   const handleCheckAll = () => {
     setCheckedMessages(messages.length === checkedMessages.length ? [] : messages);
   }
@@ -422,70 +387,17 @@ function Messages({ classes }: MessagesProps) {
           </Paper>
           <Paper className={classes.messages}>
             <List className={classes.mailList}>
-              {messages.map((message: Message, key: number) => {
-                const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
-                const checked = checkedMessages.includes(message);
-                return <Hover key={key}>
-                  {(hover: boolean) => <ListItemButton
-                    onContextMenu={handleContextMenu(message)}
-                    selected={checked || selectedMsg?.id === message.id}
-                    onClick={handleMailClick(message)}
-                  >
-                    {hover || checkedMessages.length > 0 ? <ListItemIcon>
-                      <Checkbox
-                        sx={{ p: 0.5 }}
-                        checked={checked}
-                        onChange={handleMailCheckbox(message)}
-                      />
-                    </ListItemIcon> : <ListItemAvatar>
-                      <Avatar sx={{ width: 32, height: 32 }}>
-                        <Typography variant='body2'>{names[0][0]}{names[names.length - 1][0]}</Typography>
-                      </Avatar>
-                    </ListItemAvatar>}
-                    <ListItemText
-                      primary={<>
-                        <div className={classes.mailSender}>
-                          {message.sender?.emailAddress?.name || message.sender?.emailAddress?.address || "Unknown sender"}
-                        </div>
-                        {hover ? <div>
-                          <IconButton onClick={handlePlaceholder} size='small' title="Mark as unread">
-                            <MailOutlineOutlined fontSize='small'/>
-                          </IconButton>
-                          <IconButton onClick={handlePlaceholder} size='small' title="Mark this message">
-                            <FlagOutlined fontSize='small'/>
-                          </IconButton>
-                          <IconButton onClick={handlePlaceholder} size='small' title="Pin this message">
-                            <PushPinOutlined fontSize='small'/>
-                          </IconButton>
-                        </div> : message.importance === "high" && <div>
-                          <PriorityHigh color="error" fontSize='small' />
-                        </div>}
-                      </>}
-                      secondary={<>
-                        <div className={classes.mailSubjectContainer}>
-                          <div className={classes.mailSubject}>
-                            <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
-                              &gt; {message.subject}
-                            </Typography>
-                          </div>
-                          <div className={classes.mailDate}>
-                            <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
-                              {parseISODate(message.receivedDateTime || "")}
-                            </Typography>
-                          </div>
-                        </div>
-                        <div className={classes.mailPreview}>{message.bodyPreview}</div>
-                      </>}
-                      primaryTypographyProps={{
-                        className: classes.mailListItemTitle,
-                      }}
-                      secondaryTypographyProps={{
-                        component: 'span',
-                      }}
-                    />
-                  </ListItemButton>}
-                </Hover>;
-              })}
+              {messages.map((message: Message, key: number) =>
+                <MessageListItem
+                  key={key}
+                  message={message}
+                  selectedMsg={selectedMsg}
+                  checkedMessages={checkedMessages}
+                  handleMailCheckbox={handleMailCheckbox}
+                  handleMailClick={handleMailClick}
+                  handleContextMenu={handleContextMenu}
+                />
+              )}
             </List>
           </Paper>
         </div>
