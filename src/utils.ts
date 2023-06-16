@@ -93,3 +93,16 @@ export function getMessageCategoryColor(pseudoColor: string) {
   default: return "white";
   }
 }
+
+export function hexColorToPresetName(pseudoColor: string) {
+  switch(pseudoColor) {
+  case "#ff0000": return 'preset0';
+  case "#ffa500": return 'preset1';
+  case "#ffff00": return 'preset3';
+  case "#008000": return 'preset4';
+  case "#0000ff": return 'preset7';
+  case "#800080": return 'preset8';
+  // TODO: Add all preset colors
+  default: return "white";
+  }
+}

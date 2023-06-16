@@ -4,12 +4,14 @@
 import { useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { Dialog, DialogTitle, DialogContent, TextField,
-  Button, DialogActions, Grid,
+  Button, DialogActions, Grid, Typography,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { useAppContext } from '../../azure/AppContext';
 import { postMessageCategory } from '../../actions/messages';
 import { useDispatch } from 'react-redux';
+import CategoryColorPicker from '../CategoryColorPicker';
+import { hexColorToPresetName } from '../../utils';
 
 const styles = theme => ({
   grid: {
@@ -31,14 +33,19 @@ const styles = theme => ({
     flex: 1,
     marginRight: 8,
   },
+  pickerContainer: {
+    display: 'flex',
+    margin: theme.spacing(1),
+    justifyContent: "center",
+  }
 });
 
 function AddCategory(props) {
   const app = useAppContext();
   const dispatch = useDispatch();
   const { classes, t, open, onClose } = props;
-  const [ category, setCategory ] = useState({ displayName: "", color: "preset9" /* TODO: Add colorpicker */ });
-  const { displayName } = category;
+  const [ category, setCategory ] = useState({ displayName: "", color: "#ff0000" /* TODO: Add colorpicker */ });
+  const { displayName, color } = category;
 
   const handleChange = (e) => {
     const newValue = e.target.value;
@@ -52,15 +59,24 @@ function AddCategory(props) {
   }
 
   const handleAdd = () => {
-    dispatch(postMessageCategory({app, category}))
+    const cat = {
+      displayName,
+      color: hexColorToPresetName(color),
+    };
+    dispatch(postMessageCategory({app, category: cat}))
       .then(resp => resp?.payload?.id ? onClose() : null);
+  }
+
+  const handleColorChange = (color) => {
+    console.log(color);
+    setCategory({ ...category, color });
   }
   
   return (
     <Dialog
       onClose={onClose}
       open={open}
-      maxWidth="lg"
+      maxWidth="xs"
       fullWidth
     >
       <DialogTitle>{t('addHeadline', { item: 'Category' })}</DialogTitle>
@@ -77,8 +93,9 @@ function AddCategory(props) {
               autoFocus
             />
           </Grid>
-          <Grid item xs={12}>
-            test
+          <Typography variant='h6' sx={{ mt: 1 }}>Color</Typography>
+          <Grid item xs={12} className={classes.pickerContainer}>
+            <CategoryColorPicker color={color} onChangeComplete={handleColorChange}/>
           </Grid>
         </Grid>
       </DialogContent>
