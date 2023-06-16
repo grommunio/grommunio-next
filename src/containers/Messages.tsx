@@ -340,7 +340,7 @@ function Messages({ classes }: MessagesProps) {
     else copy[0] = tab;
     setMailTabs(copy);
     setMailTab(tab);
-    setSelectedMsg(msg);
+    setSelectedMsg({...msg});
     setContextMenuPosition({ top: e.clientY, left: e.clientX });
   };
 

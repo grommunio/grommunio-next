@@ -1,27 +1,35 @@
-import { ListItemIcon, MenuItem } from "@mui/material";
+import { ListItemIcon, ListItemText, MenuItem } from "@mui/material";
 import NestedMenuItem from "../../menu/NestedMenuItem";
 import { useAppContext } from "../../../azure/AppContext";
 import { withTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { patchMessageData } from "../../../actions/messages";
-import { Sell } from "@mui/icons-material";
+import { Check, Sell } from "@mui/icons-material";
 import { getMessageCategoryColor } from "../../../utils";
+import { useState } from "react";
 
 
 const CategorizeMailMenuItem = ({ t, openedMail }) => {
   const app = useAppContext();
   const dispatch = useDispatch();
+  const [mail, setMail] = useState(openedMail);
   const { categories } = useSelector(state => state.messages);
 
-  const handleCategorize = catId => () => {
+  const handleCategorize = cat => () => {
+    const copy = [...mail.categories];
+    if(copy.includes(cat)) {
+      copy.splice(copy.findIndex(c => c.displayName === cat), 1);
+    } else {
+      copy.push(cat);
+    }
+
+    setMail({...mail, categories: copy });
+
     dispatch(patchMessageData({
       app,
-      message: openedMail,
+      message: mail,
       specificProps: {
-        categories: [
-          ...openedMail.categories,
-          catId,
-        ]
+        categories: copy,
       },
     }));
   }
@@ -37,7 +45,8 @@ const CategorizeMailMenuItem = ({ t, openedMail }) => {
         <ListItemIcon>
           <Sell color="inherit" style={{ color: getMessageCategoryColor(color) }} /* TODO: Parse proper color */ />
         </ListItemIcon>
-        {displayName}
+        <ListItemText>{displayName}</ListItemText>
+        {mail.categories.includes(displayName) && <Check fontSize="small"/>}
       </MenuItem>
     )}
   </NestedMenuItem>;
