@@ -8,7 +8,7 @@ const orangeTheme = mode => ({
     MuiToolbar: {
       styleOverrides: {
         root: {
-          backgroundImage: `linear-gradient(150deg, ${orange['500']}, ${orange['800']})`,
+          backgroundImage: `linear-gradient(150deg, ${orange['topbar']}, ${orange['topbar']})`,
         },
       },
     },

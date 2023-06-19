@@ -119,6 +119,6 @@ pre code {
   flex: 1 !important;
 }
 
-.tox-promotion {
+.tox-promotion, .tox-statusbar__branding {
   display: none !important;
 }
