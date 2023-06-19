@@ -13,7 +13,6 @@ import {
   MenuItem,
   Tooltip,
 } from '@mui/material';
-import background from '../res/bootback.svg';
 import logo from '../res/grommunio_logo_default.svg';
 import { Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
@@ -158,12 +157,6 @@ const Login = ({ classes }) => {
           </Button>
         </Paper>
       </Paper>
-      <div
-        className={classes.background}
-        style={{
-          backgroundImage: 'url(' + (background) + ')',
-        }}
-      ></div>
     </div>
   );
   

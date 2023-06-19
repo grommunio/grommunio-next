@@ -17,14 +17,15 @@ import { useTypeDispatch } from './store';
 import { changeSettings } from './actions/settings';
 import GAB from './components/dialogs/GAB';
 import { CssBaseline } from '@mui/material';
+import background from "!file-loader!./res/background_light.svg";
+import backgroundDark from "!file-loader!./res/background_dark.svg";
 
-const styles = theme => ({
+const styles = {
   root: {
     display: "flex",
     flexDirection: 'column',
     flex: 1,
     overflow: "hidden",
-    backgroundColor: theme.palette.mode === "dark" ? "#212121" : "#fafafa",
     backgroundSize: "cover",
     width: "100%",
     height: "100%",
@@ -47,7 +48,7 @@ const styles = theme => ({
     flexDirection: 'column',
     flex: 1,
   }
-});
+};
 
 // <MsalInstanceSnippet>
 const msalInstance = new PublicClientApplication({
@@ -96,11 +97,17 @@ function App(props) {
   const routesProps = {
     authenticated,
   };
-  
+
+  const darkMode = window.localStorage.getItem("darkMode");
   return (
     <MsalProvider instance={msalInstance}>
       <ProvideAppContext>
-        <div className={classes.root}>
+        <div
+          className={classes.root}
+          style={{
+            backgroundImage: `url(${darkMode === "true" ? backgroundDark : background})`,
+          }}
+        >
           <CssBaseline />
           {authenticated && <TopBar />}
           <AsyncMainView

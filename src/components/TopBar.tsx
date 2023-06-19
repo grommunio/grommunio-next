@@ -9,7 +9,7 @@ import { getLangs } from '../utils';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
-import logo from '../res/grommunio_logo_default.svg';
+import logo from '../res/grommunio_logo_light.svg';
 import SettingsDrawer from './SettingsDrawer';
 import { useAppContext } from '../azure/AppContext';
 
@@ -45,7 +45,7 @@ const styles = {
   },
   profileIcon: {
     fontSize: 40,
-    color: '#aaa',
+    color: '#fff',
     marginLeft: 8,
   },
   logo: {
