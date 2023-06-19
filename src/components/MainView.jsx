@@ -4,17 +4,14 @@
 import PropTypes from 'prop-types';
 import AppRoutes from '../Routes';
 import Drawer from './Drawer';
-import { Toolbar } from '@mui/material';
 
-export default function MainView({ classes }) {
+export default function MainView({ classes, routesProps }) {
   return (
     <div className={classes.mainView}>
       <Drawer />
       <div className={classes.routes}>
-        <Toolbar />
         <AppRoutes childProps={{
-          authenticated: false,
-          drawerListElementClass: classes.drawerListElementClass,
+          ...routesProps,
         }}/>
       </div>
     </div>

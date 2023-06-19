@@ -4,6 +4,7 @@
 import { Route, Routes } from "react-router-dom";
 import RequireAuth from "./components/RequireAuth";
 import makeLoadableComponent from "./lazy";
+import UnauthenticatedRoute from "./components/UnauthenticatedRoute";
 
 function makeAuthenticatedElement(AsyncComponent, childProps) {
   return <RequireAuth>
@@ -27,7 +28,7 @@ const AppRoutes = ({ childProps }) => (
   <Routes>
     <Route
       path="/login"
-      element={<AsyncLogin {...childProps}/>}
+      element={<UnauthenticatedRoute component={AsyncLogin} childProps={childProps}/>}
     />
     <Route
       path="/"

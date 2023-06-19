@@ -42,6 +42,7 @@ const styles = theme => ({
     borderRadius: '3px',
   },
   routes: {
+    marginTop: 64, // Topbar
     display: 'flex',
     flexDirection: 'column',
     flex: 1,

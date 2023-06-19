@@ -1,29 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { PureComponent } from 'react';
+import { useState } from 'react';
 import { withStyles } from '@mui/styles';
 import PropTypes from 'prop-types';
 import {
   Paper,
   Button,
-  InputBase,
   Typography,
-  CircularProgress,
   IconButton,
   Menu,
   MenuItem,
   Tooltip,
 } from '@mui/material';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import Key from '@mui/icons-material/VpnKey';
 import background from '../res/bootback.svg';
 import logo from '../res/grommunio_logo_default.svg';
 import { Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
-import { connect } from 'react-redux';
-import { authLogin } from '../actions/auth';
 import { withRouter } from '../components/hocs/withRouter';
+import { changeSettings } from '../actions/settings';
+import { useAppContext } from '../azure/AppContext';
+import { useDispatch, useSelector } from 'react-redux';
 
 const styles = theme => ({
   /* || General */
@@ -95,170 +92,87 @@ const styles = theme => ({
 });
 
 
-class Login extends PureComponent {
+const Login = ({ classes }) => {
+  const app = useAppContext();
+  const settings = useSelector(state => state.settings);
+  const [langsAnchorEl, setLangsAnchorEl] = useState(null);
+  const dispatch = useDispatch();
 
-  state = {
-    user: '',
-    pass: '',
-    loading: false,
-    langsAnchorEl: null,
+  const handleLogin = e => {
+    e.preventDefault();
+    app.signIn();
   }
 
-  handleTextinput = field => e => {
-    this.setState({
-      [field]: e.target.value,
-    });
-  }
+  const handleMenuOpen = e => setLangsAnchorEl(e.currentTarget);
 
-  handleLogin = event => {
-    const { authLogin, router } = this.props;
-    const { user, pass } = this.state;
-    event.preventDefault();
-    this.setState({ loading: true });
-    authLogin(user, pass)
-      .then(() => router.navigate('/'))
-      .catch(err => {
-        this.setState({ loading: false });
-        console.error(err);
-      });
-  }
+  const handleMenuClose = () => setLangsAnchorEl(null);
 
-  handleMenuOpen = menu => e => this.setState({
-    [menu]: e.currentTarget,
-  });
-
-  handleMenuClose = menu => () => this.setState({
-    [menu]: null,
-  });
-
-  handleLangChange = lang => () => {
-    const { changeSettings } = this.props;
-    // Set language in i18n, redux store and local storage
-    // i18n.changeLanguage(lang);
-    changeSettings('language', lang);
+  const handleLangChange = lang => () => {
+    dispatch(changeSettings('language', lang));
     window.localStorage.setItem('lang', lang);
-    this.setState({
-      langsAnchorEl: null,
-    });
+    handleMenuClose();
   }
 
-  render() {
-    const { classes, settings } = this.props;
-    const { user, pass, loading, langsAnchorEl } = this.state;    
-
-    return (
-      <div className={classes.root}>
-        <Paper elevation={3} className={classes.loginForm} component="form" onSubmit={this.handleLogin} >
-          <Tooltip title="Language">
-            <IconButton className={classes.lang} onClick={this.handleMenuOpen('langsAnchorEl')}>
-              <Translate />
-            </IconButton>
-          </Tooltip>
-          <Menu
-            id="lang-menu"
-            anchorEl={langsAnchorEl}
-            keepMounted
-            open={Boolean(langsAnchorEl)}
-            onClose={this.handleMenuClose('langsAnchorEl')}
-          >
-            {getLangs().map(({key, value}) =>
-              <MenuItem
-                selected={settings?.language === key}
-                value={key}
-                key={key}
-                onClick={this.handleLangChange(key)}
-              >
-                {value}
-              </MenuItem>  
-            )}
-          </Menu>
-          <div className={classes.logoContainer}>
-            <img
-              src={logo}
-              height={64}
-              alt="grommunio"
-            />
-          </div>
-          <Paper className={classes.inputContainer}>
-            <AccountCircle className={classes.inputAdornment}/>
-            <InputBase
-              fullWidth
-              autoFocus
-              //error={!!auth.error}
-              className={classes.input}
-              placeholder={("Username")}
-              value={user}
-              onChange={this.handleTextinput('user')}
-              name="username"
-              id="username"
-              autoComplete="username"
-            />
-          </Paper>
-          <Paper className={classes.inputContainer}>
-            <Key className={classes.inputAdornment}/>
-            <InputBase
-              fullWidth
-              type="password"
-              className={classes.input}
-              //error={!!auth.error}
-              placeholder={("Password")}
-              value={pass}
-              onChange={this.handleTextinput('pass')}
-              name="password"
-              id="password"
-              autoComplete="currect-password"
-            />
-          </Paper>
-          {/*auth.error && <Alert elevation={6} variant="filled" severity="error" className={classes.errorMessage}>
-            {auth.error || ("Failed to login. Incorrect password or username")}
-    </Alert>*/}
-          <Paper className={classes.inputContainer}>
-            <Button
-              className={classes.button}
-              type="submit"
-              variant="contained"
-              color="primary"
-              onClick={this.handleLogin}
-              disabled={!user || !pass}
+  return (
+    <div className={classes.root}>
+      <Paper elevation={3} className={classes.loginForm} component="form" onSubmit={handleLogin}>
+        <Tooltip title="Language">
+          <IconButton className={classes.lang} onClick={handleMenuOpen}>
+            <Translate />
+          </IconButton>
+        </Tooltip>
+        <Menu
+          id="lang-menu"
+          anchorEl={langsAnchorEl}
+          keepMounted
+          open={Boolean(langsAnchorEl)}
+          onClose={handleMenuClose}
+        >
+          {getLangs().map(({key, value}) =>
+            <MenuItem
+              selected={settings?.language === key}
+              value={key}
+              key={key}
+              onClick={handleLangChange(key)}
             >
-              {loading ? <CircularProgress size={24}  color="inherit" className={classes.loader}/> :
-                <Typography>{('Login')}</Typography>}
-            </Button>
-          </Paper>
+              {value}
+            </MenuItem>  
+          )}
+        </Menu>
+        <div className={classes.logoContainer}>
+          <img
+            src={logo}
+            height={64}
+            alt="grommunio"
+          />
+        </div>
+        <Paper className={classes.inputContainer}>
+          <Button
+            className={classes.button}
+            type="submit"
+            variant="contained"
+            color="primary"
+            onClick={handleLogin}
+          >
+            <Typography>{('Login')}</Typography>
+          </Button>
         </Paper>
-        <div
-          className={classes.background}
-          style={{
-            backgroundImage: 'url(' + (background) + ')',
-          }}
-        ></div>
-      </div>
-    );
-  }
+      </Paper>
+      <div
+        className={classes.background}
+        style={{
+          backgroundImage: 'url(' + (background) + ')',
+        }}
+      ></div>
+    </div>
+  );
+  
 }
 
 Login.propTypes = {
   classes: PropTypes.object.isRequired,
-  auth: PropTypes.object.isRequired,
-  authLogin: PropTypes.func.isRequired,
   router: PropTypes.object.isRequired,
 };
 
-const mapStateToProps = state => {
-  const { auth } = state;
-  return {
-    auth,
-  };
-};
 
-const mapDispatchToProps = dispatch => {
-  return {
-    authLogin: async (user, pass) => {
-      await dispatch(authLogin(user, pass));
-    },
-  };
-};
-
-export default withRouter(
-  connect(mapStateToProps, mapDispatchToProps)(
-    withStyles(styles)(Login)));
+export default withRouter(withStyles(styles)(Login));

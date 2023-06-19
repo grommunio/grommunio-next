@@ -2,11 +2,11 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 import { AnyAction } from 'redux'
 import {
-  AUTH_LOGIN,
+  AUTH_LOGIN, SET_ME,
 } from '../actions/types';
 
 const defaultState = {
-  authenticated: true, // TODO: Change in the future
+  authenticated: false, // TODO: Change in the future
 };
 
 function authReducer(state = defaultState, action: AnyAction) {
@@ -17,6 +17,12 @@ function authReducer(state = defaultState, action: AnyAction) {
       ...state,
       authenticated: action.authenticated,
     };
+
+  case SET_ME:
+    return {
+      ...state,
+      authenticated: true,
+    }
 
   default:
     return state;
