@@ -5,6 +5,9 @@ import { FlagOutlined, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from
 import { Message } from "microsoft-graph";
 import { parseISODate } from "../../utils";
 import CategoryChip from "./CategoryChip";
+import { useTypeDispatch } from "../../store";
+import { patchMessageData } from "../../actions/messages";
+import { useAppContext } from "../../azure/AppContext";
 
 const styles: any = {
   mailSender: {
@@ -52,9 +55,24 @@ type MessageListItemProps = {
 }
 
 const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, handleContextMenu, handleMailClick, handleMailCheckbox }: MessageListItemProps) => {
+  const app = useAppContext();
   const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   const checked = checkedMessages.includes(message);
   const handlePlaceholder = () => null;
+  const dispatch = useTypeDispatch();
+
+  const handleFlag = () => {
+    dispatch(patchMessageData({
+      app,
+      message,
+      specificProps: {
+        flag: {
+          // TODO: Add full followupFlag resource type
+          flagStatus: message.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged",
+        }
+      },
+    }));
+  };
   
   return <Hover>
     {(hover: boolean) => <ListItemButton
@@ -89,9 +107,9 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
             </IconButton>
             <IconButton
               style={{ visibility: (hover || message.flag?.flagStatus === "flagged") ? "visible" : "hidden" }}
-              onClick={handlePlaceholder}
+              onClick={handleFlag}
               size='small'
-              title="Mark this message"
+              title="Flag this message"
             >
               <FlagOutlined fontSize='small' color={message.flag?.flagStatus === "flagged" ? "error" : "inherit"}/>
             </IconButton>

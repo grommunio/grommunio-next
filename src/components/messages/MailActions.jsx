@@ -78,6 +78,19 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
 
   const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
+  const handleFlag = () => {
+    dispatch(patchMessageData({
+      app,
+      message: openedMail,
+      specificProps: {
+        flag: {
+          // TODO: Add full followupFlag resource type
+          flagStatus: openedMail.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged",
+        }
+      },
+    }));
+  };
+
   return <>
     <IconButton onClick={handleFoldersToggle} style={{ marginRight: 8 }}>
       <MenuIcon />
@@ -148,7 +161,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Categorize")}
     </ActionButton>
     <ActionButton
-      onClick={handlePlaceholder}
+      onClick={handleFlag}
       disabled={!mailsSelected}
       startIcon={<FlagOutlined color={mailsSelected ? "error" : "secondary"}/>}
     >

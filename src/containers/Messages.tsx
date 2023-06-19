@@ -159,6 +159,11 @@ function Messages({ classes }: MessagesProps) {
     dispatch(fetchMessageCategories(app));
   }, []);
 
+  // Update selected message when message object in store changes
+  useEffect(() => {
+    if(selectedMsg?.id) setSelectedMsg(messages.find((m: Message) => m.id === selectedMsg.id));
+  }, [messages]);
+
   const debouncedSearch = debounce(async (search: string, folderid?: string) => {
     await dispatch(fetchMessagesData({
       app,
