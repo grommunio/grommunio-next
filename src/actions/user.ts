@@ -27,7 +27,7 @@ export const fetchPeopleData = createAsyncThunk<
   }
 );
 
-export function setMeData(me: User) {
+export function setMeData(me: User | null) {
   return {
     type: SET_ME,
     data: me,

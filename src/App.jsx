@@ -96,12 +96,13 @@ function App(props) {
   const routesProps = {
     authenticated,
   };
+  
   return (
     <MsalProvider instance={msalInstance}>
       <ProvideAppContext>
         <div className={classes.root}>
           <CssBaseline />
-          <TopBar />
+          {authenticated && <TopBar />}
           <AsyncMainView
             classes={classes}
             routesProps={routesProps}

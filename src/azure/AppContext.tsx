@@ -38,7 +38,7 @@ export type AppContext = {
   user?: AppUser;
   error?: AppError;
   signIn?: MouseEventHandler<HTMLElement>;
-  signOut?: MouseEventHandler<HTMLElement>;
+  signOut?: Function;
   displayError?: Function;
   clearError?: Function;
   authProvider?: AuthCodeMSALBrowserAuthenticationProvider;
@@ -146,12 +146,18 @@ function useProvideAppContext() {
   };
   // </SignInSnippet>
 
-  // <SignOutSnippet>
+  // This flow is a bit sus.
+  // First we need to set the authentication state to false (by clearing the user data),
+  // so we get redirected to login screen.
+  // If we clear the context's user state simultanious,
+  // it will automatically try to log us in again (because of the useEffect).
+  // Thus, we first have to open the MS popout to logout remotely
+  // Afterwards, we can clear the context's state
   const signOut = async () => {
+    dispatch(setMeData(null));
     await msal.instance.logoutPopup();
     setUser(undefined);
   };
-  // </SignOutSnippet>
 
   return {
     user,

@@ -19,7 +19,7 @@ export default function meReducer(state = defaultState, action: AnyAction) {
   case SET_ME:
     return {
       ...state,
-      ...action.data
+      ...(action.data || defaultState)
     };
 
   default:

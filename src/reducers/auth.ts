@@ -6,7 +6,7 @@ import {
 } from '../actions/types';
 
 const defaultState = {
-  authenticated: false, // TODO: Change in the future
+  authenticated: false,
 };
 
 function authReducer(state = defaultState, action: AnyAction) {
@@ -21,7 +21,7 @@ function authReducer(state = defaultState, action: AnyAction) {
   case SET_ME:
     return {
       ...state,
-      authenticated: true,
+      authenticated: action.data ? true : false,
     }
 
   default:

@@ -11,6 +11,7 @@ import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
 import logo from '../res/grommunio_logo_default.svg';
 import SettingsDrawer from './SettingsDrawer';
+import { useAppContext } from '../azure/AppContext';
 
 const styles = {
   appbar: {
@@ -55,11 +56,15 @@ const styles = {
 function TopBar(props: any) {
   const { classes } = props;
   const { t, i18n } = useTranslation();
+  const app = useAppContext();
   const dispatch = useTypeDispatch();
   const { me, settings } = useTypeSelector(state => state);
   const { language } = settings;
+  const [ languagesAnchor, setLanguagesAnchor ] = useState<null | HTMLElement>(null);
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
   const [ settingsOpen, setSettingsOpen ] = useState<boolean>(false);
+
+  const handleLanguages = (open: boolean) => (e: MouseEvent<HTMLElement>) => setLanguagesAnchor(open ? e.currentTarget : null);
 
   const handleMenu = (open: boolean) => (e: MouseEvent<HTMLElement>) => setMenuAnchor(open ? e.currentTarget : null);
 
@@ -67,10 +72,16 @@ function TopBar(props: any) {
     i18n.changeLanguage(lang);
     dispatch(changeSettings('language', lang));
     window.localStorage.setItem('lang', lang);
-    setMenuAnchor(null)
+    setLanguagesAnchor(null)
   }
 
   const handleSettings = () => setSettingsOpen(!settingsOpen);
+
+  const handleLogout = () => {
+    if(app?.signOut) {
+      app.signOut();
+    }
+  }
 
   return (
     <AppBar
@@ -78,7 +89,6 @@ function TopBar(props: any) {
       position='fixed'
       className={classes.appbar}
       sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-
     >
       <Toolbar className={classes.toolbar}>
         <img
@@ -89,7 +99,7 @@ function TopBar(props: any) {
         />
         <div className={classes.flexEndContainer}>
           <Tooltip title={t("Language")}>
-            <IconButton onClick={handleMenu(true)}>
+            <IconButton onClick={handleLanguages(true)}>
               <Translate color="inherit" className={classes.trans}/>
             </IconButton>
           </Tooltip>
@@ -98,16 +108,16 @@ function TopBar(props: any) {
               <Settings color="inherit" className={classes.trans}/>
             </IconButton>
           </Tooltip>
-          <Box className={classes.profileButton}>
+          <Box className={classes.profileButton} onClick={handleMenu(true)}>
             <Typography className={classes.username}>{me.displayName}</Typography>
             <AccountCircle className={classes.profileIcon}/>
           </Box>
           <Menu
             id="lang-menu"
-            anchorEl={menuAnchor}
+            anchorEl={languagesAnchor}
             keepMounted
-            open={Boolean(menuAnchor)}
-            onClose={handleMenu(false)}
+            open={Boolean(languagesAnchor)}
+            onClose={handleLanguages(false)}
           >
             {getLangs().map(({key, value}) =>
               <MenuItem
@@ -119,6 +129,13 @@ function TopBar(props: any) {
                 {value}
               </MenuItem>  
             )}
+          </Menu>
+          <Menu
+            open={Boolean(menuAnchor)}
+            onClose={handleMenu(false)}
+            anchorEl={menuAnchor}
+          >
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </div>
       </Toolbar>

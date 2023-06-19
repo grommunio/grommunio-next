@@ -8,7 +8,7 @@ import Drawer from './Drawer';
 export default function MainView({ classes, routesProps }) {
   return (
     <div className={classes.mainView}>
-      <Drawer />
+      {routesProps.authenticated && <Drawer />}
       <div className={classes.routes}>
         <AppRoutes childProps={{
           ...routesProps,
