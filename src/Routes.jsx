@@ -14,7 +14,6 @@ function makeAuthenticatedElement(AsyncComponent, childProps) {
 
 // Create async components
 const AsyncLogin = makeLoadableComponent(() => import("./containers/Login"));
-const AsyncMenu = makeLoadableComponent(() => import("./containers/Menu"));
 const AsyncMessages = makeLoadableComponent(() => import("./containers/Messages"));
 const AsyncNewMessage = makeLoadableComponent(() => import("./components/NewMessage"));
 const AsyncCalendar = makeLoadableComponent(() => import("./containers/Calendar"));
@@ -32,10 +31,6 @@ const AppRoutes = ({ childProps }) => (
     />
     <Route
       path="/"
-      element={makeAuthenticatedElement(AsyncMenu, childProps)}
-    />
-    <Route
-      path="/messages"
       element={makeAuthenticatedElement(AsyncMessages, childProps)}
     />
     <Route

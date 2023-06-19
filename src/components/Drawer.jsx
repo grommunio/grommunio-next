@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { useNavigate } from 'react-router-dom';
-import { AccountBox, CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
+import { CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 
@@ -27,8 +27,7 @@ const styles = theme => ({
 });
 
 const tabs = [
-  { label: "Account", icon: AccountBox, route: "/" },
-  { label: "Messages", icon: Mail, route: "/messages" },
+  { label: "Messages", icon: Mail, route: "/" },
   { label: "Calendar", icon: CalendarMonth, route: "/calendar" },
   { label: "Contacts", icon: ContactEmergency, route: "/contacts" },
   { label: "Tasks", icon: Task, route: "/tasks" },
