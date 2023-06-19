@@ -1,5 +1,5 @@
-import { orange } from "@mui/material/colors";
 import grey from "../colors/grey";
+import orange from "../colors/orange";
 import defaultStyles from "./defaultStyles";
 
 const orangeTheme = mode => ({

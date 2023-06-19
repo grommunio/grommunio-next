@@ -9,9 +9,9 @@ import { getLangs } from '../utils';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { changeSettings } from '../actions/settings';
-import logo from '../res/grommunio_logo_light.svg';
 import SettingsDrawer from './SettingsDrawer';
 import { useAppContext } from '../azure/AppContext';
+import GrommunioLight from './logos/GrommunioLight';
 
 const styles = {
   appbar: {
@@ -91,12 +91,7 @@ function TopBar(props: any) {
       sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
     >
       <Toolbar className={classes.toolbar}>
-        <img
-          src={logo}
-          height="42"
-          alt="grommunio"
-          className={classes.logo}
-        />
+        <GrommunioLight />
         <div className={classes.flexEndContainer}>
           <Tooltip title={t("Language")}>
             <IconButton onClick={handleLanguages(true)}>
