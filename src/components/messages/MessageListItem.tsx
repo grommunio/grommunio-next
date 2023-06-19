@@ -131,7 +131,7 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
         secondary={<>
           <div className={classes.mailSubjectContainer}>
             <div className={classes.mailSubject}>
-              <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
+              <Typography style={{ fontWeight: message.isRead ? "normal" : "bold"}} variant='body2' color={message.isRead ? "white" : "primary"}>
               &gt; {message.subject}
               </Typography>
             </div>
