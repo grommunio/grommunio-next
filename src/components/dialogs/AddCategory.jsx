@@ -44,7 +44,7 @@ function AddCategory(props) {
   const app = useAppContext();
   const dispatch = useDispatch();
   const { classes, t, open, onClose } = props;
-  const [ category, setCategory ] = useState({ displayName: "", color: "#ff0000" /* TODO: Add colorpicker */ });
+  const [ category, setCategory ] = useState({ displayName: "", color: "#ff0000" });
   const { displayName, color } = category;
 
   const handleChange = (e) => {
@@ -68,7 +68,6 @@ function AddCategory(props) {
   }
 
   const handleColorChange = (color) => {
-    console.log(color);
     setCategory({ ...category, color });
   }
   

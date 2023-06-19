@@ -78,19 +78,33 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
           <div className={classes.mailSender}>
             {message.sender?.emailAddress?.name || message.sender?.emailAddress?.address || "Unknown sender"}
           </div>
-          {hover ? <div>
-            <IconButton onClick={handlePlaceholder} size='small' title="Mark as unread">
+          <div>
+            <IconButton
+              style={{ visibility: hover ? "visible" : "hidden" }}
+              onClick={handlePlaceholder}
+              size='small'
+              title="Mark as unread"
+            >
               <MailOutlineOutlined fontSize='small'/>
             </IconButton>
-            <IconButton onClick={handlePlaceholder} size='small' title="Mark this message">
-              <FlagOutlined fontSize='small'/>
+            <IconButton
+              style={{ visibility: (hover || message.flag?.flagStatus === "flagged") ? "visible" : "hidden" }}
+              onClick={handlePlaceholder}
+              size='small'
+              title="Mark this message"
+            >
+              <FlagOutlined fontSize='small' color={message.flag?.flagStatus === "flagged" ? "error" : "inherit"}/>
             </IconButton>
-            <IconButton onClick={handlePlaceholder} size='small' title="Pin this message">
+            <IconButton
+              style={{ visibility: hover ? "visible" : "hidden" }}
+              onClick={handlePlaceholder}
+              size='small'
+              title="Pin this message"
+            >
               <PushPinOutlined fontSize='small'/>
             </IconButton>
-          </div> : message.importance === "high" && <div>
-            <PriorityHigh color="error" fontSize='small' />
-          </div>}
+            {message.importance === "high" && <PriorityHigh color="error" fontSize='small' />}
+          </div> 
         </>}
         secondary={<>
           <div className={classes.mailSubjectContainer}>
