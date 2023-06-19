@@ -73,6 +73,10 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
       },
     }));
   };
+
+  const handleSetUnread = () => {
+    dispatch(patchMessageData({app, message, specificProps: { isRead: false }}));
+  }
   
   return <Hover>
     {(hover: boolean) => <ListItemButton
@@ -99,7 +103,7 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
           <div>
             <IconButton
               style={{ visibility: hover ? "visible" : "hidden" }}
-              onClick={handlePlaceholder}
+              onClick={handleSetUnread}
               size='small'
               title="Mark as unread"
             >
