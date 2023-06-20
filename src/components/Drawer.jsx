@@ -9,7 +9,7 @@ import {
 import { withStyles } from '@mui/styles';
 import { useNavigate } from 'react-router-dom';
 import { CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 
 const styles = theme => ({
@@ -36,13 +36,16 @@ const tabs = [
 
 function ResponsiveDrawer({ classes }) {
   const app = useAppContext();
-  const [tab, setTab] = useState(tabs.find(t => t.route === window.location.pathname)?.route);
+  const [tab, setTab] = useState(tabs.find(t => t.route === window.location.pathname)?.route || "/");
   const navigate = useNavigate();
 
   const handleTabClicked = (e, newValue) => {
-    setTab(newValue);
     navigate(newValue);
   }
+
+  useEffect(() => {
+    setTab(tabs.find(t => t.route === window.location.pathname)?.route || "/");
+  }, [window.location.pathname])
 
   return (
     <Drawer
