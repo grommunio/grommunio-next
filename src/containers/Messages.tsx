@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -324,6 +324,23 @@ function Messages({ classes }: MessagesProps) {
     setAddingCategory(open);
   }
 
+  const pinnedMessages = useMemo(() => JSON.parse(localStorage.getItem("pinnedMsgs") || "[]"),
+    [localStorage.getItem("pinnedMsgs")]);
+
+  // Move pinned messages to top of list
+  const sortedMessages = useMemo(() => {
+    const copy = [...messages];
+    copy.sort((a: Message, b: Message) => {
+      const aIncluded = pinnedMessages.includes(a.id);
+      const bIncluded = pinnedMessages.includes(b.id);
+      if(aIncluded && bIncluded) return 0;
+      if(aIncluded) return -1;
+      if(bIncluded) return 1;
+      return 0;
+    });
+    return copy;
+  }, [pinnedMessages, messages]);
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -398,7 +415,7 @@ function Messages({ classes }: MessagesProps) {
           </Paper>
           <Paper className={classes.messages}>
             <List className={classes.mailList}>
-              {messages.map((message: Message, key: number) =>
+              {sortedMessages.map((message: Message, key: number) =>
                 <MessageListItem
                   key={key}
                   message={message}
@@ -407,6 +424,7 @@ function Messages({ classes }: MessagesProps) {
                   handleMailCheckbox={handleMailCheckbox}
                   handleMailClick={handleMailClick}
                   handleContextMenu={handleContextMenu}
+                  pinnedMessages={pinnedMessages}
                 />
               )}
             </List>

@@ -52,14 +52,16 @@ type MessageListItemProps = {
   handleContextMenu: (a: Message) => (b: React.MouseEvent<HTMLElement>) => void;
   handleMailClick: (a: Message) => () => void;
   handleMailCheckbox: (a: Message) => (b: React.ChangeEvent<HTMLInputElement>) => void;
+  pinnedMessages: Array<string>;
 }
 
-const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, handleContextMenu, handleMailClick, handleMailCheckbox }: MessageListItemProps) => {
+const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, handleContextMenu,
+  handleMailClick, handleMailCheckbox, pinnedMessages }: MessageListItemProps) => {
   const app = useAppContext();
   const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   const checked = checkedMessages.includes(message);
-  const handlePlaceholder = () => null;
   const dispatch = useTypeDispatch();
+  const isPinned = pinnedMessages.includes(message.id || ""); // useMemo doesn't work here
 
   const handleFlag = () => {
     dispatch(patchMessageData({
@@ -76,6 +78,16 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
 
   const handleSetUnread = () => {
     dispatch(patchMessageData({app, message, specificProps: { isRead: false }}));
+  }
+
+  const handlePin = () => {
+    const copy = [...pinnedMessages];
+    if(isPinned) {
+      copy.splice(copy.findIndex((id: string) => id === message.id), 1);
+    } else {
+      copy.push(message.id || "")
+    }
+    localStorage.setItem("pinnedMsgs", JSON.stringify(copy));
   }
   
   return <Hover>
@@ -118,12 +130,12 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
               <FlagOutlined fontSize='small' color={message.flag?.flagStatus === "flagged" ? "error" : "inherit"}/>
             </IconButton>
             <IconButton
-              style={{ visibility: hover ? "visible" : "hidden" }}
-              onClick={handlePlaceholder}
+              style={{ visibility: hover || isPinned ? "visible" : "hidden" }}
+              onClick={handlePin}
               size='small'
               title="Pin this message"
             >
-              <PushPinOutlined fontSize='small'/>
+              <PushPinOutlined fontSize='small' color={isPinned ? "error" : "inherit"}/>
             </IconButton>
             {message.importance === "high" && <PriorityHigh color="error" fontSize='small' />}
           </div> 

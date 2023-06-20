@@ -2,7 +2,6 @@ import { useTheme } from "@mui/styles";
 
 const GrommunioLight = () => {
   const theme = useTheme();
-  console.log(theme);
 
   return <div style={{ width: 186, height: 42 }}>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 140">
