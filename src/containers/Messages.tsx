@@ -6,13 +6,13 @@ import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMailFoldersData, fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
-import { Badge, Button, IconButton, List, ListItem, ListItemButton, ListItemText, Menu,
-  MenuItem, Paper, Tab, Tabs } from '@mui/material';
+import { Badge, Button, Grid, IconButton, List, ListItem, ListItemButton, ListItemText, Menu,
+  MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, EditOutlined, FilterList } from '@mui/icons-material';
+import { CheckBoxOutlined, EditOutlined, FilterList, Mail } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import MailActions from '../components/messages/MailActions';
@@ -102,6 +102,17 @@ const styles: any = (theme: any) => ({
     maxWidth: 172,
     fontWeight: theme.typography.fontWeightBold,
     fontSize: theme.typography.pxToRem(15),
+  },
+  centralize: {
+    display: "flex",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  mailIconContainer: {
+    paddingBottom: 8,
+    display: 'flex',
+    justifyContent: 'center',
   },
 });
 
@@ -453,6 +464,15 @@ function Messages({ classes }: MessagesProps) {
               )}
             </Tabs>
           </div>
+          {mailTabs.length === 0 && <div className={classes.centralize}>
+            <Grid>
+              <div className={classes.mailIconContainer}>
+                <Mail color="primary" fontSize="inherit" style={{ fontSize: 69 /* nice */ }}/>
+              </div>
+              <Typography align='center'>Select E-Mail to read</Typography>
+              <Typography color="grey" align='center'>No selection made</Typography>
+            </Grid>
+          </div>}
           {mailTab?.ID === 1 && <MessagePaper
             handleForward={handleForward}
             handleReply={handleReply}
