@@ -22,6 +22,7 @@ import MessagePaper from '../components/messages/MessagePaper';
 import MailContextMenu from '../components/messages/MailContextMenu/MailContextMenu';
 import MessageListItem from '../components/messages/MessageListItem';
 import AddCategory from '../components/dialogs/AddCategory';
+import usePinnedMessages from '../hooks/usePinnedMessages';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -162,6 +163,9 @@ function Messages({ classes }: MessagesProps) {
   const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
   const isContextMenuOpen = Boolean(contextMenuPosition);
   const dispatch = useTypeDispatch();
+
+  const [pinnedMessages, setPinnedMessages] = usePinnedMessages();
+  // console.log(pinnedMessages);
 
   // componentDidMount()
   useEffect(() => {
@@ -334,10 +338,7 @@ function Messages({ classes }: MessagesProps) {
   const handleAddCategory = (open: boolean) => () => {
     setAddingCategory(open);
   }
-
-  const pinnedMessages = useMemo(() => JSON.parse(localStorage.getItem("pinnedMsgs") || "[]"),
-    [localStorage.getItem("pinnedMsgs")]);
-
+    
   // Move pinned messages to top of list
   const sortedMessages = useMemo(() => {
     const copy = [...messages];
@@ -352,6 +353,16 @@ function Messages({ classes }: MessagesProps) {
     return copy;
   }, [pinnedMessages, messages]);
 
+  const handlePin = (messageId: string) => () => {
+    const copy = [...pinnedMessages];
+    if(pinnedMessages.includes(messageId)) {
+      copy.splice(copy.findIndex(id => id === messageId), 1);
+    } else {
+      copy.push(messageId || "")
+    }
+    setPinnedMessages(copy);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -362,6 +373,7 @@ function Messages({ classes }: MessagesProps) {
         folder={selectedFolder}
         handleReply={handleReply}
         handleFoldersToggle={handleFoldersToggle}
+        handlePin={handlePin(selectedMsg?.id || "")}
       />}
     >
       <div className={classes.content}>
@@ -436,6 +448,7 @@ function Messages({ classes }: MessagesProps) {
                   handleMailClick={handleMailClick}
                   handleContextMenu={handleContextMenu}
                   pinnedMessages={pinnedMessages}
+                  handlePin={handlePin}
                 />
               )}
             </List>

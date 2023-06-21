@@ -34,7 +34,8 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   );
 });
 
-const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle }) => {
+const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle,
+  handlePin }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
@@ -168,7 +169,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Flag")}
     </ActionButton>
     <ActionButton
-      onClick={handlePlaceholder}
+      onClick={handlePin}
       disabled={!mailsSelected}
       startIcon={<PushPinOutlined color={mailsSelected ? "info" : "secondary"}/>}
     >

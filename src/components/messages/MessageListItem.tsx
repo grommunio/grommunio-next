@@ -49,14 +49,15 @@ type MessageListItemProps = {
   message: Message;
   checkedMessages: Array<Message>;
   selectedMsg: Message | null;
+  handlePin: (messageId: string) => (b: React.MouseEvent<HTMLElement>) => void;
+  pinnedMessages: Array<string>;
   handleContextMenu: (a: Message) => (b: React.MouseEvent<HTMLElement>) => void;
   handleMailClick: (a: Message) => () => void;
   handleMailCheckbox: (a: Message) => (b: React.ChangeEvent<HTMLInputElement>) => void;
-  pinnedMessages: Array<string>;
 }
 
-const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, handleContextMenu,
-  handleMailClick, handleMailCheckbox, pinnedMessages }: MessageListItemProps) => {
+const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages, message, selectedMsg, handleContextMenu,
+  handleMailClick, handleMailCheckbox }: MessageListItemProps) => {
   const app = useAppContext();
   const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   const checked = checkedMessages.includes(message);
@@ -78,16 +79,6 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
 
   const handleSetUnread = () => {
     dispatch(patchMessageData({app, message, specificProps: { isRead: false }}));
-  }
-
-  const handlePin = () => {
-    const copy = [...pinnedMessages];
-    if(isPinned) {
-      copy.splice(copy.findIndex((id: string) => id === message.id), 1);
-    } else {
-      copy.push(message.id || "")
-    }
-    localStorage.setItem("pinnedMsgs", JSON.stringify(copy));
   }
   
   return <Hover>
@@ -131,7 +122,7 @@ const MesssageListItem = ({ classes, checkedMessages, message, selectedMsg, hand
             </IconButton>
             <IconButton
               style={{ visibility: hover || isPinned ? "visible" : "hidden" }}
-              onClick={handlePin}
+              onClick={handlePin(message?.id || "")}
               size='small'
               title="Pin this message"
             >
