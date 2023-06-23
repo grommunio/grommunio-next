@@ -3,7 +3,7 @@
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
-import { CategoryColor, MailFolder, Message } from "microsoft-graph";
+import { CategoryColor, Message } from "microsoft-graph";
 import { buildQuery } from "../utils";
 import { ensureClient, graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
@@ -28,17 +28,6 @@ export async function postMessage(authProvider: AuthCodeMSALBrowserAuthenticatio
   return await graphClient!
     .api('/me/' + (send ? 'sendMail' : 'messages'))
     .post(send ? { message } : message);
-}
-
-
-export async function getMailFolders(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<MailFolder[]> {
-  ensureClient(authProvider);
-  
-  const response: PageCollection = await graphClient!
-    .api('/me/mailFolders')
-    .get();
-
-  return response.value;
 }
 
 export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthenticationProvider,

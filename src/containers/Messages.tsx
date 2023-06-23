@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { fetchMailFoldersData, fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
+import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Badge, Button, Grid, IconButton, List, ListItem, ListItemButton, ListItemText, Menu,
   MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
@@ -23,6 +23,7 @@ import MailContextMenu from '../components/messages/MailContextMenu/MailContextM
 import MessageListItem from '../components/messages/MessageListItem';
 import AddCategory from '../components/dialogs/AddCategory';
 import usePinnedMessages from '../hooks/usePinnedMessages';
+import { fetchMailFoldersData } from '../actions/folders';
 
 const styles: any = (theme: any) => ({
   content: {

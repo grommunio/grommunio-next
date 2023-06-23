@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { CategoryColor, MailFolder, Message } from "microsoft-graph";
-import { deleteMessage, getMailFolders, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";
+import { CategoryColor, Message } from "microsoft-graph";
+import { deleteMessage, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
-import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MAIL_FOLDERS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
+import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
 import { MessageCategory } from "../types/messages";
 
 type fetchMessagesDataArgTypes = {
@@ -23,25 +23,6 @@ export const fetchMessagesData = createAsyncThunk<
     if (app.user) {
       try {
         const mails = await getUserMessages(app.authProvider!, folderid, params);
-        return mails;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
-
-export const fetchMailFoldersData = createAsyncThunk<
-  MailFolder[],
-  AppContext
->(
-  FETCH_MAIL_FOLDERS_DATA,
-  async (app: AppContext) => {
-    if (app.user) {
-      try {
-        const mails = await getMailFolders(app.authProvider!);
         return mails;
       } catch (err) {
         const error = err as Error;
