@@ -158,7 +158,7 @@ function Messages({ classes }: MessagesProps) {
   const [mailFilters, setMailFilters] = useState<any>({});
   const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
-  const [mailTab, setMailTab] = useState<MailTab | null>(null);
+  const [activeMailTab, setActiveMailTab] = useState<MailTab | null>(null);
   const [foldersVisible, setFoldersVisible] = useState<boolean>(true);
   const [addingCategory, setAddingCategory] = useState<boolean>(false);
   const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
@@ -203,11 +203,15 @@ function Messages({ classes }: MessagesProps) {
   const handleMailClick = (msg: Message) => () => {
     const copy = [...mailTabs];
     const tab = { ID: 1, label: msg.subject || '' };
-    if(selectedMsg === null) copy.unshift(tab);
+    // No message selected and no empty reading tab created
+    if(selectedMsg === null && copy.length === 0) {
+      copy.unshift(tab);
+    }
+    // Replace empty reading tab with clicked mail
     else copy[0] = tab;
     setSelectedMsg({...msg});
     setMailTabs(copy);
-    setMailTab(tab);
+    setActiveMailTab(tab);
     // Set isRead
     if(!msg.isRead) dispatch(patchMessageData({ app, message: msg, specificProps: { isRead: true }}));
   }
@@ -228,7 +232,7 @@ function Messages({ classes }: MessagesProps) {
     };
     copy.push(tab);
     setMailTabs(copy);
-    setMailTab(tab);
+    setActiveMailTab(tab);
   }
 
   const handleReply = () => {
@@ -248,7 +252,7 @@ function Messages({ classes }: MessagesProps) {
     };
     copy.push(tab);
     setMailTabs(copy);
-    setMailTab(tab);
+    setActiveMailTab(tab);
   }
 
   const handleFilterMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -299,6 +303,13 @@ function Messages({ classes }: MessagesProps) {
 
   const handleNewMessage = () => {
     const copy = [...mailTabs];
+    if(copy.length === 0) { /* No e-mail selected */
+      const readingTab = {
+        ID: 1, /* Reading tab ID */
+        label: 'Select mail to read',
+      }
+      copy.push(readingTab);
+    }
     const tab = {
       ID: now(),
       label: '<No subject>',
@@ -306,15 +317,15 @@ function Messages({ classes }: MessagesProps) {
     };
     copy.push(tab);
     setMailTabs(copy);
-    setMailTab(tab);
+    setActiveMailTab(tab);
   }
 
-  const handleTab = (e: any, newVal: MailTab) => setMailTab(newVal);
+  const handleTab = (e: any, newVal: MailTab) => setActiveMailTab(newVal);
 
   const handleDraftClose = (tabIndex: number) => () => {
     const copy = [...mailTabs];
     copy.splice(tabIndex, 1);
-    setMailTab(copy[0] || null);
+    setActiveMailTab(copy[0] || null);
     setMailTabs(copy);
   }
 
@@ -327,7 +338,7 @@ function Messages({ classes }: MessagesProps) {
     if(selectedMsg === null) copy.unshift(tab);
     else copy[0] = tab;
     setMailTabs(copy);
-    setMailTab(tab);
+    setActiveMailTab(tab);
     setSelectedMsg({...msg});
     setContextMenuPosition({ top: e.clientY, left: e.clientX });
   };
@@ -459,7 +470,7 @@ function Messages({ classes }: MessagesProps) {
           <div className={classes.mailTabsContainer}>
             <Tabs
               onChange={handleTab}
-              value={mailTab}
+              value={activeMailTab}
               color="primary"
               textColor="inherit"
               style={{ color: 'white' }}
@@ -487,13 +498,13 @@ function Messages({ classes }: MessagesProps) {
               <Typography color="grey" align='center'>No selection made</Typography>
             </Grid>
           </div>}
-          {mailTab?.ID === 1 && <MessagePaper
+          {activeMailTab?.ID === 1 && <MessagePaper
             handleForward={handleForward}
             handleReply={handleReply}
             selectedMsg={selectedMsg}
           />}
           {(mailTabs.length > 1 ? mailTabs.slice(1) : []).map((tab, key) =>
-            <TabPanel key={key} hidden={tab.ID !== mailTab?.ID}>
+            <TabPanel key={key} hidden={tab.ID !== activeMailTab?.ID}>
               {tab?.Component ? <tab.Component
                 initialState={tab.initialState}
                 handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)}
