@@ -12,7 +12,7 @@ import { MailFolder, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
-import { CheckBoxOutlined, EditOutlined, FilterList, Mail } from '@mui/icons-material';
+import { CheckBoxOutlined, Close, EditOutlined, FilterList, Mail } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import FolderList from '../components/FolderList';
 import MailActions from '../components/messages/MailActions';
@@ -96,12 +96,18 @@ const styles: any = (theme: any) => ({
     textTransform: 'none',
     border: '2px solid #545454',
     marginRight: 8,
+    padding: 11,
+    minHeight: 48,
+    minWidth: 120,
   },
   tabContent: {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     maxWidth: 172,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     fontWeight: theme.typography.fontWeightBold,
     fontSize: theme.typography.pxToRem(15),
   },
@@ -375,6 +381,20 @@ function Messages({ classes }: MessagesProps) {
     setPinnedMessages(copy);
   }
 
+  const handleCloseTab = (tab: MailTab) => (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    const copy = [...mailTabs];
+    const idx = copy.findIndex(t => t.ID === tab.ID);
+    if(idx !== -1) {
+      copy.splice(idx, 1);
+    }
+    // Closing active tab -> Select the latest one
+    if(activeMailTab?.ID === tab.ID) {
+      setActiveMailTab(copy[copy.length - 1])
+    }
+    setMailTabs(copy);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -480,11 +500,20 @@ function Messages({ classes }: MessagesProps) {
                   disableRipple
                   key={key}
                   value={tab}
+                  iconPosition='start'
+                  icon={key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : undefined}
                   label={<div className={classes.tabContent}>
-                    {key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : null}
-                    {tab.label || "<No subject>"}
+                    <Typography>{tab.label || "<No subject>"}</Typography>
+                    {key !== 0 && <IconButton
+                      onClick={handleCloseTab(tab)}
+                      size="small"
+                      sx={{ ml: 1 }}
+                    >
+                      <Close fontSize='small'/>
+                    </IconButton>}
                   </div>}
                   className={classes.tab}
+                  
                 />
               )}
             </Tabs>
