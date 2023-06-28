@@ -47,6 +47,9 @@ const styles: any = (theme: any) => ({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
+  ccButton: {
+    minWidth: 40,
+  }
 });
 
 type MessagesProps = {
@@ -66,7 +69,10 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const [ccRecipients, setCcRecipients] = useState("");
   const [bccRecipients, setBccRecipients] = useState("");
   const [subject, setSubject] = useState(initialState?.subject || "");
-  const [messageImportance, setMessageImportance] = useState<Importance>("normal")
+  const [ccVisible, setCcVisible] = useState(false);
+  const [bccVisible, setBccVisible] = useState(false);
+  const [messageImportance, setMessageImportance] = useState<Importance>("normal");
+  // TODO: This solution was a stupid idea. Rewrite the state handlers
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
     'setSubject': setSubject,
@@ -175,9 +181,29 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             onChange={handleInput('setToRecipients')}
             value={toRecipients}
             fullWidth
+            InputProps={{
+              endAdornment: <div className={classes.flexRow}>
+                <Button
+                  className={classes.ccButton}
+                  onClick={() => setCcVisible(!ccVisible)}
+                  size='small'
+                  color={ccVisible ? 'primary' : 'secondary'}
+                >
+                  CC
+                </Button>
+                <Button
+                  className={classes.ccButton}
+                  onClick={() => setBccVisible(!bccVisible)}
+                  size='small'
+                  color={bccVisible ? 'primary' : 'secondary'}
+                >
+                  BCC
+                </Button>
+              </div>
+            }}
           />
         </div>
-        <div className={classes.flexRow}>
+        {ccVisible && <div className={classes.flexRow}>
           <IconButton onClick={handleGAB}>
             <ImportContacts />
           </IconButton>
@@ -188,8 +214,8 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={ccRecipients}
             fullWidth
           />
-        </div>
-        <div className={classes.flexRow}>
+        </div>}
+        {bccVisible && <div className={classes.flexRow}>
           <IconButton onClick={handleGAB}>
             <ImportContacts />
           </IconButton>
@@ -200,7 +226,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={bccRecipients}
             fullWidth
           />
-        </div>
+        </div>}
         <TextField
           className={classes.input}
           label={t("Subject")}
