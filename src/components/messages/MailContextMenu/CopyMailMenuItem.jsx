@@ -1,4 +1,4 @@
-import { Button, Input, MenuItem } from "@mui/material";
+import { Button, Input, ListItemIcon, MenuItem } from "@mui/material";
 import NestedMenuItem from "../../menu/NestedMenuItem";
 import { copyMessage } from "../../../api/messages";
 import { useAppContext } from "../../../azure/AppContext";
@@ -6,6 +6,7 @@ import { withTranslation } from "react-i18next";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { postMailFolderData } from "../../../actions/folders";
+import { Archive, DeleteOutline, Folder, Inbox } from "@mui/icons-material";
 
 const CopyMailMenuItem = ({ t, openedMail }) => {
   const app = useAppContext();
@@ -41,11 +42,23 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
     label={t("Copy")}
   >
     {showingAll ? mailFolders.map((mailFolder, idx) => 
-      <MenuItem key={idx} onClick={handleCopy(mailFolder.id)}>{mailFolder.displayName || ""}</MenuItem>
+      <MenuItem key={idx} onClick={handleCopy(mailFolder.id)}>
+        <ListItemIcon><Folder fontSize="small"/></ListItemIcon>
+        {mailFolder.displayName || ""}
+      </MenuItem>
     ) : <>
-      <MenuItem onClick={handleCopy("inbox")}>{t("Inbox")}</MenuItem>
-      <MenuItem onClick={handleCopy("deletedItems")}>{t("Deleted items")}</MenuItem>
-      <MenuItem onClick={handleCopy("archive")}>{t("Archive")}</MenuItem>
+      <MenuItem onClick={handleCopy("inbox")}>
+        <ListItemIcon><Inbox fontSize="small"/></ListItemIcon>
+        {t("Inbox")}
+      </MenuItem>
+      <MenuItem onClick={handleCopy("deletedItems")}>
+        <ListItemIcon><DeleteOutline fontSize="small"/></ListItemIcon>
+        {t("Deleted items")}
+      </MenuItem>
+      <MenuItem onClick={handleCopy("archive")}>
+        <ListItemIcon><Archive fontSize="small"/></ListItemIcon>
+        {t("Archive")}
+      </MenuItem>
     </>}
     <MenuItem onKeyDown={e => e.stopPropagation()}>
       <Input
