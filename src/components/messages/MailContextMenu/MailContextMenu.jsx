@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { withStyles } from '@mui/styles';
 import CopyMailMenuItem from './CopyMailMenuItem';
 import CategorizeMailMenuItem from './CategorizeMailMenuItem';
+import MoveMailMenuItem from './MoveMailMenuItem';
 
 const styles = {
   backdrop: {
@@ -53,6 +54,7 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
       <MenuItem onClick={handleMailDelete}>{t("Delete")}</MenuItem>
       <MenuItem onClick={handleMailMove("archive")}>{t("Archive")}</MenuItem>
       <MenuItem onClick={handleMarkAsUnread}>{t("Mark as unread")}</MenuItem>
+      <MoveMailMenuItem openedMail={openedMail} />
       <CopyMailMenuItem openedMail={openedMail}/>
       <CategorizeMailMenuItem openedMail={openedMail} handleAddCategory={handleAddCategory}/>
     </Menu>
