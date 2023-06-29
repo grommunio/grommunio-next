@@ -41,7 +41,6 @@ const styles = theme => ({
 });
 
 function AddCategory(props) {
-  const app = useAppContext();
   const dispatch = useDispatch();
   const { classes, t, open, onClose } = props;
   const [ category, setCategory ] = useState({ displayName: "", color: "#ff0000" });
@@ -63,8 +62,8 @@ function AddCategory(props) {
       displayName,
       color: hexColorToPresetName(color),
     };
-    dispatch(postMessageCategory({app, category: cat}))
-      .then(resp => resp?.payload?.id ? onClose() : null);
+    dispatch(postMessageCategory(cat))
+      .then(resp => resp?.id ? onClose() : null);
   }
 
   const handleColorChange = (color) => {

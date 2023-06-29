@@ -8,7 +8,6 @@ import { Dialog, DialogTitle, DialogContent,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { Message } from 'microsoft-graph';
-import { useAppContext } from '../../azure/AppContext';
 import { Editor } from '@tinymce/tinymce-react';
 import { useTypeDispatch } from '../../store';
 import { postNoteData } from '../../actions/notes';
@@ -20,7 +19,6 @@ const styles = {
 };
 
 function AddNote(props: any) {
-  const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
   const { classes, t, open, onClose } = props;
@@ -33,7 +31,7 @@ function AddNote(props: any) {
       },
       subject: editorRef.current ? editorRef.current.getContent({ format: 'text' }) : ''
     };
-    dispatch(postNoteData({app, note}))
+    dispatch(postNoteData(note))
       .then(resp => {
         if(resp) {
           onClose();

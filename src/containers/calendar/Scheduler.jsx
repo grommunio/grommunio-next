@@ -421,7 +421,7 @@ class ScheduleCalendar extends React.PureComponent {
       const { postEvent, patchEvent, app } = this.props;
       let { data } = state;
       if (added) {
-        postEvent({ event: added, app: app });
+        postEvent(added);
         const startingAddedId =
           data.length > 0 ? data[data.length - 1].id + 1 : 0;
         data = [...data, { id: startingAddedId, ...added }];

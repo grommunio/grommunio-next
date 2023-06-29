@@ -100,9 +100,7 @@ export async function mailCategories(authProvider: AuthCodeMSALBrowserAuthentica
   return response.value;
 }
 
-export async function postMailCategory(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  category: MessageCategory): Promise<MessageCategory> {
-  ensureClient(authProvider);
+export async function postMailCategory(category: MessageCategory): Promise<MessageCategory> {
 
   const response = await graphClient!
     .api("/me/outlook/masterCategories")

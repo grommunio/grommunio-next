@@ -8,7 +8,6 @@ import { Dialog, DialogTitle, DialogContent, TextField,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { TodoTask } from 'microsoft-graph';
-import { useAppContext } from '../../azure/AppContext';
 import { Editor } from '@tinymce/tinymce-react';
 import { postTaskData } from '../../actions/tasks';
 import { useTypeDispatch } from '../../store';
@@ -24,7 +23,6 @@ const styles = (theme: any) => ({
 });
 
 function AddTask(props: any) {
-  const app = useAppContext();
   const editorRef = useRef<any>(null);
   const { classes, t, open, onClose, taskListId } = props;
   const [ task, setTask ] = useState<TodoTask>({});
@@ -50,7 +48,7 @@ function AddTask(props: any) {
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
     }
-    dispatch(postTaskData({app, taskListId, task: mergedTask}))
+    dispatch(postTaskData(taskListId, mergedTask))
       .then(resp => {
         if(resp) {
           onClose();

@@ -109,6 +109,6 @@ export function hexColorToPresetName(pseudoColor: string) {
   case "#0000ff": return 'preset7';
   case "#800080": return 'preset8';
   // TODO: Add all preset colors
-  default: return "white";
+  default: return "preset0";
   }
 }

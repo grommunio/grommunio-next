@@ -54,7 +54,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
       categories: action.payload ?? [],
     };
 
-  case POST_MESSAGE_CATEGORY + "/fulfilled":
+  case POST_MESSAGE_CATEGORY:
     return {
       ...state,
       categories: addItem(state.categories, action.payload),

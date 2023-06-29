@@ -7,6 +7,7 @@ import { deleteTask, getUserTaskLists, getUserTasks, patchTask, postTask, postTa
 import { AppContext } from "../azure/AppContext";
 import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, PATCH_TASK_DATA, POST_TASK_DATA,
   POST_TASK_LIST_DATA, DELETE_TASK_LIST_DATA } from "./types";
+import { defaultPostHandler } from "./defaults";
 
 export const fetchTaskListsData = createAsyncThunk<
   TodoTaskList[],
@@ -108,25 +109,9 @@ type postTaskListDataParams = {
   taskList: TodoTaskList,
 }
 
-export const postTaskListData = createAsyncThunk<
-  TodoTaskList | boolean,
-  postTaskListDataParams
-  >(
-    POST_TASK_LIST_DATA,
-    async ({ taskList, app }: postTaskListDataParams) => {
-      if (app.user) {
-        try {
-          const res = await postTaskList(app.authProvider!, taskList);
-          return res;
-        } catch (err) {
-          const error = err as Error;
-          app.displayError!(error.message);
-          return false;
-        }
-      }
-      return false;
-    }
-  );
+export function postTaskListData(...endpointProps: [TodoTaskList]) {
+  return defaultPostHandler(postTaskList, POST_TASK_LIST_DATA, ...endpointProps)
+}
 
 export const deleteTaskListData = createAsyncThunk<
   string | boolean,
@@ -148,28 +133,7 @@ export const deleteTaskListData = createAsyncThunk<
     }
   );
 
-type postTaskDataParams = {
-  app: AppContext,
-  taskListId: string,
-  task: TodoTask,
-}
 
-export const postTaskData = createAsyncThunk<
-  TodoTask | boolean,
-  postTaskDataParams
-  >(
-    POST_TASK_DATA,
-    async ({ taskListId, task, app }: postTaskDataParams) => {
-      if (app.user) {
-        try {
-          const res = await postTask(app.authProvider!, taskListId, task);
-          return res;
-        } catch (err) {
-          const error = err as Error;
-          app.displayError!(error.message);
-          return false;
-        }
-      }
-      return false;
-    }
-  );
+export function postTaskData(...endpointProps: [string, TodoTask]) {
+  return defaultPostHandler(postTask, POST_TASK_DATA, ...endpointProps)
+}

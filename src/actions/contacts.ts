@@ -3,9 +3,10 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Contact } from "microsoft-graph";
-import { deleteContact, getContacts } from "../api/contacts";
+import { deleteContact, getContacts, postContact } from "../api/contacts";
 import { AppContext } from "../azure/AppContext";
 import { FETCH_CONTACTS_DATA, DELETE_CONTACTS_DATA } from "./types";
+import { defaultPostHandler } from "./defaults";
 
 
 export const fetchContactsData = createAsyncThunk<
@@ -51,3 +52,8 @@ export const deleteContactData = createAsyncThunk<
     return false;
   }
 );
+
+export function postContactData(...endpointProps: [Contact]) {
+  //TODO: Add proper dispatch type to update reducer
+  return defaultPostHandler(postContact, null, ...endpointProps)
+}

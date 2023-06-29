@@ -28,7 +28,7 @@ function notesReducer(state = defaultState, action: AnyAction) {
       notes: action.payload ? state.notes.filter((note: Message) => note.id !== action.payload) : state.notes,
     }
 
-  case POST_NOTE_DATA + '/fulfilled':
+  case POST_NOTE_DATA:
     return {
       ...state,
       notes: addItem(state.notes, action.payload),

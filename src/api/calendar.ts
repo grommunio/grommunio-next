@@ -62,9 +62,7 @@ export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthe
 // </GetUserWeekCalendarSnippet>
 
 // <CreateEventSnippet>
-export async function postEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  newEvent: Event): Promise<Event> {
-  ensureClient(authProvider);
+export async function postEvent(newEvent: Event): Promise<Event> {
 
   // POST /me/events
   // JSON representation of the new event is sent in the

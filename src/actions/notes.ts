@@ -6,6 +6,7 @@ import { Message } from "microsoft-graph";
 import { deleteNote, getNotes, postNote } from "../api/notes";
 import { AppContext } from "../azure/AppContext";
 import { FETCH_NOTES_DATA, DELETE_NOTES_DATA, POST_NOTE_DATA } from "./types";
+import { defaultPostHandler } from "./defaults";
 
 export const fetchNotesData = createAsyncThunk<
   Message[],
@@ -51,27 +52,7 @@ export const deleteNoteData = createAsyncThunk<
     }
   );
 
-type postNoteDataParams = {
-    app: AppContext,
-    note: Message,
-  }
-  
-export const postNoteData = createAsyncThunk<
-    Message | boolean,
-    postNoteDataParams
-    >(
-      POST_NOTE_DATA,
-      async ({ note, app }: postNoteDataParams) => {
-        if (app.user) {
-          try {
-            const resp = await postNote(app.authProvider!, note);
-            return resp;
-          } catch (err) {
-            const error = err as Error;
-          app.displayError!(error.message);
-          return false;
-          }
-        }
-        return false;
-      }
-    );
+
+export function postNoteData(...endpointProps: [Message]) {
+  return defaultPostHandler(postNote, POST_NOTE_DATA, ...endpointProps)
+}

@@ -27,9 +27,7 @@ export async function getUserTasks(authProvider: AuthCodeMSALBrowserAuthenticati
   return response.value;
 }
 
-export async function postTaskList(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  taskList: TodoTaskList): Promise<TodoTask> {
-  ensureClient(authProvider);
+export async function postTaskList(taskList: TodoTaskList): Promise<TodoTask> {
   
   return await graphClient!
     .api('/me/todo/lists')
@@ -45,9 +43,7 @@ export async function deleteTaskList(authProvider: AuthCodeMSALBrowserAuthentica
     .delete();
 }
 
-export async function postTask(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  tasklistID: string, task: TodoTask): Promise<TodoTask> {
-  ensureClient(authProvider);
+export async function postTask(tasklistID: string, task: TodoTask): Promise<TodoTask> {
   
   return await graphClient!
     .api('/me/todo/lists/' + tasklistID + '/tasks')

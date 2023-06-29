@@ -16,10 +16,7 @@ export async function getNotes(authProvider: AuthCodeMSALBrowserAuthenticationPr
   return response.value;
 }
 
-export async function postNote(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  note: Message): Promise<Message> {
-  ensureClient(authProvider);
-  
+export async function postNote(note: Message): Promise<Message> {
   return await graphClient!
     .api('/me/MailFolders/notes/messages')
     .post(note);

@@ -8,7 +8,6 @@ import { Dialog, DialogTitle, DialogContent, TextField,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { TodoTaskList } from 'microsoft-graph';
-import { useAppContext } from '../../azure/AppContext';
 import { postTaskListData } from '../../actions/tasks';
 import { useTypeDispatch } from '../../store';
 
@@ -23,7 +22,6 @@ const styles = (theme: any) => ({
 });
 
 function AddTaskList(props: any) {
-  const app = useAppContext();
   const { classes, t, open, onClose } = props;
   const [ taskList, setTaskList ] = useState<TodoTaskList>({});
   const { displayName } = taskList;
@@ -41,7 +39,7 @@ function AddTaskList(props: any) {
   }
 
   const handleAdd = () => {
-    dispatch(postTaskListData({app, taskList}))
+    dispatch(postTaskListData(taskList))
       .then(resp => {
         if(resp) {
           setTaskList({});

@@ -8,13 +8,13 @@ import { Dialog, DialogTitle, DialogContent, TextField,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { Contact } from 'microsoft-graph';
-import { useAppContext } from '../../azure/AppContext';
-import { postContact } from '../../api/contacts';
+import { postContactData } from '../../actions/contacts';
+import { useTypeDispatch } from '../../store';
 
 const styles = (theme: any) => ({
   grid: {
     display: 'flex',
-    margin: theme.spacing(1, 1, 1, 1),
+    margin: theme.spacing(1),
     flex: 1,
   },
   input: {
@@ -24,7 +24,7 @@ const styles = (theme: any) => ({
     display: 'flex',
   },
   propertyInput: {
-    margin: theme.spacing(1, 1, 1, 1),
+    margin: theme.spacing(1),
     flex: 1,
   },
   flexTextfield: {
@@ -34,8 +34,8 @@ const styles = (theme: any) => ({
 });
 
 function AddContact(props: any) {
-  const app = useAppContext();
   const { classes, t, open, onClose } = props;
+  const dispatch = useTypeDispatch();
   const [ contact, setContact ] = useState<Contact>({})
   const [ emails, setEmails ] = useState<string>('');
   const { displayName, givenName, initials, surname, nickName } = contact;
@@ -64,8 +64,8 @@ function AddContact(props: any) {
         }
       ]
     }
-    postContact(app.authProvider!, mergedContact)
-      .then(resp => resp.id ? onClose() : null); // TODO: Update table view after successful add. (Maybe create action?)
+    dispatch(postContactData(mergedContact))
+      .then((resp: Contact) => resp.id ? onClose() : null); // TODO: Update table view after successful add. (Maybe create action?)
   }
   
   return (

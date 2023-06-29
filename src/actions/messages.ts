@@ -144,26 +144,6 @@ export const fetchMessageCategories = createAsyncThunk<
   }
 );
 
-type postMessageCategoryProps = {
-  app: AppContext,
-  category: MessageCategory
+export function postMessageCategory(...endpointProps: [MessageCategory]) {
+  return defaultPostHandler(postMailCategory, POST_MESSAGE_CATEGORY, ...endpointProps)
 }
-
-export const postMessageCategory = createAsyncThunk<
-  MessageCategory | boolean,
-  postMessageCategoryProps
->(
-  POST_MESSAGE_CATEGORY,
-  async ({app, category}: postMessageCategoryProps) => {
-    if (app.user) {
-      try {
-        const result = await postMailCategory(app.authProvider!, category);
-        return result;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return false;
-  }
-);

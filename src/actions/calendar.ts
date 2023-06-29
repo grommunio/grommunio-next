@@ -13,6 +13,7 @@ import {
   getUserCalendar,
 } from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA } from "./types";
+import { defaultPostHandler } from "./defaults";
 
 
 export const fetchEventsData = createAsyncThunk<
@@ -40,26 +41,9 @@ type postEventDataParams = {
   event: Event,
 }
 
-export const postEventData = createAsyncThunk<
-  Event | boolean,
-  postEventDataParams
->(
-  POST_EVENT_DATA,
-  async ({ event, app }: postEventDataParams) => {
-    if (app.user) {
-      try {
-        const res = await postEvent(app.authProvider!, formatEvent(event));
-        return res;
-      } catch (err) {
-        const error = err as Error;
-        console.error(error);
-        app.displayError!(error.message);
-        return false;
-      }
-    }
-    return false;
-  }
-);
+export function postEventData(event: Event) {
+  return defaultPostHandler(postEvent, POST_EVENT_DATA, ...[formatEvent(event)])
+}
 
 export const patchEventData = createAsyncThunk<
   Event | boolean,
