@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { postMailFolderData } from "../../../actions/folders";
 import { Archive, DeleteOutline, Folder, Inbox } from "@mui/icons-material";
 import { pushAlertStack } from "../../../actions/alerts";
+import { copyMessageData } from "../../../actions/messages";
 
 
 const CopyMailMenuItem = ({ t, openedMail }) => {
@@ -18,11 +19,11 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
   const mailFolders = useSelector(state => state.messages.mailFolders);
 
   const handleCopy = destinationId => () => {
-    copyMessage(
-      app.authProvider,
+    dispatch(copyMessageData(
+      app,
       openedMail.id,
       destinationId,
-    );
+    ));
   }
 
   const handleCreate = async () => {

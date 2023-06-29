@@ -78,9 +78,9 @@ export async function moveMessage(authProvider: AuthCodeMSALBrowserAuthenticatio
   return response?.message;
 }
 
-export async function copyMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
+export async function copyMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider | undefined,
   id: string, destinationId: string): Promise<string | undefined> {
-  ensureClient(authProvider);
+  ensureClient(authProvider!);
   
   
   const response = await graphClient!

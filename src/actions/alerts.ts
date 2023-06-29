@@ -1,12 +1,12 @@
 import { now } from "moment";
-import { AlertType } from "../types/misc";
 import { PUSH_ALERT_STACK, SPLICE_ALERT_STACK } from "./types";
 
-export function pushAlertStack(alert: AlertType) {
+export function pushAlertStack(alert?: any) {
   return {
     type: PUSH_ALERT_STACK,
     alert: {
-      ...alert,
+      ...(alert || {}),
+      message: alert?.message || "Success",
       id: now(),
     },
   }

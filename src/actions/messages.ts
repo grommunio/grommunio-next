@@ -3,10 +3,11 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { CategoryColor, Message } from "microsoft-graph";
-import { deleteMessage, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";
+import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
 import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
 import { MessageCategory } from "../types/messages";
+import { pushAlertStack } from "./alerts";
 
 type fetchMessagesDataArgTypes = {
   app: AppContext,
@@ -119,6 +120,22 @@ export const moveMessageData = createAsyncThunk<
     return succ;
   }
 );
+
+
+export function copyMessageData(app: AppContext, messageId: string, destinationId: string) {
+  return async (dispatch: any) => {
+    try {
+      await copyMessage(
+        app.authProvider,
+        messageId,
+        destinationId,
+      );
+      dispatch(pushAlertStack());
+    } catch (error: any) {
+      dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
+    }
+  }
+}
 
 export const fetchMessageCategories = createAsyncThunk<
   CategoryColor[],
