@@ -17,8 +17,10 @@ import notesReducer from './reducers/notes';
 import settingsReducer from './reducers/settings';
 import tasksReducer from './reducers/tasks';
 import { userReducer as meatGrinder } from './reducers/user';
+import alertsReducer from './reducers/alerts';
 
 const rootReducer = combineReducers({
+  alerts: alertsReducer,
   auth: authReducer,
   calendar: calendarReducer,
   contacts: contactsReducer,

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { postMailFolderData } from "../../../actions/folders";
 import { moveMessageData } from "../../../actions/messages";
 import { Archive, DeleteOutline, Folder } from "@mui/icons-material";
+import { pushAlertStack } from "../../../actions/alerts";
 
 const MoveMailMenuItem = ({ t, openedMail }) => {
   const app = useAppContext();
@@ -25,7 +26,6 @@ const MoveMailMenuItem = ({ t, openedMail }) => {
 
   const handleCreate = async () => {
     const res = await dispatch(postMailFolderData({app, folder: { displayName: newFolder }}));
-    console.log(res);
     if(!res.error) {
       dispatch(moveMessageData({
         app,
@@ -34,8 +34,7 @@ const MoveMailMenuItem = ({ t, openedMail }) => {
       }));
       setNewFolder("");
     } else {
-      /* TODO: Implement feedback snackbar */
-      console.log(res.payload);
+      dispatch(pushAlertStack({ message: res.payload, severity: "error" }));
     }
   }
 

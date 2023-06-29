@@ -19,6 +19,7 @@ import GAB from './components/dialogs/GAB';
 import { CssBaseline } from '@mui/material';
 import background from "!file-loader!./res/background_light.svg";
 import backgroundDark from "!file-loader!./res/background_dark.svg";
+import AlertStack from './components/AlertStack';
 
 const styles = {
   root: {
@@ -115,6 +116,7 @@ function App(props) {
             routesProps={routesProps}
           />
           <GAB />
+          <AlertStack />
         </div>
       </ProvideAppContext>
     </MsalProvider>

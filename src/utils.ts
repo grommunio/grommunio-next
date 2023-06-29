@@ -31,6 +31,12 @@ export function addItem(arr: Array<any>, item: any): Array<any> {
   return copy;
 }
 
+export function spliceArray(arr: Array<any>, index: number): Array<any> {
+  const copy = [...arr];
+  copy.splice(index, 1);
+  return copy;
+}
+
 export function getLangs() {
   return [
     { key: 'ca-ES', value: 'ca_ES: català' },

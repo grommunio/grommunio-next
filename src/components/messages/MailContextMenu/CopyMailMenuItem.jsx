@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { postMailFolderData } from "../../../actions/folders";
 import { Archive, DeleteOutline, Folder, Inbox } from "@mui/icons-material";
+import { pushAlertStack } from "../../../actions/alerts";
+
 
 const CopyMailMenuItem = ({ t, openedMail }) => {
   const app = useAppContext();
@@ -33,8 +35,7 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
       );
       setNewFolder("");
     } else {
-      /* TODO: Implement feedback snackbar */
-      console.log(res.payload);
+      dispatch(pushAlertStack({ message: res.payload, severity: "error" }));
     }
   }
 
