@@ -3,6 +3,7 @@ import { MailFolder } from "microsoft-graph";
 import { AppContext } from "../azure/AppContext";
 import { FETCH_MAIL_FOLDERS_DATA, POST_MAIL_FOLDER } from "./types";
 import { getMailFolders, postMailFolder } from "../api/folders";
+import { defaultPostHandler } from "./defaults";
 
 
 export const fetchMailFoldersData = createAsyncThunk<
@@ -25,27 +26,6 @@ export const fetchMailFoldersData = createAsyncThunk<
 );
 
 
-type postMailFolderDataProps = {
-  app: AppContext,
-  folder: MailFolder,
+export function postMailFolderData(...endpointProps: [AppContext, MailFolder]) {
+  return defaultPostHandler(postMailFolder, POST_MAIL_FOLDER, ...endpointProps)
 }
-
-export const postMailFolderData = createAsyncThunk<
-  MailFolder | boolean,
-  postMailFolderDataProps
->(
-  POST_MAIL_FOLDER,
-  async ({app, folder}: postMailFolderDataProps, { rejectWithValue }) => {
-    if (app.user) {
-      try {
-        const result = await postMailFolder(app.authProvider!, folder);
-        return result;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-        return rejectWithValue(error.message);
-      }
-    }
-    return false;
-  }
-);

@@ -1,13 +1,11 @@
 import { Button, Input, ListItemIcon, MenuItem } from "@mui/material";
 import NestedMenuItem from "../../menu/NestedMenuItem";
-import { copyMessage } from "../../../api/messages";
 import { useAppContext } from "../../../azure/AppContext";
 import { withTranslation } from "react-i18next";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { postMailFolderData } from "../../../actions/folders";
 import { Archive, DeleteOutline, Folder, Inbox } from "@mui/icons-material";
-import { pushAlertStack } from "../../../actions/alerts";
 import { copyMessageData } from "../../../actions/messages";
 
 
@@ -27,16 +25,14 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
   }
 
   const handleCreate = async () => {
-    const res = await dispatch(postMailFolderData({app, folder: { displayName: newFolder }}));
-    if(!res.error) {
-      copyMessage(
+    const data = await dispatch(postMailFolderData(app, { displayName: newFolder }));
+    if(data?.payload) {
+      dispatch(copyMessageData(
         app.authProvider,
         openedMail.id,
-        res.payload.id,
-      );
+        data.payload.id,
+      ));
       setNewFolder("");
-    } else {
-      dispatch(pushAlertStack({ message: res.payload, severity: "error" }));
     }
   }
 

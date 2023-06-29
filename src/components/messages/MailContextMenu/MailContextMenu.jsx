@@ -7,7 +7,6 @@ import { withStyles } from '@mui/styles';
 import CopyMailMenuItem from './CopyMailMenuItem';
 import CategorizeMailMenuItem from './CategorizeMailMenuItem';
 import MoveMailMenuItem from './MoveMailMenuItem';
-import { pushAlertStack } from '../../../actions/alerts';
 
 const styles = {
   backdrop: {
@@ -30,8 +29,8 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
     }));
   }
 
-  const handleMailMove = destinationId => async () => {
-    await dispatch(moveMessageData({
+  const handleMailMove = destinationId => () => {
+    dispatch(moveMessageData({
       app,
       messages: [openedMail],
       destinationId,

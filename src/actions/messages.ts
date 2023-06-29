@@ -7,7 +7,7 @@ import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessag
 import { AppContext } from "../azure/AppContext";
 import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
 import { MessageCategory } from "../types/messages";
-import { pushAlertStack } from "./alerts";
+import { defaultPostHandler } from "./defaults";
 
 type fetchMessagesDataArgTypes = {
   app: AppContext,
@@ -121,20 +121,8 @@ export const moveMessageData = createAsyncThunk<
   }
 );
 
-
-export function copyMessageData(app: AppContext, messageId: string, destinationId: string) {
-  return async (dispatch: any) => {
-    try {
-      await copyMessage(
-        app.authProvider,
-        messageId,
-        destinationId,
-      );
-      dispatch(pushAlertStack());
-    } catch (error: any) {
-      dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
-    }
-  }
+export function copyMessageData(...endpointProps: [AppContext, string, string]) {
+  return defaultPostHandler(copyMessage, null, ...endpointProps)
 }
 
 export const fetchMessageCategories = createAsyncThunk<

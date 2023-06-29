@@ -172,7 +172,6 @@ function Messages({ classes }: MessagesProps) {
   const dispatch = useTypeDispatch();
 
   const [pinnedMessages, setPinnedMessages] = usePinnedMessages();
-  // console.log(pinnedMessages);
 
   // componentDidMount()
   useEffect(() => {
