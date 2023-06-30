@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { TodoTask, TodoTaskList } from "microsoft-graph";
-import { ensureClient, graphClient } from "./utils";
+import { graphClient } from "./utils";
 
 export async function getUserTaskLists(): Promise<TodoTaskList[]> {
   const response: PageCollection = await graphClient!
@@ -50,9 +49,7 @@ export async function deleteTask(taskId: string, tasklistID: string): Promise<To
     .delete();
 }
 
-export async function patchTask(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  tasklistID: string, task: TodoTask): Promise<TodoTask> {
-  ensureClient(authProvider);
+export async function patchTask(task: TodoTask, tasklistID: string): Promise<TodoTask> {
   
   return await graphClient!
     .api('/me/todo/lists/' + tasklistID + '/tasks/' + task.id)

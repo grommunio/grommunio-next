@@ -7,37 +7,16 @@ import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessag
 import { AppContext } from "../azure/AppContext";
 import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
 import { MessageCategory } from "../types/messages";
-import { defaultFetchHandler, defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultPatchHandler, defaultPostHandler } from "./defaults";
 
 
 export function fetchMessagesData(folderid = 'inbox', params={}) {
   return defaultFetchHandler(getUserMessages, FETCH_MAILS_DATA, folderid, params)
 }
 
-type patchMessageDataArgTypes = {
-  app: AppContext,
-  message: Message,
-  specificProps?: any,
-};
-
-export const patchMessageData = createAsyncThunk<
-  Message | boolean,
-  patchMessageDataArgTypes
->(
-  PATCH_MESSAGE_DATA,
-  async ({app, message, specificProps}: patchMessageDataArgTypes) => {
-    if (app.user) {
-      try {
-        const res = await patchMessage(app.authProvider!, message, specificProps);
-        return res || false;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return false;
-  }
-);
+export function patchMessageData(message: Message, specificProps?: any) {
+  return defaultPatchHandler(patchMessage, PATCH_MESSAGE_DATA, true, message, specificProps)
+}
 
 type deleteMessageDataArgTypes = {
   app: AppContext,

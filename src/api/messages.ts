@@ -39,9 +39,7 @@ export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthen
   return response?.message;
 }
 
-export async function patchMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  message: Message, specificProps: any): Promise<Message | undefined> {
-  ensureClient(authProvider);
+export async function patchMessage(message: Message, specificProps: any): Promise<Message | undefined> {
   
   const response = await graphClient!
     .api('/me/messages/'+ message.id)

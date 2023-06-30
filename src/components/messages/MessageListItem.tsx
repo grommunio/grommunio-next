@@ -7,7 +7,6 @@ import { parseISODate } from "../../utils";
 import CategoryChip from "./CategoryChip";
 import { useTypeDispatch } from "../../store";
 import { patchMessageData } from "../../actions/messages";
-import { useAppContext } from "../../azure/AppContext";
 
 const styles: any = {
   mailSender: {
@@ -58,27 +57,25 @@ type MessageListItemProps = {
 
 const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages, message, selectedMsg, handleContextMenu,
   handleMailClick, handleMailCheckbox }: MessageListItemProps) => {
-  const app = useAppContext();
   const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   const checked = checkedMessages.includes(message);
   const dispatch = useTypeDispatch();
   const isPinned = pinnedMessages.includes(message.id || ""); // useMemo doesn't work here
 
   const handleFlag = () => {
-    dispatch(patchMessageData({
-      app,
+    dispatch(patchMessageData(
       message,
-      specificProps: {
+      {
         flag: {
           // TODO: Add full followupFlag resource type
           flagStatus: message.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged",
         }
       },
-    }));
+    ));
   };
 
   const handleSetUnread = () => {
-    dispatch(patchMessageData({app, message, specificProps: { isRead: false }}));
+    dispatch(patchMessageData(message, { isRead: false }));
   }
   
   return <Hover>

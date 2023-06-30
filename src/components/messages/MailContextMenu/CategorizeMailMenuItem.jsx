@@ -1,6 +1,5 @@
 import { ListItemIcon, ListItemText, MenuItem } from "@mui/material";
 import NestedMenuItem from "../../menu/NestedMenuItem";
-import { useAppContext } from "../../../azure/AppContext";
 import { withTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { patchMessageData } from "../../../actions/messages";
@@ -10,7 +9,6 @@ import { useState } from "react";
 
 
 const CategorizeMailMenuItem = ({ t, openedMail, handleAddCategory }) => {
-  const app = useAppContext();
   const dispatch = useDispatch();
   const [mail, setMail] = useState(openedMail);
   const { categories } = useSelector(state => state.messages);
@@ -25,13 +23,12 @@ const CategorizeMailMenuItem = ({ t, openedMail, handleAddCategory }) => {
 
     setMail({...mail, categories: copy });
 
-    dispatch(patchMessageData({
-      app,
-      message: mail,
-      specificProps: {
+    dispatch(patchMessageData(
+      mail,
+      {
         categories: copy,
       },
-    }));
+    ));
   }
 
   return <NestedMenuItem

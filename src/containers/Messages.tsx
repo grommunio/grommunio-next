@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
@@ -155,7 +154,6 @@ const filterOptions = [
 ]
 
 function Messages({ classes }: MessagesProps) {
-  const app = useAppContext();
   const { t } = useTranslation();
   const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
@@ -217,7 +215,7 @@ function Messages({ classes }: MessagesProps) {
     setMailTabs(copy);
     setActiveMailTab(tab);
     // Set isRead
-    if(!msg.isRead) dispatch(patchMessageData({ app, message: msg, specificProps: { isRead: true }}));
+    if(!msg.isRead) dispatch(patchMessageData(msg, { isRead: true }));
   }
 
   const handleForward = () => {

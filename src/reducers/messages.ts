@@ -41,7 +41,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
       mails: state.mails.filter((mail: Message) => !action.payload.includes(mail.id)),
     };
   
-  case PATCH_MESSAGE_DATA + "/fulfilled":
+  case PATCH_MESSAGE_DATA:
     return {
       ...state,
       mails: state.mails.map((mail: Message) => mail.id === action.payload.id ?

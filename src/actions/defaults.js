@@ -40,3 +40,17 @@ export function defaultDeleteHandler(endpoint, actionType, id, ...endpointProps)
     }
   }
 }
+
+export function defaultPatchHandler(endpoint, actionType, suppressAlert, ...endpointParams) {
+  return async dispatch => {
+    try {
+      const resp = await endpoint(...endpointParams);
+      if(actionType) await dispatch({ type: actionType, payload: resp });
+      if(!suppressAlert) await dispatch(pushAlertStack());
+      return resp;
+    } catch(error) {
+      await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
+      return false;
+    }
+  };
+}

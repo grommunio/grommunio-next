@@ -86,11 +86,10 @@ function Tasks({ t, classes }: any) {
         } : {}),
       }
     }
-    dispatch(patchTaskData({
-      app,
-      taskListId: selectedTaskList?.id || '',
-      task: mergedTask
-    }))
+    dispatch(patchTaskData(
+      mergedTask,
+      selectedTaskList?.id || '',
+    ))
       .then(() => setDirty(false));
   }
 

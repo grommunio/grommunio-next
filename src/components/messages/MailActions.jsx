@@ -63,7 +63,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
 
   const handleReadToggle = () => {
     (selection.length > 0 ? selection : [openedMail]).forEach(message => {
-      dispatch(patchMessageData({app, message, specificProps: { isRead: !message.isRead }}));
+      dispatch(patchMessageData( message, { isRead: !message.isRead }));
     });
   }
 
@@ -80,16 +80,15 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handleFolderFilter = e => setMailFolderFilter(e.target.value.toLowerCase());
 
   const handleFlag = () => {
-    dispatch(patchMessageData({
-      app,
-      message: openedMail,
-      specificProps: {
+    dispatch(patchMessageData(
+      openedMail,
+      {
         flag: {
           // TODO: Add full followupFlag resource type
           flagStatus: openedMail.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged",
         }
       },
-    }));
+    ));
   };
 
   return <>
