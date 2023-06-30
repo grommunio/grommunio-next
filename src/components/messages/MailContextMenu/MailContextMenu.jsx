@@ -1,7 +1,6 @@
 import { withTranslation } from 'react-i18next';
 import { Menu, MenuItem } from '@mui/material';
 import { deleteMessageData, moveMessageData, patchMessageData } from '../../../actions/messages';
-import { useAppContext } from '../../../azure/AppContext';
 import { useDispatch } from 'react-redux';
 import { withStyles } from '@mui/styles';
 import CopyMailMenuItem from './CopyMailMenuItem';
@@ -15,25 +14,32 @@ const styles = {
 }
 
 // TODO: These actions are duplicated in the actionbar. Use a hook or HOC to deduplicate functions
-const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folder, handleAddCategory }) => {
-  const app = useAppContext();
+const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folder, handleAddCategory, clearCheckedMails }) => {
   const dispatch = useDispatch();
 
   const handleMailDelete = () => {
-    // TODO: Close contextmenu after successful delete
-    dispatch(deleteMessageData({
-      app,
-      messages: [openedMail],
+    dispatch(deleteMessageData(
+      [openedMail],
       // TODO: This does not work. Find way to convert non-english displayname
-      force: folder?.displayname == "Deleted items"
-    }));
+      folder?.displayname == "Deleted items"
+    )).then(success => {
+      if(success) {
+        clearCheckedMails();
+        onClose();
+      }
+    });
   }
 
   const handleMailMove = destinationId => () => {
     dispatch(moveMessageData(
       [openedMail],
       destinationId,
-    ));
+    )).then(success => {
+      if(success) {
+        clearCheckedMails();
+        onClose();
+      }
+    });
   }
 
   const handleMarkAsUnread = () => {

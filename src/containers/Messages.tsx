@@ -351,6 +351,8 @@ function Messages({ classes }: MessagesProps) {
   const handleAddCategory = (open: boolean) => () => {
     setAddingCategory(open);
   }
+
+  const clearCheckedMails = () => setCheckedMessages([]);
     
   // Move pinned messages to top of list
   const sortedMessages = useMemo(() => {
@@ -397,6 +399,7 @@ function Messages({ classes }: MessagesProps) {
         handleNewMessage={handleNewMessage}
         openedMail={selectedMsg}
         selection={checkedMessages}
+        clearCheckedMails={clearCheckedMails}
         folder={selectedFolder}
         handleReply={handleReply}
         handleFoldersToggle={handleFoldersToggle}
@@ -545,6 +548,7 @@ function Messages({ classes }: MessagesProps) {
         openedMail={selectedMsg}
         folder={selectedFolder}
         handleAddCategory={handleAddCategory}
+        clearCheckedMails={clearCheckedMails}
       />
       <AddCategory
         open={addingCategory}

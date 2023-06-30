@@ -34,7 +34,7 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
 });
 
 const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle,
-  handlePin }) => {
+  handlePin, clearCheckedMails }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const handlePlaceholder = (e) => e.stopPropagation();
   const { mailFolders } = useSelector(state => state.messages);
@@ -47,14 +47,14 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       selection.length > 0 ? selection : [openedMail],
       // TODO: This does not work. Find way to convert non-english displayname
       folder?.displayname == "Deleted items"
-    ));
+    )).then(success => (success ? clearCheckedMails() : null))
   }
 
   const handleMailMove = destinationId => () => {
     dispatch(moveMessageData(
       selection.length > 0 ? selection : [openedMail],
       destinationId,
-    ));
+    )).then(success => (success ? clearCheckedMails() : null));
   }
 
   const handleReadToggle = () => {

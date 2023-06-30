@@ -71,5 +71,6 @@ export function defaultMultiMailHandler(endpoint, actionType, messages, ...endpo
     }
     if(actionType) await dispatch({ type: actionType, payload: succ });
     if(!failure) await dispatch(pushAlertStack());
+    return !failure;
   };
 }
