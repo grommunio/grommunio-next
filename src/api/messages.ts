@@ -48,10 +48,7 @@ export async function patchMessage(message: Message, specificProps: any): Promis
   return response;
 }
 
-export async function deleteMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  id: string, force=false): Promise<string | undefined> {
-  ensureClient(authProvider);
-  
+export async function deleteMessage(id: string, force=false): Promise<string | undefined> {
   
   const response = force ? await graphClient! // Full delete
     .api('/me/messages/'+ id)
@@ -62,10 +59,7 @@ export async function deleteMessage(authProvider: AuthCodeMSALBrowserAuthenticat
   return response?.message;
 }
 
-export async function moveMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  id: string, destinationId: string): Promise<string | undefined> {
-  ensureClient(authProvider);
-  
+export async function moveMessage(id: string, destinationId: string): Promise<string | undefined> {
   
   const response = await graphClient!
     .api('/me/messages/'+ id + "/move")

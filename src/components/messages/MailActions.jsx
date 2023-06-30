@@ -5,7 +5,6 @@ import { ArchiveOutlined, CleaningServicesOutlined, DeleteOutlineOutlined, Draft
   FlagOutlined, KeyboardArrowDown, MailOutlineOutlined, PushPinOutlined, ReplyAllOutlined } from '@mui/icons-material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { withStyles } from '@mui/styles';
-import { useAppContext } from '../../azure/AppContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteMessageData, moveMessageData, patchMessageData } from '../../actions/messages';
 import { useState } from 'react';
@@ -37,7 +36,6 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
 const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle,
   handlePin }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
-  const app = useAppContext();
   const handlePlaceholder = (e) => e.stopPropagation();
   const { mailFolders } = useSelector(state => state.messages);
   const dispatch = useDispatch();
@@ -45,20 +43,18 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const [moveMenuAnchor, setMoveMenuAnchor] = useState(null);
 
   const handleMailDelete = () => {
-    dispatch(deleteMessageData({
-      app,
-      messages: selection.length > 0 ? selection : [openedMail],
+    dispatch(deleteMessageData(
+      selection.length > 0 ? selection : [openedMail],
       // TODO: This does not work. Find way to convert non-english displayname
-      force: folder?.displayname == "Deleted items"
-    }));
+      folder?.displayname == "Deleted items"
+    ));
   }
 
   const handleMailMove = destinationId => () => {
-    dispatch(moveMessageData({
-      app,
-      messages: selection.length > 0 ? selection : [openedMail],
+    dispatch(moveMessageData(
+      selection.length > 0 ? selection : [openedMail],
       destinationId,
-    }));
+    ));
   }
 
   const handleReadToggle = () => {

@@ -17,21 +17,19 @@ const MoveMailMenuItem = ({ t, openedMail }) => {
   const mailFolders = useSelector(state => state.messages.mailFolders);
 
   const handleCopy = destinationId => () => {
-    dispatch(moveMessageData({
-      app,
-      messages: [openedMail],
+    dispatch(moveMessageData(
+      [openedMail],
       destinationId,
-    }));
+    ));
   }
 
   const handleCreate = async () => {
     const res = await dispatch(postMailFolderData({app, folder: { displayName: newFolder }}));
     if(!res.error) {
-      dispatch(moveMessageData({
-        app,
-        messages: [openedMail],
-        destinationId: res.payload.id,
-      }));
+      dispatch(moveMessageData(
+        [openedMail],
+        res.payload.id,
+      ));
       setNewFolder("");
     } else {
       dispatch(pushAlertStack({ message: res.payload, severity: "error" }));

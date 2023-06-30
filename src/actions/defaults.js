@@ -54,3 +54,22 @@ export function defaultPatchHandler(endpoint, actionType, suppressAlert, ...endp
     }
   };
 }
+
+export function defaultMultiMailHandler(endpoint, actionType, messages, ...endpointParams) {
+  return async dispatch => {
+    const succ = [];
+    let failure = false;
+    for(let i = 0; i < messages.length; i++) {
+      const id = messages[i].id;
+      try {
+        await endpoint(id, ...endpointParams);
+        succ.push(id);
+      } catch(error) {
+        failure = true;
+        dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
+      }
+    }
+    if(actionType) await dispatch({ type: actionType, payload: succ });
+    if(!failure) await dispatch(pushAlertStack());
+  };
+}

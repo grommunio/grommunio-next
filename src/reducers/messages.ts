@@ -60,7 +60,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
       categories: addItem(state.categories, action.payload),
     }
 
-  case POST_MAIL_FOLDER + "/fulfilled":
+  case POST_MAIL_FOLDER:
     return {
       ...state,
       mailFolders: addItem(state.mailFolders, action.payload),

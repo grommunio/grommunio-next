@@ -30,11 +30,10 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
   }
 
   const handleMailMove = destinationId => () => {
-    dispatch(moveMessageData({
-      app,
-      messages: [openedMail],
+    dispatch(moveMessageData(
+      [openedMail],
       destinationId,
-    }));
+    ));
   }
 
   const handleMarkAsUnread = () => {
