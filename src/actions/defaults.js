@@ -13,3 +13,16 @@ export function defaultPostHandler(endpoint, actionType, ...endpointProps) {
     }
   }
 }
+
+export function defaultFetchHandler(endpoint, actionType, ...endpointProps) {
+  return async (dispatch) => {
+    try {
+      const data = await endpoint(...endpointProps);
+      if(actionType) await dispatch({ type: actionType, payload: data });
+      return data;
+    } catch (error) {
+      await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
+      return false;
+    }
+  }
+}

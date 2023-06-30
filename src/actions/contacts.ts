@@ -6,27 +6,12 @@ import { Contact } from "microsoft-graph";
 import { deleteContact, getContacts, postContact } from "../api/contacts";
 import { AppContext } from "../azure/AppContext";
 import { FETCH_CONTACTS_DATA, DELETE_CONTACTS_DATA } from "./types";
-import { defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
 
-export const fetchContactsData = createAsyncThunk<
-  Contact[],
-  AppContext
->(
-  FETCH_CONTACTS_DATA,
-  async (app: AppContext) => {
-    if (app.user) {
-      try {
-        const contacts = await getContacts(app.authProvider!);
-        return contacts;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
+export function fetchContactsData(...endpointProps: []) {
+  return defaultFetchHandler(getContacts, FETCH_CONTACTS_DATA, ...endpointProps)
+}
 
 type deleteContactArgs = {
   app: AppContext,

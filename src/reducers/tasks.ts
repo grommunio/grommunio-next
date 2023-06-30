@@ -20,13 +20,13 @@ const defaultState = {
 function tasksReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_TASK_LISTS_DATA + "/fulfilled":
+  case FETCH_TASK_LISTS_DATA:
     return {
       ...state,
       taskLists: action.payload ?? [],
     };
   
-  case FETCH_TASKS_DATA + "/fulfilled":
+  case FETCH_TASKS_DATA:
     return {
       ...state,
       tasks: action.payload ?? [],

@@ -50,14 +50,14 @@ function Tasks({ t, classes }: any) {
 
   // componentDidMount()
   useEffect(() => {
-    dispatch(fetchTaskListsData(app));
+    dispatch(fetchTaskListsData());
   }, [app.authProvider]);
 
   const handleTaskListClick = (taskList: TodoTaskList) => () => {
     setSelectedTaskList(taskList);
     setSelectedTask(null);
     setDirty(false);
-    dispatch(fetchTasksData({taskList, app}));
+    dispatch(fetchTasksData(taskList));
   }
 
   const handleTaskClick = (task: TodoTask) => () => {

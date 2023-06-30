@@ -6,9 +6,7 @@ import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-
 import { Contact } from "microsoft-graph";
 import { ensureClient, graphClient } from "./utils";
 
-export async function getContacts(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Contact[]> {
-  ensureClient(authProvider);
-  
+export async function getContacts(): Promise<Contact[]> {
   const response: PageCollection = await graphClient!
     .api('/me/contacts')
     .get();

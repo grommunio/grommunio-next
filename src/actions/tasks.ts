@@ -7,50 +7,17 @@ import { deleteTask, getUserTaskLists, getUserTasks, patchTask, postTask, postTa
 import { AppContext } from "../azure/AppContext";
 import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, PATCH_TASK_DATA, POST_TASK_DATA,
   POST_TASK_LIST_DATA, DELETE_TASK_LIST_DATA } from "./types";
-import { defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
-export const fetchTaskListsData = createAsyncThunk<
-  TodoTaskList[],
-  AppContext
->(
-  FETCH_TASK_LISTS_DATA,
-  async (app: AppContext) => {
-    if (app.user) {
-      try {
-        const taskLists = await getUserTaskLists(app.authProvider!);
-        return taskLists;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
 
-type fetchTasksDataParams = {
-  app: AppContext,
-  taskList: TodoTaskList,
+export function fetchTaskListsData() {
+  return defaultFetchHandler(getUserTaskLists, FETCH_TASK_LISTS_DATA)
 }
 
-export const fetchTasksData = createAsyncThunk<
-  TodoTask[],
-  fetchTasksDataParams
->(
-  FETCH_TASKS_DATA,
-  async ({ taskList, app }: fetchTasksDataParams) => {
-    if (app.user) {
-      try {
-        const task = await getUserTasks(app.authProvider!, taskList.id || '');
-        return task;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
+
+export function fetchTasksData(taskList: TodoTaskList) {
+  return defaultFetchHandler(getUserTasks, FETCH_TASKS_DATA, taskList.id)
+}
 
 type deleteTaskDataParams = {
   app: AppContext,

@@ -23,13 +23,13 @@ const defaultState = {
 function messagesReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_MAILS_DATA + "/fulfilled":
+  case FETCH_MAILS_DATA:
     return {
       ...state,
       mails: action.payload ?? [],
     };
 
-  case FETCH_MAIL_FOLDERS_DATA + "/fulfilled":
+  case FETCH_MAIL_FOLDERS_DATA:
     return {
       ...state,
       mailFolders: action.payload ?? [],
@@ -48,7 +48,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
         {...mail, ...action.payload} : mail),
     };
 
-  case FETCH_MESSAGE_CATEGORIES + "/fulfilled":
+  case FETCH_MESSAGE_CATEGORIES:
     return {
       ...state,
       categories: action.payload ?? [],

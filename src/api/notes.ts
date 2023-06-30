@@ -6,9 +6,7 @@ import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-
 import { Message } from "microsoft-graph";
 import { ensureClient, graphClient } from "./utils";
 
-export async function getNotes(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Message[]> {
-  ensureClient(authProvider);
-  
+export async function getNotes(): Promise<Message[]> {
   const response: PageCollection = await graphClient!
     .api('/me/MailFolders/notes/messages')
     .get();

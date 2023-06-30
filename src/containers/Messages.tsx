@@ -175,9 +175,9 @@ function Messages({ classes }: MessagesProps) {
 
   // componentDidMount()
   useEffect(() => {
-    dispatch(fetchMessagesData({app}));
-    dispatch(fetchMailFoldersData(app));
-    dispatch(fetchMessageCategories(app));
+    dispatch(fetchMessagesData());
+    dispatch(fetchMailFoldersData());
+    dispatch(fetchMessageCategories());
   }, []);
 
   // Update selected message when message object in store changes
@@ -186,13 +186,12 @@ function Messages({ classes }: MessagesProps) {
   }, [messages]);
 
   const debouncedSearch = debounce(async (search: string, folderid?: string) => {
-    await dispatch(fetchMessagesData({
-      app,
+    await dispatch(fetchMessagesData(
       folderid,
-      params: {
+      {
         search: search === '""' ? undefined : search,
       },
-    }));
+    ));
   }, 250);
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +201,7 @@ function Messages({ classes }: MessagesProps) {
 
   const handleMailFolderClick = (folder: MailFolder) => () => {
     setSelectedFolder(folder);
-    dispatch(fetchMessagesData({app, folderid: folder?.id, params: { filter: objectToCNF(mailFilters) || undefined }}))
+    dispatch(fetchMessagesData(folder?.id, { filter: objectToCNF(mailFilters) || undefined }))
   }
 
   const handleMailClick = (msg: Message) => () => {
@@ -276,13 +275,12 @@ function Messages({ classes }: MessagesProps) {
   }
 
   useEffect(() => {
-    dispatch(fetchMessagesData({
-      app,
-      folderid: selectedFolder?.id,
-      params: {
+    dispatch(fetchMessagesData(
+      selectedFolder?.id,
+      {
         filter: objectToCNF(mailFilters) || undefined,
       },
-    }));
+    ));
   }, [mailFilters]);
 
   const handleMailCheckbox = (message: Message) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -387,7 +385,7 @@ function Messages({ classes }: MessagesProps) {
     if(idx !== -1) {
       copy.splice(idx, 1);
     }
-    // Closing active tab -> Select the latest one
+    // Closing active tab -> Select the last one
     if(activeMailTab?.ID === tab.ID) {
       setActiveMailTab(copy[copy.length - 1])
     }

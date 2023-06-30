@@ -2,37 +2,17 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { CategoryColor, Message } from "microsoft-graph";
+import { Message } from "microsoft-graph";
 import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
 import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY } from "./types";
 import { MessageCategory } from "../types/messages";
-import { defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
-type fetchMessagesDataArgTypes = {
-  app: AppContext,
-  folderid?: string,
-  params?: any,
-};
 
-export const fetchMessagesData = createAsyncThunk<
-  Message[],
-  fetchMessagesDataArgTypes
->(
-  FETCH_MAILS_DATA,
-  async ({app, folderid, params}: fetchMessagesDataArgTypes) => {
-    if (app.user) {
-      try {
-        const mails = await getUserMessages(app.authProvider!, folderid, params);
-        return mails;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
+export function fetchMessagesData(folderid = 'inbox', params={}) {
+  return defaultFetchHandler(getUserMessages, FETCH_MAILS_DATA, folderid, params)
+}
 
 type patchMessageDataArgTypes = {
   app: AppContext,
@@ -125,24 +105,9 @@ export function copyMessageData(...endpointProps: [AppContext, string, string]) 
   return defaultPostHandler(copyMessage, null, ...endpointProps)
 }
 
-export const fetchMessageCategories = createAsyncThunk<
-  CategoryColor[],
-  AppContext
->(
-  FETCH_MESSAGE_CATEGORIES,
-  async (app: AppContext) => {
-    if (app.user) {
-      try {
-        const categories = await mailCategories(app.authProvider!);
-        return categories;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
+export function fetchMessageCategories(...endpointProps: []) {
+  return defaultFetchHandler(mailCategories, FETCH_MESSAGE_CATEGORIES, ...endpointProps)
+}
 
 export function postMessageCategory(...endpointProps: [MessageCategory]) {
   return defaultPostHandler(postMailCategory, POST_MESSAGE_CATEGORY, ...endpointProps)

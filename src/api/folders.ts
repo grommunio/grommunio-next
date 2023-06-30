@@ -3,8 +3,7 @@ import { MailFolder } from "microsoft-graph";
 import { ensureClient, graphClient } from "./utils";
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 
-export async function getMailFolders(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<MailFolder[]> {
-  ensureClient(authProvider);
+export async function getMailFolders(): Promise<MailFolder[]> {
   
   const response: PageCollection = await graphClient!
     .api('/me/mailFolders')

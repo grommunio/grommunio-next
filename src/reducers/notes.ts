@@ -16,7 +16,7 @@ const defaultState = {
 function notesReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_NOTES_DATA + "/fulfilled":
+  case FETCH_NOTES_DATA:
     return {
       ...state,
       notes: action.payload ?? [],

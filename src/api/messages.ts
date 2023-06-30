@@ -8,9 +8,7 @@ import { buildQuery } from "../utils";
 import { ensureClient, graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
 
-export async function getUserMessages(authProvider: AuthCodeMSALBrowserAuthenticationProvider, folderid = 'inbox', params={}): Promise<Message[]> {
-  ensureClient(authProvider);
-
+export async function getUserMessages(folderid = 'inbox', params={}): Promise<Message[]> {
   const url = buildQuery(`/me/mailFolders/${folderid}/messages`, params);
 
   const response: PageCollection = await graphClient!
@@ -90,8 +88,7 @@ export async function copyMessage(authProvider: AuthCodeMSALBrowserAuthenticatio
   return response?.message;
 }
 
-export async function mailCategories(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<CategoryColor[]> {
-  ensureClient(authProvider);
+export async function mailCategories(): Promise<CategoryColor[]> {
   
   const response = await graphClient!
     .api("/me/outlook/masterCategories")

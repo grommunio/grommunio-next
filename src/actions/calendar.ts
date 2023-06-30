@@ -10,10 +10,10 @@ import {
   getUserWeekCalendar,
   patchEvent,
   postEvent,
-  getUserCalendar,
+  getUserCalendars,
 } from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA } from "./types";
-import { defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
 
 export const fetchEventsData = createAsyncThunk<
@@ -117,17 +117,6 @@ function formatEvent(rawEvent: any): Event {
   };
 }
 
-export const fetchUserCalenders = createAsyncThunk<Event[], AppContext>(
-  FETCH_USER_CALENDER_DATA,
-  async (app: AppContext) => {
-    if (app.user) {
-      try {
-        return await getUserCalendar(app.authProvider!);
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
+export function fetchUserCalenders() {
+  return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA)
+}

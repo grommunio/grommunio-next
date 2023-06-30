@@ -44,7 +44,7 @@ function calendarReducer(state = defaultState, action: AnyAction) {
       events: action.payload ? formatEvents(action.payload) : [],
     };
 
-  case FETCH_USER_CALENDER_DATA + "/fulfilled":
+  case FETCH_USER_CALENDER_DATA:
     return {
       ...state,
       calendar: action.payload ? action.payload.map(({id, name}: IUserCalender) => ({id, name})) : [],

@@ -17,9 +17,7 @@ export async function getUser(authProvider: AuthCodeMSALBrowserAuthenticationPro
   return user;
 }
 
-export async function getPeople(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<Array<Person>> {
-  ensureClient(authProvider);
-
+export async function getPeople(): Promise<Array<Person>> {
   // Return the /me/people API endpoint result as an array of Person objects
   const people: Array<Person> = await graphClient!.api('/me/people')
     .get();

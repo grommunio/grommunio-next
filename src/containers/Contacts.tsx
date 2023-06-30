@@ -29,7 +29,7 @@ function Contacts({ classes }: any) {
   const [adding, setAdding] = useState<boolean>(false);
 
   useEffect(() => {
-    dispatch(fetchContactsData(app));
+    dispatch(fetchContactsData());
   }, [app.authProvider]);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);

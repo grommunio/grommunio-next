@@ -14,7 +14,7 @@ const defaultState = {
 function contactsReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_CONTACTS_DATA + "/fulfilled":
+  case FETCH_CONTACTS_DATA:
     return {
       ...state,
       contacts: action.payload ?? [],

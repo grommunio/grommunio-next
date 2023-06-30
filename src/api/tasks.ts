@@ -6,9 +6,7 @@ import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-
 import { TodoTask, TodoTaskList } from "microsoft-graph";
 import { ensureClient, graphClient } from "./utils";
 
-export async function getUserTaskLists(authProvider: AuthCodeMSALBrowserAuthenticationProvider): Promise<TodoTaskList[]> {
-  ensureClient(authProvider);
-  
+export async function getUserTaskLists(): Promise<TodoTaskList[]> {
   const response: PageCollection = await graphClient!
     .api('/me/todo/lists')
     .get();
@@ -16,9 +14,7 @@ export async function getUserTaskLists(authProvider: AuthCodeMSALBrowserAuthenti
   return response.value;
 }
 
-export async function getUserTasks(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  tasklistID: string): Promise<TodoTask[]> {
-  ensureClient(authProvider);
+export async function getUserTasks(tasklistID: string): Promise<TodoTask[]> {
   
   const response: PageCollection = await graphClient!
     .api('/me/todo/lists/' + tasklistID + '/tasks')

@@ -12,10 +12,10 @@ const defaultState = {
 export function userReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_PEOPLE_DATA + "/fulfilled":
+  case FETCH_PEOPLE_DATA:
     return {
       ...state,
-      people: action.payload.value ?? [],
+      people: action.payload ?? [],
     };
 
   default:

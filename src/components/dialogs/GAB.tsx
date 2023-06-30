@@ -7,7 +7,6 @@ import { Dialog, DialogTitle, DialogContent,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { Contact } from 'microsoft-graph';
-import { useAppContext } from '../../azure/AppContext';
 import { useTypeDispatch, useTypeSelector } from '../../store';
 import { fetchContactsData } from '../../actions/contacts';
 import { setGABContactsSelection, setGABOpen } from '../../actions/gab';
@@ -22,7 +21,6 @@ const styles = {
 };
 
 function GAB(props: any) {
-  const app = useAppContext();
   const dispatch = useTypeDispatch();
   const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
   const { t, classes } = props;
@@ -31,7 +29,7 @@ function GAB(props: any) {
   
   // componentDidMount()
   const handleEnter = () => {
-    dispatch(fetchContactsData(app));
+    dispatch(fetchContactsData());
   };
 
   const handleContactSelect = (contact: Contact) => () => {

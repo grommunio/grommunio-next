@@ -6,26 +6,12 @@ import { Message } from "microsoft-graph";
 import { deleteNote, getNotes, postNote } from "../api/notes";
 import { AppContext } from "../azure/AppContext";
 import { FETCH_NOTES_DATA, DELETE_NOTES_DATA, POST_NOTE_DATA } from "./types";
-import { defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
-export const fetchNotesData = createAsyncThunk<
-  Message[],
-  AppContext
->(
-  FETCH_NOTES_DATA,
-  async (app: AppContext) => {
-    if (app.user) {
-      try {
-        const mails = await getNotes(app.authProvider!);
-        return mails;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
-    }
-    return [];
-  }
-);
+
+export function fetchNotesData() {
+  return defaultFetchHandler(getNotes, FETCH_NOTES_DATA)
+}
 
 type deleteNoteDataParams = {
   app: AppContext,
