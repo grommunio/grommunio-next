@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { useEffect, useState } from 'react';
 import { useAppContext } from '../azure/AppContext';

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+
 import { Alert, IconButton, Slide, Stack } from "@mui/material";
 import { AlertType } from "../types/misc";
 import { useTypeDispatch, useTypeSelector } from "../store";

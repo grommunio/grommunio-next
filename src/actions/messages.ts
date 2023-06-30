@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { Message } from "microsoft-graph";
 import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessage, patchMessage, postMailCategory } from "../api/messages";

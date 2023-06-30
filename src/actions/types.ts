@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 export const AUTH_LOGIN = 'AUTH_LOGIN';
 export const AUTH_URL = 'AUTH_URL';

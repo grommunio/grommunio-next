@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+
 import Hover from "../Hover";
 import { withStyles } from "@mui/styles";
 import { Avatar, Checkbox, IconButton, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";

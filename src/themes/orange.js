@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+
 import grey from "../colors/grey";
 import orange from "../colors/orange";
 import defaultStyles from "./defaultStyles";
