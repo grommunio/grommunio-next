@@ -30,12 +30,10 @@ export async function postTaskList(taskList: TodoTaskList): Promise<TodoTask> {
     .post(taskList);
 }
 
-export async function deleteTaskList(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  taskList: TodoTaskList): Promise<TodoTask> {
-  ensureClient(authProvider);
+export async function deleteTaskList(taskListId: string): Promise<TodoTask> {
   
   return await graphClient!
-    .api('/me/todo/lists/' + taskList.id)
+    .api('/me/todo/lists/' + taskListId)
     .delete();
 }
 
@@ -46,10 +44,7 @@ export async function postTask(tasklistID: string, task: TodoTask): Promise<Todo
     .post(task);
 }
 
-export async function deleteTask(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  tasklistID: string, taskId: string): Promise<TodoTask> {
-  ensureClient(authProvider);
-  
+export async function deleteTask(taskId: string, tasklistID: string): Promise<TodoTask> {
   return await graphClient!
     .api('/me/todo/lists/' + tasklistID + '/tasks/' + taskId)
     .delete();

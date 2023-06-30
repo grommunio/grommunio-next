@@ -35,7 +35,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
       mailFolders: action.payload ?? [],
     };
 
-  case DELETE_MESSAGE_DATA + "/fulfilled":
+  case DELETE_MESSAGE_DATA:
     return {
       ...state,
       mails: state.mails.filter((mail: Message) => !action.payload.includes(mail.id)),

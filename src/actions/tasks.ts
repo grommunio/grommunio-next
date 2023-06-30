@@ -7,7 +7,7 @@ import { deleteTask, getUserTaskLists, getUserTasks, patchTask, postTask, postTa
 import { AppContext } from "../azure/AppContext";
 import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, PATCH_TASK_DATA, POST_TASK_DATA,
   POST_TASK_LIST_DATA, DELETE_TASK_LIST_DATA } from "./types";
-import { defaultFetchHandler, defaultPostHandler } from "./defaults";
+import { defaultDeleteHandler, defaultFetchHandler, defaultPostHandler } from "./defaults";
 
 
 export function fetchTaskListsData() {
@@ -19,31 +19,9 @@ export function fetchTasksData(taskList: TodoTaskList) {
   return defaultFetchHandler(getUserTasks, FETCH_TASKS_DATA, taskList.id)
 }
 
-type deleteTaskDataParams = {
-  app: AppContext,
-  taskListId: string,
-  taskId: string,
+export function deleteTaskData(taskId: string, taskListId: string) {
+  return defaultDeleteHandler(deleteTask, DELETE_TASKS_DATA, taskId, taskListId);
 }
-
-export const deleteTaskData = createAsyncThunk<
-  string | boolean,
-  deleteTaskDataParams
-  >(
-    DELETE_TASKS_DATA,
-    async ({ taskListId, taskId, app }: deleteTaskDataParams) => {
-      if (app.user) {
-        try {
-          await deleteTask(app.authProvider!, taskListId, taskId);
-          return taskId;
-        } catch (err) {
-          const error = err as Error;
-        app.displayError!(error.message);
-        return false;
-        }
-      }
-      return false;
-    }
-  );
 
 type patchTaskDataParams = {
   app: AppContext,
@@ -71,35 +49,13 @@ export const patchTaskData = createAsyncThunk<
     }
   );
 
-type postTaskListDataParams = {
-  app: AppContext,
-  taskList: TodoTaskList,
-}
-
 export function postTaskListData(...endpointProps: [TodoTaskList]) {
   return defaultPostHandler(postTaskList, POST_TASK_LIST_DATA, ...endpointProps)
 }
 
-export const deleteTaskListData = createAsyncThunk<
-  string | boolean,
-  postTaskListDataParams
-  >(
-    DELETE_TASK_LIST_DATA,
-    async ({ taskList, app }: postTaskListDataParams) => {
-      if (app.user) {
-        try {
-          await deleteTaskList(app.authProvider!, taskList);
-          return taskList.id || "";
-        } catch (err) {
-          const error = err as Error;
-          app.displayError!(error.message);
-          return false;
-        }
-      }
-      return false;
-    }
-  );
-
+export function deleteTaskListData(taskListId: string) {
+  return defaultDeleteHandler(deleteTaskList, DELETE_TASK_LIST_DATA, taskListId);
+}
 
 export function postTaskData(...endpointProps: [string, TodoTask]) {
   return defaultPostHandler(postTask, POST_TASK_DATA, ...endpointProps)

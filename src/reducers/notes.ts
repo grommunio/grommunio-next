@@ -22,7 +22,7 @@ function notesReducer(state = defaultState, action: AnyAction) {
       notes: action.payload ?? [],
     };
 
-  case DELETE_NOTES_DATA + "/fulfilled":
+  case DELETE_NOTES_DATA:
     return {
       ...state,
       notes: action.payload ? state.notes.filter((note: Message) => note.id !== action.payload) : state.notes,

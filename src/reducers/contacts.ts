@@ -20,7 +20,7 @@ function contactsReducer(state = defaultState, action: AnyAction) {
       contacts: action.payload ?? [],
     };
 
-  case DELETE_CONTACTS_DATA + "/fulfilled":
+  case DELETE_CONTACTS_DATA:
     return {
       ...state,
       contacts: action.payload ? state.contacts.filter((contact: Contact) => contact.id !== action.payload) : state.contacts,

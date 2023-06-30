@@ -5,7 +5,6 @@ import { getMailFolders, postMailFolder } from "../api/folders";
 import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
 
-
 export function fetchMailFoldersData(...endpointProps: []) {
   return defaultFetchHandler(getMailFolders, FETCH_MAIL_FOLDERS_DATA, ...endpointProps)
 }

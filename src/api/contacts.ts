@@ -20,10 +20,7 @@ export async function postContact(contact: Contact): Promise<Contact> {
     .post(contact);
 }
 
-export async function deleteContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  contactId: string): Promise<void> {
-  ensureClient(authProvider);
-  
+export async function deleteContact(contactId: string): Promise<void> {
   return await graphClient!
     .api('/me/contacts/' + contactId)
     .delete();

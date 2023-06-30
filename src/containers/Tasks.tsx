@@ -70,11 +70,10 @@ function Tasks({ t, classes }: any) {
 
   const handleTaskDelete = (taskId: string) => (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    dispatch(deleteTaskData({
-      app,
+    dispatch(deleteTaskData(
       taskId,
-      taskListId: (selectedTaskList as TodoTaskList)?.id || ''
-    }));
+      (selectedTaskList as TodoTaskList)?.id || '',
+    ));
   }
 
   const handleSave = () => {
@@ -97,7 +96,7 @@ function Tasks({ t, classes }: any) {
 
   const handleDeleteTaskList = (taskList: TodoTaskList) => (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    dispatch(deleteTaskListData({ app, taskList }));
+    dispatch(deleteTaskListData(taskList.id!));
   }
 
   return (

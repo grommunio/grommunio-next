@@ -26,3 +26,17 @@ export function defaultFetchHandler(endpoint, actionType, ...endpointProps) {
     }
   }
 }
+
+export function defaultDeleteHandler(endpoint, actionType, id, ...endpointProps) {
+  return async (dispatch) => {
+    try {
+      await endpoint(id, ...endpointProps);
+      if(actionType) await dispatch({ type: actionType, payload: id });
+      await dispatch(pushAlertStack());
+      return true;
+    } catch (error) {
+      await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
+      return false;
+    }
+  }
+}

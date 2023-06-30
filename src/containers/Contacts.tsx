@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, MouseEvent } from 'react';
 import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
@@ -34,8 +34,9 @@ function Contacts({ classes }: any) {
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);
 
-  const handleDelete = (contactId: string) => () => {
-    dispatch(deleteContactData({app, contactId}));
+  const handleDelete = (contactId: string) => (e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    dispatch(deleteContactData(contactId));
   }
 
   const handleContact = (contact: Contact) => () => {

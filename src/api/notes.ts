@@ -20,10 +20,7 @@ export async function postNote(note: Message): Promise<Message> {
     .post(note);
 }
 
-export async function deleteNote(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  noteId: string): Promise<Message> {
-  ensureClient(authProvider);
-  
+export async function deleteNote(noteId: string): Promise<Message> {
   return await graphClient!
     .api('/me/MailFolders/notes/messages/' + noteId)
     .delete();

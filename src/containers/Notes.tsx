@@ -60,10 +60,7 @@ function Notes({ t, classes }: any) {
 
   const handleNoteDelete = (noteId: string) => (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    dispatch(deleteNoteData({
-      app,
-      noteId
-    }));
+    dispatch(deleteNoteData(noteId));
   }
 
   const handleSave = () => {

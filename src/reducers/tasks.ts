@@ -32,13 +32,13 @@ function tasksReducer(state = defaultState, action: AnyAction) {
       tasks: action.payload ?? [],
     }
   
-  case DELETE_TASKS_DATA + "/fulfilled":
+  case DELETE_TASKS_DATA:
     return {
       ...state,
       tasks: action.payload ? state.tasks.filter((task: TodoTask) => task.id !== action.payload) : state.tasks,
     }
 
-  case DELETE_TASK_LIST_DATA + "/fulfilled":
+  case DELETE_TASK_LIST_DATA:
     return {
       ...state,
       taskLists: action.payload ? state.taskLists.filter((taskList: TodoTaskList) => taskList.id !== action.payload) : state.taskLists,
