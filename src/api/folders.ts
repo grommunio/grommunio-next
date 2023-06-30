@@ -1,6 +1,5 @@
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { MailFolder } from "microsoft-graph";
-import { ensureClient, graphClient } from "./utils";
+import { graphClient } from "./utils";
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 
 export async function getMailFolders(): Promise<MailFolder[]> {
@@ -12,9 +11,7 @@ export async function getMailFolders(): Promise<MailFolder[]> {
   return response.value;
 }
 
-export async function postMailFolder(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  folder: MailFolder): Promise<MailFolder> {
-  ensureClient(authProvider);
+export async function postMailFolder(folder: MailFolder): Promise<MailFolder> {
 
   const response = await graphClient!
     .api("/me/mailFolders")

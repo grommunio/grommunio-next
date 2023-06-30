@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { useEffect, useState, MouseEvent } from 'react';
-import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { Button, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
@@ -22,7 +21,6 @@ const styles: any = {
 
 function Contacts({ classes }: any) {
   const navigate = useNavigate();
-  const app = useAppContext();
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
@@ -30,7 +28,7 @@ function Contacts({ classes }: any) {
 
   useEffect(() => {
     dispatch(fetchContactsData());
-  }, [app.authProvider]);
+  }, []);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);
 

@@ -37,7 +37,6 @@ export const fetchEventsData = createAsyncThunk<
 );
 
 type postEventDataParams = {
-  app: AppContext,
   event: Event,
 }
 
@@ -50,17 +49,14 @@ export const patchEventData = createAsyncThunk<
   postEventDataParams
 >(
   PATCH_EVENT_DATA,
-  async ({ event, app }: postEventDataParams) => {
-    if (app.user) {
-      try {
-        const res = await patchEvent(app.authProvider!, formatEvent(event));
-        return res;
-      } catch (err) {
-        const error = err as Error;
-        console.error(error);
-        app.displayError!(error.message);
-        return false;
-      }
+  async ({ event }: postEventDataParams) => {
+    try {
+      const res = await patchEvent(formatEvent(event));
+      return res;
+    } catch (err) {
+      const error = err as Error;
+      console.error(error);
+      return false;
     }
     return false;
   }
@@ -68,7 +64,6 @@ export const patchEventData = createAsyncThunk<
 
 
 type deleteEventDataParams = {
-  app: AppContext,
   eventId: string,
 }
 
@@ -77,17 +72,14 @@ export const deleteEventData = createAsyncThunk<
   deleteEventDataParams
 >(
   PATCH_EVENT_DATA,
-  async ({ eventId, app }: deleteEventDataParams) => {
-    if (app.user) {
-      try {
-        const res = await deleteEvent(app.authProvider!, eventId);
-        return res;
-      } catch (err) {
-        const error = err as Error;
-        console.error(error);
-        app.displayError!(error.message);
-        return false;
-      }
+  async ({ eventId }: deleteEventDataParams) => {
+    try {
+      const res = await deleteEvent(eventId);
+      return res;
+    } catch (err) {
+      const error = err as Error;
+      console.error(error);
+      return false;
     }
     return false;
   }

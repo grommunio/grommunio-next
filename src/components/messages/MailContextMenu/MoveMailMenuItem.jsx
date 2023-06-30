@@ -1,6 +1,5 @@
 import { Button, Input, ListItemIcon, MenuItem } from "@mui/material";
 import NestedMenuItem from "../../menu/NestedMenuItem";
-import { useAppContext } from "../../../azure/AppContext";
 import { withTranslation } from "react-i18next";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,7 +9,6 @@ import { Archive, DeleteOutline, Folder } from "@mui/icons-material";
 import { pushAlertStack } from "../../../actions/alerts";
 
 const MoveMailMenuItem = ({ t, openedMail }) => {
-  const app = useAppContext();
   const dispatch = useDispatch();
   const [newFolder, setNewFolder] = useState("");
   const [showingAll, setShowingAll] = useState(false);
@@ -24,7 +22,7 @@ const MoveMailMenuItem = ({ t, openedMail }) => {
   }
 
   const handleCreate = async () => {
-    const res = await dispatch(postMailFolderData({app, folder: { displayName: newFolder }}));
+    const res = await dispatch(postMailFolderData({ displayName: newFolder }));
     if(!res.error) {
       dispatch(moveMessageData(
         [openedMail],

@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { MouseEvent, useEffect, useRef, useState } from 'react';
-import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { Button, IconButton, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
@@ -38,7 +37,6 @@ const styles: any = {
 };
 
 function Notes({ t, classes }: any) {
-  const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
   const [ dirty, setDirty ] = useState<boolean>(false);
@@ -49,7 +47,7 @@ function Notes({ t, classes }: any) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchNotesData());
-  }, [app.authProvider]);
+  }, []);
 
   const handleNoteClick = (note: Message) => () => {
     setSelectedNote(note);
@@ -74,7 +72,7 @@ function Notes({ t, classes }: any) {
       },
       subject: editorRef.current ? editorRef.current.getContent({ format: 'text' }) : '',
     }
-    patchNote(app.authProvider!, mergedNote);
+    patchNote(mergedNote);
   }
 
 

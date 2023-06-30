@@ -368,8 +368,8 @@ class ScheduleCalendar extends React.PureComponent {
   }
 
   componentDidMount() {
-    const { fetchUserCalenders, app } = this.props;
-    fetchUserCalenders(app)
+    const { fetchUserCalenders } = this.props;
+    fetchUserCalenders()
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -409,8 +409,8 @@ class ScheduleCalendar extends React.PureComponent {
       const nextData = data.filter(
         (appointment) => appointment.id !== deletedAppointmentId
       );
-      const { deleteEvent, app } = this.props;
-      deleteEvent({ eventId: deletedAppointmentId, app });
+      const { deleteEvent } = this.props;
+      deleteEvent({ eventId: deletedAppointmentId });
       return { data: nextData, deletedAppointmentId: null };
     });
     this.toggleConfirmationVisible();
@@ -418,7 +418,7 @@ class ScheduleCalendar extends React.PureComponent {
 
   commitChanges({ added, changed, deleted }) {
     this.setState((state) => {
-      const { postEvent, patchEvent, app } = this.props;
+      const { postEvent, patchEvent } = this.props;
       let { data } = state;
       if (added) {
         postEvent(added);
@@ -430,7 +430,7 @@ class ScheduleCalendar extends React.PureComponent {
         data = data.map((appointment) => {
           if (changed[appointment.id]) {
             const event = { ...appointment, ...changed[appointment.id] };
-            patchEvent({ event, app: app });
+            patchEvent({ event });
             return event;
           }
           return appointment;

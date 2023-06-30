@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { Button, IconButton, Paper, TextField } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
@@ -60,7 +59,6 @@ type MessagesProps = {
 }
 
 function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
-  const app = useAppContext();
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
@@ -116,7 +114,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
       importance: messageImportance,
       ...extraProps,
     }
-    postMessage(app.authProvider!, message, send)
+    postMessage(message, send)
       .then(handleDraftClose);
   }
 

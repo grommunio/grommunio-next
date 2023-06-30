@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { Message } from "microsoft-graph";
-import { ensureClient, graphClient } from "./utils";
+import { graphClient } from "./utils";
 
 export async function getNotes(): Promise<Message[]> {
   const response: PageCollection = await graphClient!
@@ -26,9 +25,7 @@ export async function deleteNote(noteId: string): Promise<Message> {
     .delete();
 }
 
-export async function patchNote(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  note: Message): Promise<Message> {
-  ensureClient(authProvider);
+export async function patchNote(note: Message): Promise<Message> {
   
   return await graphClient!
     .api('/me/MailFolders/notes/messages/' + note.id)

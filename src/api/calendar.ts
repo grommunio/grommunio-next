@@ -9,13 +9,12 @@ import { AuthCodeMSALBrowserAuthenticationProvider } from '@microsoft/microsoft-
 import { endOfWeek, startOfWeek } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { Event } from 'microsoft-graph';
-import { ensureClient, graphClient } from './utils';
+import { graphClient } from './utils';
 
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
   timeZone: string): Promise<Event[]> {
-  ensureClient(authProvider);
 
   // Generate startDateTime and endDateTime query params
   // to display a 7-day window
@@ -72,18 +71,14 @@ export async function postEvent(newEvent: Event): Promise<Event> {
     .post(newEvent);
 }
 
-export async function patchEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  event: Event): Promise<Event> {
-  ensureClient(authProvider);
+export async function patchEvent(event: Event): Promise<Event> {
 
   return await graphClient!
     .api('/me/events/' + event.id)
     .patch(event);
 }
 
-export async function deleteEvent(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  event: string): Promise<Event> {
-  ensureClient(authProvider);
+export async function deleteEvent(event: string): Promise<Event> {
 
   return await graphClient!
     .api('/me/events/' + event)

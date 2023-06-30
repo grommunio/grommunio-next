@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { MouseEvent, useEffect, useRef, useState } from 'react';
-import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { deleteTaskData, deleteTaskListData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
@@ -38,7 +37,6 @@ const styles: any = {
 };
 
 function Tasks({ t, classes }: any) {
-  const app = useAppContext();
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
   const [ dirty, setDirty ] = useState<boolean>(false);
@@ -51,7 +49,7 @@ function Tasks({ t, classes }: any) {
   // componentDidMount()
   useEffect(() => {
     dispatch(fetchTaskListsData());
-  }, [app.authProvider]);
+  }, []);
 
   const handleTaskListClick = (taskList: TodoTaskList) => () => {
     setSelectedTaskList(taskList);

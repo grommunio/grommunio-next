@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { ChangeEvent, useEffect, useState } from 'react';
-import { useAppContext } from '../azure/AppContext';
 import { withStyles } from '@mui/styles';
 import AuthenticatedView from '../components/AuthenticatedView';
 import { getStringAfterLastSlash } from '../utils';
@@ -17,17 +16,16 @@ const styles: any = {
 };
 
 function Contact({ classes, t }: any) {
-  const app = useAppContext();
   const [contact, setContact] = useState<ContactType>({});
 
   const fetchContact = async () => {
-    const contact = await getContact(app.authProvider!, getStringAfterLastSlash());
+    const contact = await getContact(getStringAfterLastSlash());
     return contact;
   }
 
   useEffect(() => {
     fetchContact().then(setContact);
-  }, [app.authProvider]);
+  }, []);
 
   const handleChange = (field: string) => (e: ChangeEvent<HTMLInputElement>) => {
     setContact({
@@ -37,9 +35,7 @@ function Contact({ classes, t }: any) {
   };
 
   const handleSave = async () => {
-    await patchContact(app.authProvider!, {
-      ...contact,
-    });
+    await patchContact(contact);
   }
 
   const handleNestedChange = (field: string, nested: string) => (e: ChangeEvent<HTMLInputElement>) => {

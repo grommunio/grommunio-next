@@ -52,7 +52,7 @@ function Calendar({ t }: any) {
         </Button>
       </>}
     >
-      <ScheduleCalendar app={app} calenderView={calenderView} showSideBar={showCalenderSidebar} />
+      <ScheduleCalendar calenderView={calenderView} showSideBar={showCalenderSidebar} />
     </AuthenticatedView>
   );
 }

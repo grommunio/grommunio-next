@@ -1,6 +1,5 @@
 import { Button, Input, ListItemIcon, MenuItem } from "@mui/material";
 import NestedMenuItem from "../../menu/NestedMenuItem";
-import { useAppContext } from "../../../azure/AppContext";
 import { withTranslation } from "react-i18next";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,7 +9,6 @@ import { copyMessageData } from "../../../actions/messages";
 
 
 const CopyMailMenuItem = ({ t, openedMail }) => {
-  const app = useAppContext();
   const dispatch = useDispatch();
   const [newFolder, setNewFolder] = useState("");
   const [showingAll, setShowingAll] = useState(false);
@@ -18,17 +16,15 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
 
   const handleCopy = destinationId => () => {
     dispatch(copyMessageData(
-      app,
       openedMail.id,
       destinationId,
     ));
   }
 
   const handleCreate = async () => {
-    const data = await dispatch(postMailFolderData(app, { displayName: newFolder }));
+    const data = await dispatch(postMailFolderData({ displayName: newFolder }));
     if(data?.payload) {
       dispatch(copyMessageData(
-        app.authProvider,
         openedMail.id,
         data.payload.id,
       ));

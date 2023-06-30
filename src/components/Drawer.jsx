@@ -10,7 +10,6 @@ import { withStyles } from '@mui/styles';
 import { useNavigate } from 'react-router-dom';
 import { CalendarMonth, ContactEmergency, Mail, Note, Task } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { useAppContext } from '../azure/AppContext';
 
 const styles = theme => ({
   /* || Side Bar */
@@ -35,7 +34,6 @@ const tabs = [
 ]
 
 function ResponsiveDrawer({ classes }) {
-  const app = useAppContext();
   const [tab, setTab] = useState(tabs.find(t => t.route === window.location.pathname)?.route || "/");
   const navigate = useNavigate();
 
@@ -66,7 +64,6 @@ function ResponsiveDrawer({ classes }) {
         {tabs.map(({ label, icon: Icon, route }) =>
           <Tab
             value={route}
-            disabled={!app.user}
             key={label}
             icon={<Icon fontSize="large"/>}
           />

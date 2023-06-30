@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { Contact } from "microsoft-graph";
-import { ensureClient, graphClient } from "./utils";
+import { graphClient } from "./utils";
 
 export async function getContacts(): Promise<Contact[]> {
   const response: PageCollection = await graphClient!
@@ -26,18 +25,13 @@ export async function deleteContact(contactId: string): Promise<void> {
     .delete();
 }
 
-export async function getContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  contactId: string): Promise<Contact> {
-  ensureClient(authProvider);
-  
+export async function getContact(contactId: string): Promise<Contact> {
   return await graphClient!
     .api('/me/contacts/' + contactId)
     .get();
 }
 
-export async function patchContact(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  contact: Contact): Promise<Contact> {
-  ensureClient(authProvider);
+export async function patchContact(contact: Contact): Promise<Contact> {
   
   return await graphClient!
     .api('/me/contacts/' + contact.id)

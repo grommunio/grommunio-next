@@ -2,10 +2,9 @@
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { CategoryColor, Message } from "microsoft-graph";
 import { buildQuery } from "../utils";
-import { ensureClient, graphClient } from "./utils";
+import { graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
 
 export async function getUserMessages(folderid = 'inbox', params={}): Promise<Message[]> {
@@ -19,24 +18,10 @@ export async function getUserMessages(folderid = 'inbox', params={}): Promise<Me
 }
 
 
-export async function postMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  message: Message, send: boolean): Promise<Message> {
-  ensureClient(authProvider);
-  
+export async function postMessage(message: Message, send: boolean): Promise<Message> {
   return await graphClient!
     .api('/me/' + (send ? 'sendMail' : 'messages'))
     .post(send ? { message } : message);
-}
-
-export async function postMessageForward(authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  message: Message, forward: any /*TODO: Find proper forward mail type */): Promise<string | undefined> {
-  ensureClient(authProvider);
-  
-  const response = await graphClient!
-    .api('/me/messages/'+ message.id + "/forward")
-    .post(forward);
-
-  return response?.message;
 }
 
 export async function patchMessage(message: Message, specificProps: any): Promise<Message | undefined> {
@@ -68,10 +53,7 @@ export async function moveMessage(id: string, destinationId: string): Promise<st
   return response?.message;
 }
 
-export async function copyMessage(authProvider: AuthCodeMSALBrowserAuthenticationProvider | undefined,
-  id: string, destinationId: string): Promise<string | undefined> {
-  ensureClient(authProvider!);
-  
+export async function copyMessage(id: string, destinationId: string): Promise<string | undefined> {
   
   const response = await graphClient!
     .api('/me/messages/'+ id + "/copy")
