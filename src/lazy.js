@@ -4,10 +4,10 @@
 import { lazy, Suspense } from "react";
 import Loading from "./components/Loading";
 
-export default function makeLoadableComponent(loader) {
+export default function makeLoadableComponent(loader, LoaderComponent) {
   const AsyncComponent = lazy(loader);
   const LoadableComponent = (props={}) => ( // TODO: Create loader component
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={LoaderComponent || <Loading />}>
       <AsyncComponent {...props}/>
     </Suspense>
   );

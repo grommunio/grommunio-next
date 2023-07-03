@@ -3,13 +3,16 @@
 
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import { StyledEngineProvider } from '@mui/material';
 import { Provider } from 'react-redux';
 import store from './store';
 import './i18n';
 import ToggleColorMode from './components/ToggleColorMode';
+import makeLoadableComponent from './lazy';
+import AppLoader from './components/AppLoader';
+
+const AsyncApp = makeLoadableComponent(() => import("./App"), <AppLoader />);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -19,7 +22,7 @@ root.render(
     <StyledEngineProvider injectFirst>
       <ToggleColorMode>
         <BrowserRouter>
-          <App />
+          <AsyncApp />
         </BrowserRouter>
       </ToggleColorMode>
     </StyledEngineProvider>
