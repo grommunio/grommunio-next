@@ -8,3 +8,11 @@ export type AlertType = {
   message: string;
   severity?: AlertColor;
 }
+
+export interface Map {
+  [key: string]: string | undefined
+}
+
+export interface IntMap {
+  [key: string]: number | undefined
+}

@@ -15,7 +15,7 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
   const dispatch = useDispatch();
   const [newFolder, setNewFolder] = useState("");
   const [showingAll, setShowingAll] = useState(false);
-  const mailFolders = useSelector(state => state.messages.mailFolders);
+  const mailFolders = useSelector(state => state.folders.mailFolders);
 
   const handleCopy = destinationId => () => {
     dispatch(copyMessageData(

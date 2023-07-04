@@ -89,7 +89,7 @@ const styles: any = (theme: any) => ({
   mailTabsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    marginBottom: 24,
+    marginBottom: 22,
   },
   tab: {
     textTransform: 'none',
@@ -160,7 +160,8 @@ function Messages({ classes }: MessagesProps) {
   const [checkedMessages, setCheckedMessages] = useState<Array<Message>>([]);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [mailFilters, setMailFilters] = useState<any>({});
-  const { mails: messages, mailFolders } = useTypeSelector(state => state.messages);
+  const { mails: messages } = useTypeSelector(state => state.messages);
+  const { mailFolders } = useTypeSelector(state => state.folders);
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [activeMailTab, setActiveMailTab] = useState<MailTab | null>(null);
   const [foldersVisible, setFoldersVisible] = useState<boolean>(true);
@@ -177,6 +178,11 @@ function Messages({ classes }: MessagesProps) {
     dispatch(fetchMailFoldersData());
     dispatch(fetchMessageCategories());
   }, []);
+
+  // Set default folder selection after folders have been fetched
+  useEffect(() => {
+    setSelectedFolder(mailFolders.find(f => f["wellKnownName"] === "inbox"));
+  }, [mailFolders]);
 
   // Update selected message when message object in store changes
   useEffect(() => {

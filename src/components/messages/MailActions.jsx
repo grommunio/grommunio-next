@@ -40,7 +40,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   handlePin, clearCheckedMails }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const handlePlaceholder = (e) => e.stopPropagation();
-  const { mailFolders } = useSelector(state => state.messages);
+  const { mailFolders } = useSelector(state => state.folders);
   const dispatch = useDispatch();
   const [mailFolderFilter, setMailFolderFilter] = useState("");
   const [moveMenuAnchor, setMoveMenuAnchor] = useState(null);

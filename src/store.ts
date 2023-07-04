@@ -18,12 +18,14 @@ import settingsReducer from './reducers/settings';
 import tasksReducer from './reducers/tasks';
 import { userReducer as meatGrinder } from './reducers/user';
 import alertsReducer from './reducers/alerts';
+import foldersReducer from './reducers/folders';
 
 const rootReducer = combineReducers({
   alerts: alertsReducer,
   auth: authReducer,
   calendar: calendarReducer,
   contacts: contactsReducer,
+  folders: foldersReducer,
   gab: gabReducer,
   me: meReducer,
   messages: messagesReducer,
