@@ -5,13 +5,14 @@ import { MailFolder } from "microsoft-graph";
 import { graphClient } from "./utils";
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 
-export async function getMailFolders(): Promise<MailFolder[]> {
+export async function getMailFolders(): Promise<PageCollection> {
   
   const response: PageCollection = await graphClient!
-    .api('/me/mailFolders')
+    .api("/me/mailFolders")
+    .top(50)  // TODO: This should be configurable
+    .count()
     .get();
-
-  return response.value;
+  return response;
 }
 
 export async function postMailFolder(folder: MailFolder): Promise<MailFolder> {

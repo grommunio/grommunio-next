@@ -10,11 +10,13 @@ import { COMMON_FOLDER_ORDER, FOLDER_COMMONNAME_DICT_MAPPING } from '../constant
 import { ExtendedMailFolder } from '../types/messages';
 
 type state = {
-  mailFolders: Array<ExtendedMailFolder>
+  mailFolders: Array<ExtendedMailFolder>;
+  count: number;
 }
 
 const defaultState: state = {
   mailFolders: [],
+  count: 0,
 };
 
 function addCommonName(folders: Array<ExtendedMailFolder>): Array<ExtendedMailFolder> {
@@ -28,18 +30,19 @@ function sortFolders(folders: Array<ExtendedMailFolder>): Array<ExtendedMailFold
   folders = addCommonName(folders);
   folders.sort((a: ExtendedMailFolder, b: ExtendedMailFolder) => {
     return (COMMON_FOLDER_ORDER[a["wellKnownName"]] ?? 9) - (COMMON_FOLDER_ORDER[b["wellKnownName"]] ?? 9);
-  })
+  });
   return folders;
 }
 
 function foldersReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
-
   case FETCH_MAIL_FOLDERS_DATA:
     return {
       ...state,
-      mailFolders: action.payload ? sortFolders(action.payload) : [],
+      count: action.payload ? action.payload["@odata.count"] : 0,
+      mailFolders: action.payload ? sortFolders(action.payload.value) : [],
     };
+
   case POST_MAIL_FOLDER:
     return {
       ...state,
