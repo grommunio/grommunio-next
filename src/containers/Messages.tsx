@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
-import { Badge, Button, Grid, IconButton, List, ListItem, ListItemButton, ListItemText, Menu,
+import { Button, Grid, IconButton, List, Menu,
   MenuItem, Pagination, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,6 @@ import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
 import { CheckBoxOutlined, Close, EditOutlined, FilterList, Mail } from '@mui/icons-material';
 import { debounce } from 'lodash';
-import FolderList from '../components/FolderList';
 import MailActions from '../components/messages/MailActions';
 import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
@@ -23,6 +22,7 @@ import MessageListItem from '../components/messages/MessageListItem';
 import AddCategory from '../components/dialogs/AddCategory';
 import usePinnedMessages from '../hooks/usePinnedMessages';
 import { fetchMailFoldersData } from '../actions/folders';
+import FolderHierarchy from '../components/FolderHierarchy';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -431,24 +431,11 @@ function Messages({ classes }: MessagesProps) {
       />}
     >
       <div className={classes.content}>
-        {foldersVisible && <FolderList>
-          {mailFolders.map((folder: MailFolder, idx: number) => 
-            <ListItem disablePadding key={idx}>
-              <ListItemButton
-                onClick={handleMailFolderClick(folder)}
-                selected={selectedFolder?.id === folder.id}
-                divider
-              >
-                <ListItemText primary={folder.displayName} />
-                <Badge
-                  badgeContent={folder.unreadItemCount}
-                  color="primary"
-                >
-                  <div style={{width: 16, height: 12}}></div>
-                </Badge>
-              </ListItemButton>
-            </ListItem>)}
-        </FolderList>}
+        {foldersVisible && <FolderHierarchy
+          data={mailFolders} 
+          handleMailFolderClick={handleMailFolderClick}
+          selected={selectedFolder}
+        />}
         <div className={classes.flexContainer}>
           <div className={classes.filterRow}>
             <SearchTextfield
