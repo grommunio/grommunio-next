@@ -39,7 +39,7 @@ function foldersReducer(state = defaultState, action: AnyAction) {
   case FETCH_MAIL_FOLDERS_DATA:
     return {
       ...state,
-      count: action.payload ? action.payload["@odata.count"] : 0,
+      count: action.payload ? action.payload["@odata.count"] || 0 : 0,
       mailFolders: action.payload ? sortFolders(action.payload.value) : [],
     };
 

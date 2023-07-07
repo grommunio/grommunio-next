@@ -7,7 +7,6 @@ import { Dialog, DialogTitle, DialogContent, TextField,
   Button, DialogActions, Grid, Typography,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
-import { useAppContext } from '../../azure/AppContext';
 import { postMessageCategory } from '../../actions/messages';
 import { useDispatch } from 'react-redux';
 import CategoryColorPicker from '../CategoryColorPicker';

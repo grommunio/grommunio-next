@@ -13,6 +13,7 @@ import { addItem } from '../utils';
 
 const defaultState = {
   mails: [],
+  count: 0,
   categories: [],
 };
 
@@ -22,7 +23,8 @@ function messagesReducer(state = defaultState, action: AnyAction) {
   case FETCH_MAILS_DATA:
     return {
       ...state,
-      mails: action.payload ?? [],
+      count: action.payload ? action.payload["@odata.count"] || 0 : 0,
+      mails: action.payload?.value ?? [],
     };
 
   case DELETE_MESSAGE_DATA:

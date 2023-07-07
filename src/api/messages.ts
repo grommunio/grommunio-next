@@ -7,14 +7,16 @@ import { buildQuery } from "../utils";
 import { graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
 
-export async function getUserMessages(folderid = 'inbox', params={}): Promise<Message[]> {
+export async function getUserMessages(folderid = 'inbox', params={}): Promise<PageCollection> {
   const url = buildQuery(`/me/mailFolders/${folderid}/messages`, params);
 
   const response: PageCollection = await graphClient!
     .api(url)
+    .top(10) // TODO: This limit will probably increased in the future, but is currently set for testing purposes
+    .count()
     .get();
 
-  return response.value;
+  return response;
 }
 
 

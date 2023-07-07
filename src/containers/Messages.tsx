@@ -6,7 +6,7 @@ import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Badge, Button, Grid, IconButton, List, ListItem, ListItemButton, ListItemText, Menu,
-  MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
+  MenuItem, Pagination, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
@@ -121,6 +121,11 @@ const styles: any = (theme: any) => ({
     display: 'flex',
     justifyContent: 'center',
   },
+  paginationContainer: {
+    marginTop: 8,
+    display: 'flex',
+    justifyContent: 'flex-end',
+  }
 });
 
 type MessagesProps = {
@@ -155,12 +160,12 @@ const filterOptions = [
 
 function Messages({ classes }: MessagesProps) {
   const { t } = useTranslation();
-  const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null); // TODO: Get default somehow
+  const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null);
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const [checkedMessages, setCheckedMessages] = useState<Array<Message>>([]);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [mailFilters, setMailFilters] = useState<any>({});
-  const { mails: messages } = useTypeSelector(state => state.messages);
+  const { mails: messages, count: totalMailCount } = useTypeSelector(state => state.messages);
   const { mailFolders } = useTypeSelector(state => state.folders);
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [activeMailTab, setActiveMailTab] = useState<MailTab | null>(null);
@@ -169,11 +174,13 @@ function Messages({ classes }: MessagesProps) {
   const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
   const isContextMenuOpen = Boolean(contextMenuPosition);
   const dispatch = useTypeDispatch();
+  const [mailListPage, setMailListPage] = useState(1);
 
   const [pinnedMessages, setPinnedMessages] = usePinnedMessages();
 
   // componentDidMount()
   useEffect(() => {
+    // TODO: Try implementing a single 'batch' request for these
     dispatch(fetchMessagesData());
     dispatch(fetchMailFoldersData());
     dispatch(fetchMessageCategories());
@@ -196,6 +203,7 @@ function Messages({ classes }: MessagesProps) {
         search: search === '""' ? undefined : search,
       },
     ));
+    if(mailListPage !== 1) setMailListPage(1);
   }, 250);
 
   const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
@@ -205,7 +213,8 @@ function Messages({ classes }: MessagesProps) {
 
   const handleMailFolderClick = (folder: MailFolder) => () => {
     setSelectedFolder(folder);
-    dispatch(fetchMessagesData(folder?.id, { filter: objectToCNF(mailFilters) || undefined }))
+    setMailListPage(1);
+    dispatch(fetchMessagesData(folder?.id, { filter: objectToCNF(mailFilters) || undefined }));
   }
 
   const handleMailClick = (msg: Message) => () => {
@@ -285,6 +294,7 @@ function Messages({ classes }: MessagesProps) {
         filter: objectToCNF(mailFilters) || undefined,
       },
     ));
+    setMailListPage(1);
   }, [mailFilters]);
 
   const handleMailCheckbox = (message: Message) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -398,6 +408,14 @@ function Messages({ classes }: MessagesProps) {
     setMailTabs(copy);
   }
 
+  const handlePagination = (_: any, value: number) => {
+    dispatch(fetchMessagesData(selectedFolder?.id, {
+      filter: objectToCNF(mailFilters) || undefined,
+      skip: 10 * (value - 1),
+    }));
+    setMailListPage(value);
+  }
+
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -489,6 +507,14 @@ function Messages({ classes }: MessagesProps) {
               )}
             </List>
           </Paper>
+          <div className={classes.paginationContainer}>
+            <Pagination
+              onChange={handlePagination}
+              count={Math.ceil(totalMailCount / 10)}
+              page={mailListPage}
+              shape="rounded"
+            />
+          </div>
         </div>
         <div className={classes.mailContainer}>
           <div className={classes.mailTabsContainer}>
