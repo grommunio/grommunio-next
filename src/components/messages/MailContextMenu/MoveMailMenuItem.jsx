@@ -29,7 +29,7 @@ const MoveMailMenuItem = ({ t, openedMail }) => {
     if(!res.error) {
       dispatch(moveMessageData(
         [openedMail],
-        res.payload.id,
+        res.id,
       ));
       setNewFolder("");
     } else {

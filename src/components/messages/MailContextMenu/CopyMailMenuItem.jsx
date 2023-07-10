@@ -26,10 +26,10 @@ const CopyMailMenuItem = ({ t, openedMail }) => {
 
   const handleCreate = async () => {
     const data = await dispatch(postMailFolderData({ displayName: newFolder }));
-    if(data?.payload) {
+    if(data?.id) {
       dispatch(copyMessageData(
         openedMail.id,
-        data.payload.id,
+        data.id,
       ));
       setNewFolder("");
     }
