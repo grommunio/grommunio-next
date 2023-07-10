@@ -63,24 +63,24 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
   };
 
   const renderTree = (folders, parentFolderId) => <>
-    {folders.map(({ id, displayName, childFolders, childFolderCount, unreadItemCount }) => 
+    {folders.map((folder) => 
       <TreeItem
-        onContextMenu={handleContextMenu(id)}
-        key={id || -1}
-        nodeId={id || "-1"}
+        onContextMenu={handleContextMenu(folder.id)}
+        key={folder.id || -1}
+        nodeId={folder.id || "-1"}
         label={<div className={classes.treeItemLabel}>
-          <Typography variant='body1'>{displayName}</Typography>
+          <Typography variant='body1'>{folder.displayName}</Typography>
           <Badge
-            badgeContent={unreadItemCount}
+            badgeContent={folder.unreadItemCount}
             color="primary"
           >
             <div style={{width: 16, height: 12}}></div>
           </Badge>
         </div>}
-        onClick={handleMailFolderClick({id})}
+        onClick={handleMailFolderClick(folder)}
       >
-        {childFolderCount
-          ? renderTree(childFolders, id)
+        {folder.childFolderCount
+          ? renderTree(folder.childFolders, folder.id)
           : null}
       </TreeItem>
     )}

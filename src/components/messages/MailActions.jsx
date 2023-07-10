@@ -48,8 +48,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
   const handleMailDelete = () => {
     dispatch(deleteMessageData(
       selection.length > 0 ? selection : [openedMail],
-      // TODO: This does not work. Find way to convert non-english displayname
-      folder?.displayname == "Deleted items"
+      folder?.wellKnownName == "deleteditems"
     )).then(success => (success ? clearCheckedMails() : null))
   }
 

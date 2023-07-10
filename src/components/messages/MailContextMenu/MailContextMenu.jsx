@@ -23,8 +23,7 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
   const handleMailDelete = () => {
     dispatch(deleteMessageData(
       [openedMail],
-      // TODO: This does not work. Find way to convert non-english displayname
-      folder?.displayname == "Deleted items"
+      folder?.wellKnownName == "deleteditems"
     )).then(success => {
       if(success) {
         clearCheckedMails();
