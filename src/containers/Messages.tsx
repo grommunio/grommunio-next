@@ -23,6 +23,7 @@ import AddCategory from '../components/dialogs/AddCategory';
 import usePinnedMessages from '../hooks/usePinnedMessages';
 import { fetchMailFoldersData } from '../actions/folders';
 import FolderHierarchy from '../components/FolderHierarchy';
+import { ContextMenuCoords } from '../types/misc';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -140,10 +141,7 @@ type MailTab = {
   initialState?: Message,
 };
 
-type ContextMenuCoords = {
-  top: number,
-  left: number,
-}
+
 
 function objectToCNF(filters: any) {
   return Object.entries(filters)

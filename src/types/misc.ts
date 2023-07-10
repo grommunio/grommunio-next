@@ -9,6 +9,11 @@ export type AlertType = {
   severity?: AlertColor;
 }
 
+export type ContextMenuCoords = {
+  top: number,
+  left: number,
+}
+
 export interface Map {
   [key: string]: string | undefined
 }

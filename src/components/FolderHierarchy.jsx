@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { postMailFolderData } from '../actions/folders';
+import FoldersContextMenu from './messages/FoldersContextMenu';
 
 const styles = theme => ({
   root: {
@@ -30,8 +31,10 @@ const styles = theme => ({
 });
 
 const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
-  const dispatch = useDispatch();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const [contextMenuPosition, setContextMenuPosition] = useState(null);
+  const isContextMenuOpen = Boolean(contextMenuPosition);
   const [adding, setAdding] = useState("");
   const [newFolder, setNewFolder] = useState("");
 
@@ -48,9 +51,21 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     }
   }
 
+  const handleContextMenu = parentFolderId => e => {
+    e.preventDefault();
+    setAdding(parentFolderId);
+    setContextMenuPosition({ top: e.clientY, left: e.clientX });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenuPosition(null);
+    setAdding("");
+  };
+
   const renderTree = (folders, parentFolderId) => <>
     {folders.map(({ id, displayName, childFolders, childFolderCount, unreadItemCount }) => 
       <TreeItem
+        onContextMenu={handleContextMenu(id)}
         key={id || -1}
         nodeId={id || "-1"}
         label={<div className={classes.treeItemLabel}>
@@ -92,7 +107,7 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     />
   </>
 
-  return (
+  return (<>
     <TreeView
       selected={selected?.id || "-1"}
       className={classes.root}
@@ -101,6 +116,14 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     >
       {data.length !== 0 && renderTree(data, 0, 0)}
     </TreeView>
+    <FoldersContextMenu
+      isOpen={isContextMenuOpen}
+      onClose={handleCloseContextMenu}
+      anchorPosition={contextMenuPosition}
+      parentFolderId={adding}
+    />
+  </>
+    
   );
 }
 
