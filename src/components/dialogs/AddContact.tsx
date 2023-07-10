@@ -65,7 +65,7 @@ function AddContact(props: any) {
       ]
     }
     dispatch(postContactData(mergedContact))
-      .then((resp: Contact) => resp.id ? onClose() : null); // TODO: Update table view after successful add. (Maybe create action?)
+      .then((resp: Contact) => resp.id ? onClose() : null);
   }
   
   return (

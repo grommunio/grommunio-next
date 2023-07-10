@@ -5,7 +5,9 @@ import { AnyAction } from 'redux'
 import {
   FETCH_CONTACTS_DATA,
   DELETE_CONTACTS_DATA,
+  POST_CONTACT_DATA,
 } from '../actions/types';
+import { addItem } from '../utils';
 
 const defaultState = {
   contacts: [],
@@ -24,6 +26,12 @@ function contactsReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       contacts: action.payload ? state.contacts.filter((contact: Contact) => contact.id !== action.payload) : state.contacts,
+    };
+
+  case POST_CONTACT_DATA:
+    return {
+      ...state,
+      contacts: addItem(state.contacts, action.payload),
     };
 
   default:

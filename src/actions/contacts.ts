@@ -3,7 +3,7 @@
 
 import { Contact } from "microsoft-graph";
 import { deleteContact, getContacts, postContact } from "../api/contacts";
-import { FETCH_CONTACTS_DATA, DELETE_CONTACTS_DATA } from "./types";
+import { FETCH_CONTACTS_DATA, DELETE_CONTACTS_DATA, POST_CONTACT_DATA } from "./types";
 import { defaultDeleteHandler, defaultFetchHandler, defaultPostHandler } from "./defaults";
 
 
@@ -16,6 +16,5 @@ export function deleteContactData(contactId: string) {
 }
 
 export function postContactData(contact: Contact) {
-  //TODO: Add proper dispatch type to update reducer
-  return defaultPostHandler(postContact, null, contact)
+  return defaultPostHandler(postContact, POST_CONTACT_DATA, contact)
 }
