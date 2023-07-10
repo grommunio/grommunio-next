@@ -34,6 +34,24 @@ function sortFolders(folders: Array<ExtendedMailFolder>): Array<ExtendedMailFold
   return folders;
 }
 
+function addLeaf(folders:  Array<ExtendedMailFolder>, newFolder: ExtendedMailFolder, parentFolderId: string) {
+  for(const folder of folders) {
+    if(folder.id === parentFolderId) {
+      folder.childFolders?.push(newFolder);
+      return true;
+    } else {
+      const found = addLeaf((folder?.childFolders || []) as Array<ExtendedMailFolder>, newFolder, folder?.id || "");
+      if(found) return true;
+    }
+  }
+  return false;
+}
+
+function addTreeItem(folders:  Array<ExtendedMailFolder>, newFolder: ExtendedMailFolder, parentFolderId: string) {
+  addLeaf(folders, newFolder, parentFolderId);
+  return folders;
+}
+
 function foldersReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
   case FETCH_MAIL_FOLDERS_DATA:
@@ -46,7 +64,9 @@ function foldersReducer(state = defaultState, action: AnyAction) {
   case POST_MAIL_FOLDER:
     return {
       ...state,
-      mailFolders: addItem(state.mailFolders, action.payload),
+      mailFolders: action.parentFolderId ? 
+        addTreeItem(structuredClone(state.mailFolders), action.payload, action.parentFolderId) :
+        addItem(state.mailFolders, action.payload),
     }
 
   default:

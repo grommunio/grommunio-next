@@ -43,7 +43,6 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
   const handleCreate = async () => {
     const data = await dispatch(postMailFolderData({ displayName: newFolder }, adding));
     if(data?.id) {
-      // TODO: Add folder to tree
       setAdding("");
       setNewFolder("");
     }

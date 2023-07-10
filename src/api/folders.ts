@@ -38,7 +38,7 @@ export async function getChildFolders(parentFolderId: string): Promise<MailFolde
   return response.value;
 }
 
-export async function postMailFolder(folder: MailFolder, parentFolderId: MailFolder | undefined): Promise<MailFolder> {
+export async function postMailFolder(folder: MailFolder, parentFolderId?: string): Promise<MailFolder> {
 
   const response = await graphClient!
     .api("/me/mailFolders" + (parentFolderId ? `/${parentFolderId}/childFolders` : ""))
