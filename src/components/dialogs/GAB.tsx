@@ -3,7 +3,7 @@
 
 import { withStyles } from '@mui/styles';
 import { Dialog, DialogTitle, DialogContent,
-  DialogActions, List, ListItemText, ListItemButton, ListItemIcon, Button, Typography, Chip, Divider,
+  DialogActions, List, ListItemText, ListItemButton, ListItemIcon, Button, Typography, Chip, Divider, TextField,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { Contact } from 'microsoft-graph';
@@ -38,6 +38,8 @@ type GABProps = {
 function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }: GABProps) {
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
+  const [search, setSearch] = useState<string>("");
+  const lcs = search.toLowerCase();
   const [preselection, setPreselection] = useState<Array<Contact>>([]);
 
   /*
@@ -96,8 +98,18 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
           </div>
         </div>
         <Divider className={classes.divider}/>
+        <TextField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          fullWidth
+          label={t("Search")}
+        />
         <List dense>
-          {contacts.map((contact: Contact, key: number) =>
+          {(search ?
+            contacts.filter((c: Contact) => c.displayName?.toLowerCase().includes(lcs) ||
+            c.emailAddresses![0].address?.toLowerCase().includes(lcs))
+            : contacts
+          ).map((contact: Contact, key: number) =>
             <ListItemButton
               key={key}
               onClick={handleContactSelect(contact)}
