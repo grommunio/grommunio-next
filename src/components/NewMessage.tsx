@@ -9,7 +9,7 @@ import { postMessage } from '../api/messages';
 import { Contact, Message, Importance, NullableOption, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-import { Delete, ImportContacts } from '@mui/icons-material';
+import { Delete } from '@mui/icons-material';
 import GAB from './dialogs/GAB';
 
 const styles: any = (theme: any) => ({
@@ -61,6 +61,7 @@ type GabSelections = {
   ccRecipients: Array<Contact>;
   bccRecipients: Array<Contact>;
 }
+
 
 function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
   const { t, i18n } = useTranslation();
@@ -191,18 +192,21 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
       </Paper>
       <Paper className={classes.tinyMceContainer}>
         <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB("toRecipients")}>
-            <ImportContacts />
-          </IconButton>
           <TextField
             className={classes.input}
-            label={t("Recipients")}
             onChange={handleInput('setToRecipients')}
             value={toRecipients}
             fullWidth
             InputProps={{
-              startAdornment: selectedContacts.toRecipients.length > 0 && <div className={classes.flexRow}>
-                {selectedContacts.toRecipients.map((c, key) =>
+              startAdornment: <div className={classes.flexRow}>
+                <Button
+                  variant='outlined'
+                  onClick={handleGAB("toRecipients")}
+                  sx={{ mr: 2 }}
+                >
+                  {t("To")}
+                </Button>
+                {selectedContacts.toRecipients.length > 0 && selectedContacts.toRecipients.map((c, key) =>
                   <Chip
                     sx={{ mr: 0.5 }}
                     key={key}
@@ -218,7 +222,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
                   size='small'
                   color={ccVisible ? 'primary' : 'secondary'}
                 >
-                  CC
+                  Cc
                 </Button>
                 <Button
                   className={classes.ccButton}
@@ -226,25 +230,28 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
                   size='small'
                   color={bccVisible ? 'primary' : 'secondary'}
                 >
-                  BCC
+                  Bcc
                 </Button>
               </div>
             }}
           />
         </div>
         {ccVisible && <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB("ccRecipients")}>
-            <ImportContacts />
-          </IconButton>
           <TextField
             className={classes.input}
-            label={t("Cc")}
             onChange={handleInput('setCcRecipients')}
             value={ccRecipients}
             fullWidth
             InputProps={{
-              startAdornment: selectedContacts.ccRecipients.length > 0 && <div className={classes.flexRow}>
-                {selectedContacts.ccRecipients.map((c, key) =>
+              startAdornment: <div className={classes.flexRow}>
+                <Button
+                  variant='outlined'
+                  onClick={handleGAB("ccRecipients")}
+                  sx={{ mr: 2 }}
+                >
+                  {t("Cc")}
+                </Button>
+                {selectedContacts.ccRecipients.length > 0 && selectedContacts.ccRecipients.map((c, key) =>
                   <Chip
                     sx={{ mr: 0.5 }}
                     key={key}
@@ -257,18 +264,21 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           />
         </div>}
         {bccVisible && <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB("bccRecipients")}>
-            <ImportContacts />
-          </IconButton>
           <TextField
             className={classes.input}
-            label={t("Bcc")}
             onChange={handleInput('setBccRecipients')}
             value={bccRecipients}
             fullWidth
             InputProps={{
-              startAdornment: selectedContacts.bccRecipients.length > 0 && <div className={classes.flexRow}>
-                {selectedContacts.bccRecipients.map((c, key) =>
+              startAdornment: <div className={classes.flexRow}>
+                <Button
+                  variant='outlined'
+                  onClick={handleGAB("bccRecipients")}
+                  sx={{ mr: 2 }}
+                >
+                  {t("Bcc")}
+                </Button>
+                {selectedContacts.bccRecipients.length > 0 && selectedContacts.bccRecipients.map((c, key) =>
                   <Chip
                     sx={{ mr: 0.5 }}
                     key={key}
