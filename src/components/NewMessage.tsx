@@ -79,13 +79,6 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     "ccRecipients": [],
     "bccRecipients": [],
   });
-  // TODO: This solution was a stupid idea. Rewrite the state handlers
-  const stateFuncs: any = {
-    'setToRecipients': setToRecipients,
-    'setSubject': setSubject,
-    'setCcRecipients': setCcRecipients,
-    'setBccRecipients': setBccRecipients,
-  }
 
   const recipientsToValidRecipientFormat = (emails: string, contacts: Array<Contact>):  NullableOption<Recipient[]> => {
     let res: Recipient[] = [];
@@ -134,10 +127,6 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     }
     postMessage(message, send)
       .then(handleDraftClose);
-  }
-
-  const handleInput = (stateFunc: string) => (e: ChangeEvent<HTMLInputElement>) => {
-    stateFuncs[stateFunc]((e.target as HTMLInputElement).value);
   }
 
   const handleSubject = (e: ChangeEvent<HTMLInputElement>) => {
@@ -194,7 +183,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         <div className={classes.flexRow}>
           <TextField
             className={classes.input}
-            onChange={handleInput('setToRecipients')}
+            onChange={e => setToRecipients(e.target.value)}
             value={toRecipients}
             fullWidth
             InputProps={{
@@ -239,7 +228,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         {ccVisible && <div className={classes.flexRow}>
           <TextField
             className={classes.input}
-            onChange={handleInput('setCcRecipients')}
+            onChange={e => setCcRecipients(e.target.value)}
             value={ccRecipients}
             fullWidth
             InputProps={{
@@ -266,7 +255,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         {bccVisible && <div className={classes.flexRow}>
           <TextField
             className={classes.input}
-            onChange={handleInput('setBccRecipients')}
+            onChange={e => setBccRecipients(e.target.value)}
             value={bccRecipients}
             fullWidth
             InputProps={{
