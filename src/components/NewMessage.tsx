@@ -56,6 +56,12 @@ type MessagesProps = {
   initialState?: Message,
 }
 
+type GabSelections = {
+  toRecipients: Array<Contact>;
+  ccRecipients: Array<Contact>;
+  bccRecipients: Array<Contact>;
+}
+
 function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
@@ -66,8 +72,12 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const [ccVisible, setCcVisible] = useState(false);
   const [bccVisible, setBccVisible] = useState(false);
   const [messageImportance, setMessageImportance] = useState<Importance>("normal");
-  const [gabOpen, setGabOpen] = useState<boolean>(false);
-  const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
+  const [gabOpen, setGabOpen] = useState<string>("");
+  const [selectedContacts, setSelectedContacts] = useState<GabSelections>({
+    "toRecipients": [],
+    "ccRecipients": [],
+    "bccRecipients": [],
+  });
   // TODO: This solution was a stupid idea. Rewrite the state handlers
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
@@ -105,10 +115,10 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     const extraProps: IExtraProps = {}
 
     if (ccRecipients) {
-      extraProps["ccRecipients"] = recipientsToValidRecipientFormat(ccRecipients, [])
+      extraProps["ccRecipients"] = recipientsToValidRecipientFormat(ccRecipients, selectedContacts.ccRecipients)
     }
     if (bccRecipients) {
-      extraProps["bccRecipients"] = recipientsToValidRecipientFormat(bccRecipients, [])
+      extraProps["bccRecipients"] = recipientsToValidRecipientFormat(bccRecipients, selectedContacts.bccRecipients)
     }
 
     const message: Message = {
@@ -117,7 +127,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         contentType: 'html',
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
-      toRecipients: recipientsToValidRecipientFormat(toRecipients, selectedContacts),
+      toRecipients: recipientsToValidRecipientFormat(toRecipients, selectedContacts.toRecipients),
       importance: messageImportance,
       ...extraProps,
     }
@@ -135,12 +145,22 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     handleTabLabelChange(value);
   }
 
-  const handleGAB = (bool: boolean) => () => {
-    setGabOpen(bool)
+  const handleGAB = (recipType: string) => () => {
+    setGabOpen(recipType)
   }
 
-  const handleContactRemove = (contact: Contact) => () =>
-    setSelectedContacts(selectedContacts.filter(c => c.id !== contact.id));
+  const handleContactRemove = (contact: Contact, recipType: string) => () =>
+    setSelectedContacts({
+      ...selectedContacts,
+      [recipType]: selectedContacts[recipType as keyof GabSelections].filter(c => c.id !== contact.id)
+    });
+
+  const handleGABSelection = (selection: Array<Contact>) => {
+    setSelectedContacts({
+      ...selectedContacts,
+      [gabOpen]: selection,
+    });
+  }
 
   return (
     <div className={classes.content}>
@@ -171,7 +191,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
       </Paper>
       <Paper className={classes.tinyMceContainer}>
         <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB(true)}>
+          <IconButton onClick={handleGAB("toRecipients")}>
             <ImportContacts />
           </IconButton>
           <TextField
@@ -181,13 +201,13 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={toRecipients}
             fullWidth
             InputProps={{
-              startAdornment: selectedContacts.length > 0 && <div className={classes.flexRow}>
-                {selectedContacts.map((c, key) =>
+              startAdornment: selectedContacts.toRecipients.length > 0 && <div className={classes.flexRow}>
+                {selectedContacts.toRecipients.map((c, key) =>
                   <Chip
                     sx={{ mr: 0.5 }}
                     key={key}
                     label={c.displayName}
-                    onDelete={handleContactRemove(c)}
+                    onDelete={handleContactRemove(c, "toRecipients")}
                   />
                 )}
               </div>,
@@ -213,7 +233,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           />
         </div>
         {ccVisible && <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB(true)}>
+          <IconButton onClick={handleGAB("ccRecipients")}>
             <ImportContacts />
           </IconButton>
           <TextField
@@ -222,10 +242,22 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             onChange={handleInput('setCcRecipients')}
             value={ccRecipients}
             fullWidth
+            InputProps={{
+              startAdornment: selectedContacts.ccRecipients.length > 0 && <div className={classes.flexRow}>
+                {selectedContacts.ccRecipients.map((c, key) =>
+                  <Chip
+                    sx={{ mr: 0.5 }}
+                    key={key}
+                    label={c.displayName}
+                    onDelete={handleContactRemove(c, "ccRecipients")}
+                  />
+                )}
+              </div>
+            }}
           />
         </div>}
         {bccVisible && <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB(true)}>
+          <IconButton onClick={handleGAB("bccRecipients")}>
             <ImportContacts />
           </IconButton>
           <TextField
@@ -234,6 +266,18 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             onChange={handleInput('setBccRecipients')}
             value={bccRecipients}
             fullWidth
+            InputProps={{
+              startAdornment: selectedContacts.bccRecipients.length > 0 && <div className={classes.flexRow}>
+                {selectedContacts.bccRecipients.map((c, key) =>
+                  <Chip
+                    sx={{ mr: 0.5 }}
+                    key={key}
+                    label={c.displayName}
+                    onDelete={handleContactRemove(c, "bccRecipients")}
+                  />
+                )}
+              </div>
+            }}
           />
         </div>}
         <TextField
@@ -255,10 +299,10 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         />
       </Paper>
       <GAB
-        open={gabOpen}
-        setOpen={setGabOpen}
-        seletedContact={selectedContacts}
-        setSelectedContacts={setSelectedContacts}
+        open={Boolean(gabOpen)}
+        onClose={() => setGabOpen("")}
+        seletedContact={selectedContacts[gabOpen as keyof GabSelections] || []}
+        setSelectedContacts={handleGABSelection}
       />
     </div>
   );

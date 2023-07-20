@@ -30,12 +30,12 @@ type GABProps = {
   classes: any;
   t: (a1: string) => string;
   open: boolean;
-  setOpen: (a1: boolean) => void;
+  onClose: () => void;
   seletedContact: Array<Contact>;
   setSelectedContacts: (a1: Array<Contact>) => void;
 }
 
-function GAB({ t, classes, open, setOpen, seletedContact, setSelectedContacts }: GABProps) {
+function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }: GABProps) {
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
   const [preselection, setPreselection] = useState<Array<Contact>>([]);
@@ -66,16 +66,14 @@ function GAB({ t, classes, open, setOpen, seletedContact, setSelectedContacts }:
     }
   }
 
-  const handleClose = () => setOpen(false);
-
   const handleConfirm = () => {
     setSelectedContacts(preselection);
-    setOpen(false);
+    onClose();
   }
 
   return (
     <Dialog
-      onClose={handleClose}
+      onClose={onClose}
       open={open}
       maxWidth="lg"
       fullWidth
@@ -118,7 +116,7 @@ function GAB({ t, classes, open, setOpen, seletedContact, setSelectedContacts }:
         </List>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>
+        <Button onClick={onClose}>
           {t("Cancel")}
         </Button>
         <Button variant='contained' onClick={handleConfirm}>
