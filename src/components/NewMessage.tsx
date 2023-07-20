@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
-import { Button, IconButton, Paper, TextField } from '@mui/material';
+import { Button, Chip, IconButton, Paper, TextField } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message, Importance, NullableOption, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import { Delete, ImportContacts } from '@mui/icons-material';
-import { useDispatch } from 'react-redux';
-import { setGABOpen } from '../actions/gab';
-import { useTypeSelector } from '../store';
+import GAB from './dialogs/GAB';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -59,10 +57,8 @@ type MessagesProps = {
 }
 
 function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
-  const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
-  const selectedGABReceipients = useTypeSelector(state => state.gab.seletion);
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
   const [ccRecipients, setCcRecipients] = useState("");
   const [bccRecipients, setBccRecipients] = useState("");
@@ -70,6 +66,8 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
   const [ccVisible, setCcVisible] = useState(false);
   const [bccVisible, setBccVisible] = useState(false);
   const [messageImportance, setMessageImportance] = useState<Importance>("normal");
+  const [gabOpen, setGabOpen] = useState<boolean>(false);
+  const [selectedContacts, setSelectedContacts] = useState<Array<Contact>>([]);
   // TODO: This solution was a stupid idea. Rewrite the state handlers
   const stateFuncs: any = {
     'setToRecipients': setToRecipients,
@@ -78,15 +76,24 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     'setBccRecipients': setBccRecipients,
   }
 
-  const recipientsToValidRecipientFormat = (emails: string):  NullableOption<Recipient[]> => {
-    if (emails){
-      return emails.split(',').map((address: string) => ({
+  const recipientsToValidRecipientFormat = (emails: string, contacts: Array<Contact>):  NullableOption<Recipient[]> => {
+    let res: Recipient[] = [];
+    if (emails) {
+      res = res.concat(emails.split(',').map((address: string) => ({
         emailAddress: {
           address,
         },
-      }))
+      })));
     }
-    return null
+    if(contacts.length > 0) {
+      res = res.concat(contacts.filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
+        emailAddress: {
+          // TODO: Which email to select?
+          address: c.emailAddresses![0].address,
+        },
+      })));
+    }
+    return res.length > 0 ? res : null;
   }
 
   interface IExtraProps {
@@ -98,10 +105,10 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     const extraProps: IExtraProps = {}
 
     if (ccRecipients) {
-      extraProps["ccRecipients"] = recipientsToValidRecipientFormat(ccRecipients)
+      extraProps["ccRecipients"] = recipientsToValidRecipientFormat(ccRecipients, [])
     }
     if (bccRecipients) {
-      extraProps["bccRecipients"] = recipientsToValidRecipientFormat(bccRecipients)
+      extraProps["bccRecipients"] = recipientsToValidRecipientFormat(bccRecipients, [])
     }
 
     const message: Message = {
@@ -110,7 +117,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         contentType: 'html',
         content: editorRef.current ? editorRef.current.getContent() : '',
       },
-      toRecipients: recipientsToValidRecipientFormat(toRecipients),
+      toRecipients: recipientsToValidRecipientFormat(toRecipients, selectedContacts),
       importance: messageImportance,
       ...extraProps,
     }
@@ -128,18 +135,12 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
     handleTabLabelChange(value);
   }
 
-  const handleGAB = () => {
-    dispatch(setGABOpen(true));
+  const handleGAB = (bool: boolean) => () => {
+    setGabOpen(bool)
   }
 
-  useEffect(() => {
-    if (selectedGABReceipients.length > 0) {
-      setToRecipients(toRecipients + (toRecipients && ",") +
-          selectedGABReceipients.map((contact: Contact) => {
-            return contact.emailAddresses ? contact.emailAddresses[0].address : ''
-          }).join(','));
-    }
-  }, [selectedGABReceipients]);
+  const handleContactRemove = (contact: Contact) => () =>
+    setSelectedContacts(selectedContacts.filter(c => c.id !== contact.id));
 
   return (
     <div className={classes.content}>
@@ -170,7 +171,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
       </Paper>
       <Paper className={classes.tinyMceContainer}>
         <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB}>
+          <IconButton onClick={handleGAB(true)}>
             <ImportContacts />
           </IconButton>
           <TextField
@@ -180,6 +181,16 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
             value={toRecipients}
             fullWidth
             InputProps={{
+              startAdornment: selectedContacts.length > 0 && <div className={classes.flexRow}>
+                {selectedContacts.map((c, key) =>
+                  <Chip
+                    sx={{ mr: 0.5 }}
+                    key={key}
+                    label={c.displayName}
+                    onDelete={handleContactRemove(c)}
+                  />
+                )}
+              </div>,
               endAdornment: <div className={classes.flexRow}>
                 <Button
                   className={classes.ccButton}
@@ -202,7 +213,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           />
         </div>
         {ccVisible && <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB}>
+          <IconButton onClick={handleGAB(true)}>
             <ImportContacts />
           </IconButton>
           <TextField
@@ -214,7 +225,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           />
         </div>}
         {bccVisible && <div className={classes.flexRow}>
-          <IconButton onClick={handleGAB}>
+          <IconButton onClick={handleGAB(true)}>
             <ImportContacts />
           </IconButton>
           <TextField
@@ -243,6 +254,12 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
           }}
         />
       </Paper>
+      <GAB
+        open={gabOpen}
+        setOpen={setGabOpen}
+        seletedContact={selectedContacts}
+        setSelectedContacts={setSelectedContacts}
+      />
     </div>
   );
 }

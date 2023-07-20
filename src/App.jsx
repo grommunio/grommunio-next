@@ -15,7 +15,6 @@ import TopBar from './components/TopBar';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch } from './store';
 import { changeSettings } from './actions/settings';
-import GAB from './components/dialogs/GAB';
 import { CssBaseline } from '@mui/material';
 import background from "!file-loader!./res/background_light.svg";
 import backgroundDark from "!file-loader!./res/background_dark.svg";
@@ -115,7 +114,6 @@ function App(props) {
             classes={classes}
             routesProps={routesProps}
           />
-          <GAB />
           <AlertStack />
         </div>
       </ProvideAppContext>
