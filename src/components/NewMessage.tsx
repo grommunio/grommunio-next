@@ -9,7 +9,7 @@ import { postMessage } from '../api/messages';
 import { Contact, Message, Importance, NullableOption, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-import { Delete } from '@mui/icons-material';
+import { ContactMail, Delete } from '@mui/icons-material';
 import GAB from './dialogs/GAB';
 
 const styles: any = (theme: any) => ({
@@ -62,6 +62,13 @@ type GabSelections = {
   bccRecipients: Array<Contact>;
 }
 
+const ContactChip = (props: any) => (
+  <Chip
+    sx={{ mr: 0.5 }}
+    icon={<ContactMail fontSize='small'/>}
+    {...props}
+  />
+);
 
 function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
   const { t, i18n } = useTranslation();
@@ -196,8 +203,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
                   {t("To")}
                 </Button>
                 {selectedContacts.toRecipients.length > 0 && selectedContacts.toRecipients.map((c, key) =>
-                  <Chip
-                    sx={{ mr: 0.5 }}
+                  <ContactChip
                     key={key}
                     label={c.displayName}
                     onDelete={handleContactRemove(c, "toRecipients")}
@@ -241,8 +247,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
                   {t("Cc")}
                 </Button>
                 {selectedContacts.ccRecipients.length > 0 && selectedContacts.ccRecipients.map((c, key) =>
-                  <Chip
-                    sx={{ mr: 0.5 }}
+                  <ContactChip
                     key={key}
                     label={c.displayName}
                     onDelete={handleContactRemove(c, "ccRecipients")}
@@ -268,8 +273,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
                   {t("Bcc")}
                 </Button>
                 {selectedContacts.bccRecipients.length > 0 && selectedContacts.bccRecipients.map((c, key) =>
-                  <Chip
-                    sx={{ mr: 0.5 }}
+                  <ContactChip
                     key={key}
                     label={c.displayName}
                     onDelete={handleContactRemove(c, "bccRecipients")}
