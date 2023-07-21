@@ -3,14 +3,16 @@
 
 import { withStyles } from '@mui/styles';
 import { Dialog, DialogTitle, DialogContent,
-  DialogActions, List, ListItemText, ListItemButton, ListItemIcon, Button, Typography, Chip, Divider, TextField,
+  DialogActions, List, ListItemText, ListItemButton, ListItemIcon, Button, Typography, Chip, Divider, TextField, Grid,
+  ListItem, IconButton,
 } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { Contact } from 'microsoft-graph';
 import { useTypeDispatch, useTypeSelector } from '../../store';
 import { fetchContactsData } from '../../actions/contacts';
-import { AccountCircle } from '@mui/icons-material';
-import { useEffect, useState } from 'react';
+import { AccountCircle, AddRounded, ContactMail } from '@mui/icons-material';
+import { MouseEvent, useEffect, useState } from 'react';
+import ContactDetails from '../ContactDetails';
 
 
 const styles = {
@@ -23,6 +25,17 @@ const styles = {
   },
   divider: {
     margin: "8px 0",
+  },
+  centralize: {
+    display: "flex",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contactIconContainer: {
+    paddingBottom: 8,
+    display: 'flex',
+    justifyContent: 'center',
   },
 };
 
@@ -41,6 +54,7 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
   const [search, setSearch] = useState<string>("");
   const lcs = search.toLowerCase();
   const [preselection, setPreselection] = useState<Array<Contact>>([]);
+  const [details, setDetails] = useState<Contact | null>(null);
 
   /*
   * It is possble to remove contacts in the NewMessage view (by deleting the chips).
@@ -57,7 +71,8 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
     dispatch(fetchContactsData());
   };
 
-  const handleContactSelect = (contact: Contact) => () => {
+  const handleContactSelect = (contact: Contact) => (e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
     const idx = preselection.findIndex(c => c.id === contact.id);
     if (idx !== -1) {
       const copy = [...preselection];
@@ -66,6 +81,10 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
     } else {
       setPreselection([...preselection, contact]);
     }
+  }
+
+  const handleContactDetails = (contact: Contact) => () => {
+    setDetails(contact);
   }
 
   const handleConfirm = () => {
@@ -77,7 +96,7 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
     <Dialog
       onClose={onClose}
       open={open}
-      maxWidth="lg"
+      maxWidth="xl"
       fullWidth
       TransitionProps={{
         onEnter: handleEnter,
@@ -98,34 +117,60 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
           </div>
         </div>
         <Divider className={classes.divider}/>
-        <TextField
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          fullWidth
-          label={t("Search")}
-        />
-        <List dense>
-          {(search ?
-            contacts.filter((c: Contact) => c.displayName?.toLowerCase().includes(lcs) ||
-            c.emailAddresses![0].address?.toLowerCase().includes(lcs))
-            : contacts
-          ).map((contact: Contact, key: number) =>
-            <ListItemButton
-              key={key}
-              onClick={handleContactSelect(contact)}
-              selected={preselection.findIndex(c => c.id === contact.id) !== -1}
-              classes={{ selected: classes.selected }}
-            >
-              <ListItemIcon>
-                <AccountCircle/>
-              </ListItemIcon>
-              <ListItemText
-                primary={contact.displayName}
-                secondary={contact.emailAddresses?.map(o => o.address).join(', ')}
-              />
-            </ListItemButton>
-          )}
-        </List>
+        <Grid container>
+          <Grid item xs={6}>
+            <TextField
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              fullWidth
+              label={t("Search")}
+            />
+            <List dense>
+              {(search ?
+                contacts.filter((c: Contact) => c.displayName?.toLowerCase().includes(lcs) ||
+                c.emailAddresses![0].address?.toLowerCase().includes(lcs))
+                : contacts
+              ).map((contact: Contact, key: number) =>
+                <ListItem
+                  key={key}
+                  secondaryAction={<IconButton edge="end" onClick={handleContactSelect(contact)}>
+                    <AddRounded />
+                  </IconButton>}
+                  disablePadding
+                >
+                  <ListItemButton
+                    dense
+                    role={undefined} 
+                    onClick={handleContactDetails(contact)}
+                    selected={details?.id === contact.id || preselection.findIndex(c => c.id === contact.id) !== -1}
+                    classes={{ selected: classes.selected }}
+                  >
+                    <ListItemIcon>
+                      <AccountCircle/>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={contact.displayName}
+                      secondary={contact.emailAddresses?.map(o => o.address).join(', ')}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              )}
+            </List>
+          </Grid>
+          <Grid item xs={6} style={{ display: 'flex' }}>
+            {details ? <ContactDetails contact={details} /> :
+              <div className={classes.centralize}>
+                <Grid>
+                  <div className={classes.contactIconContainer}>
+                    <ContactMail color="primary" fontSize="inherit" style={{ fontSize: 69 /* nice */ }}/>
+                  </div>
+                  <Typography align='center'>Select E-Mail to read</Typography>
+                  <Typography color="grey" align='center'>No selection made</Typography>
+                </Grid>
+              </div>
+            }
+          </Grid>
+        </Grid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>
