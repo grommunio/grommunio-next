@@ -138,7 +138,7 @@ type MailTab = {
   ID: number,
   label: string,
   Component?: typeof NewMessage,
-  initialState?: Message,
+  initialState?: any,
 };
 
 
@@ -258,7 +258,7 @@ function Messages({ classes }: MessagesProps) {
       Component: NewMessage,
       initialState: {
         subject: "RE: " + selectedMsg?.subject,
-        toRecipients: selectedMsg?.toRecipients,
+        toRecipients: selectedMsg?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(","),
         body: {
           // TODO: Improve reply body (this already works really well)
           content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
@@ -316,12 +316,12 @@ function Messages({ classes }: MessagesProps) {
     setMailTabs(copy);
   }
 
-  const handleNewMessage = () => {
+  const handleNewMessage = (initialState?: any, label?: string) => () => {
     const copy = [...mailTabs];
     if(copy.length === 0) { /* No e-mail selected */
       const readingTab = {
         ID: 1, /* Reading tab ID */
-        label: 'Select mail to read',
+        label: label || 'Select mail to read',
       }
       copy.push(readingTab);
     }
@@ -329,6 +329,7 @@ function Messages({ classes }: MessagesProps) {
       ID: now(),
       label: '<No subject>',
       Component: NewMessage,
+      initialState,
     };
     copy.push(tab);
     setMailTabs(copy);
@@ -418,7 +419,7 @@ function Messages({ classes }: MessagesProps) {
     <AuthenticatedView
       header={t("Messages")}
       actions={<MailActions
-        handleNewMessage={handleNewMessage}
+        handleNewMessage={handleNewMessage()}
         openedMail={selectedMsg}
         selection={checkedMessages}
         clearCheckedMails={clearCheckedMails}
@@ -551,6 +552,7 @@ function Messages({ classes }: MessagesProps) {
             <TabPanel key={key} hidden={tab.ID !== activeMailTab?.ID}>
               {tab?.Component ? <tab.Component
                 initialState={tab.initialState}
+                handleNewMessage={handleNewMessage}
                 handleTabLabelChange={handleTabLabelChange(key + 1 /* First tab is the selected mail */)}
                 handleDraftClose={handleDraftClose(key + 1)}
               /> : null}

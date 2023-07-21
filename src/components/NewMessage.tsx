@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, MouseEvent, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { Button, Chip, IconButton, Paper, TextField } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
@@ -50,10 +50,11 @@ const styles: any = (theme: any) => ({
 });
 
 type MessagesProps = {
-  classes: any,
-  handleTabLabelChange: (label: string) => void,
-  handleDraftClose: () => void,
-  initialState?: Message,
+  classes: any;
+  handleTabLabelChange: (label: string) => void;
+  handleDraftClose: () => void;
+  initialState?: any;
+  handleNewMessage: (a1?: any, a2?: any) => (e: MouseEvent<HTMLElement>) => void;
 }
 
 type GabSelections = {
@@ -70,10 +71,10 @@ const ContactChip = (props: any) => (
   />
 );
 
-function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialState }: MessagesProps) {
+function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDraftClose, initialState }: MessagesProps) {
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
-  const [toRecipients, setToRecipients] = useState(initialState?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(",") || "");
+  const [toRecipients, setToRecipients] = useState(initialState?.toRecipients || "");
   const [ccRecipients, setCcRecipients] = useState("");
   const [bccRecipients, setBccRecipients] = useState("");
   const [subject, setSubject] = useState(initialState?.subject || "");
@@ -306,6 +307,7 @@ function NewMessage({ classes, handleTabLabelChange, handleDraftClose, initialSt
         onClose={() => setGabOpen("")}
         seletedContact={selectedContacts[gabOpen as keyof GabSelections] || []}
         setSelectedContacts={handleGABSelection}
+        handleNewMessage={handleNewMessage}
       />
     </div>
   );

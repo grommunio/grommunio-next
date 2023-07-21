@@ -45,10 +45,11 @@ type GABProps = {
   open: boolean;
   onClose: () => void;
   seletedContact: Array<Contact>;
+  handleNewMessage: (a1?: any, a2?: any) => (e: MouseEvent<HTMLElement>) => void;
   setSelectedContacts: (a1: Array<Contact>) => void;
 }
 
-function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }: GABProps) {
+function GAB({ t, classes, open, onClose, seletedContact, handleNewMessage, setSelectedContacts }: GABProps) {
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
   const [search, setSearch] = useState<string>("");
@@ -158,7 +159,7 @@ function GAB({ t, classes, open, onClose, seletedContact, setSelectedContacts }:
             </List>
           </Grid>
           <Grid item xs={6} style={{ display: 'flex' }}>
-            {details ? <ContactDetails contact={details} /> :
+            {details ? <ContactDetails handleNewMessage={handleNewMessage} contact={details} /> :
               <div className={classes.centralize}>
                 <Grid>
                   <div className={classes.contactIconContainer}>

@@ -2,6 +2,7 @@ import { Mail } from "@mui/icons-material";
 import { Avatar, Button, Divider, Typography } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Contact } from "microsoft-graph";
+import { MouseEvent } from "react";
 
 const styles: any = {
   root: {
@@ -34,16 +35,24 @@ const styles: any = {
 type ContactDetailsProps = {
   classes: any,
   contact?: Contact;
+  handleNewMessage: (a1?: any, a2?: any) => (e: MouseEvent<HTMLElement>) => void;
 }
 
-const ContactDetails = ({ contact, classes }: ContactDetailsProps) => {
+const ContactDetails = ({ contact, classes, handleNewMessage }: ContactDetailsProps) => {
   if(!contact) return null;
+
   return <div className={classes.root}>
     <div className={classes.header}>
       <Avatar sx={{ width: 80, height: 80, mr: 2 }}/>
       <div>
         <Typography variant="h5">{contact.displayName}</Typography>
-        <Button size="small" startIcon={<Mail />}>Send mail</Button>
+        <Button
+          onClick={handleNewMessage({ toRecipients: contact.emailAddresses![0].address })}
+          size="small"
+          startIcon={<Mail />}
+        >
+          Send mail
+        </Button>
       </div>
     </div>
     <Divider className={classes.divider}/>
@@ -53,7 +62,11 @@ const ContactDetails = ({ contact, classes }: ContactDetailsProps) => {
         <Mail sx={{ mr: 1 }}/>
         <div className={classes.details}>
           <Typography variant="caption">E-Mail</Typography>
-          <Button className={classes.mail} color="primary">
+          <Button
+            onClick={handleNewMessage({ toRecipients: contact.emailAddresses![0].address })}
+            className={classes.mail}
+            color="primary"
+          >
             {contact.emailAddresses!.length > 0 && contact.emailAddresses![0].address}
           </Button>
         </div>
