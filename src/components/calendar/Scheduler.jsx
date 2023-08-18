@@ -2,8 +2,8 @@
 import * as React from "react";
 import { styled } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import Grid from "@mui/material/Grid";
-import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { ViewState, EditingState } from "@devexpress/dx-react-scheduler";
 import {
   Scheduler,
@@ -21,8 +21,8 @@ import {
   DateNavigator,
 } from "@devexpress/dx-react-scheduler-material-ui";
 import { connectProps } from "@devexpress/dx-react-core";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -36,7 +36,6 @@ import AddIcon from "@mui/icons-material/Add";
 import TextField from "@mui/material/TextField";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
-import Close from "@mui/icons-material/Close";
 import CalendarToday from "@mui/icons-material/CalendarToday";
 import Create from "@mui/icons-material/Create";
 import { connect } from "react-redux";
@@ -48,6 +47,9 @@ import {
 } from "../../actions/calendar";
 import { Box, ListItemButton, ListItemText } from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
+import smallCallendarDay from "./smallCallendar";
+import CloseIcon from "@mui/icons-material/Close";
+// import AppointmentFormContainerBasic from '../dialogs/AppointmentFormContainerBasic'
 
 const PREFIX = "Demo";
 const classes = {
@@ -79,15 +81,12 @@ const StyledDiv = styled("div")(({ theme }) => ({
     padding: theme.spacing(2),
     paddingTop: 0,
   },
-  [`& .${classes.closeButton}`]: {
-    float: "right",
-  },
   [`& .${classes.picker}`]: {
     margin: theme.spacing(2),
   },
   [`& .${classes.wrapper}`]: {
     display: "flex",
-    justifyContent: "space-between",
+    // justifyContent: "space-between",
     padding: theme.spacing(1, 0),
   },
   [`& .${classes.buttonGroup}`]: {
@@ -96,7 +95,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
     padding: theme.spacing(0, 2),
   },
   [`& .${classes.button}`]: {
-    marginLeft: theme.spacing(2),
+    background: "#1976D2",
   },
   [`& .${classes.flexRow}`]: {
     display: "flex",
@@ -111,9 +110,7 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   },
 }));
 
-const StyledTable = styled(MonthView)(({ theme }) => ({
-  
-}))
+const StyledTable = styled(MonthView)(({ theme }) => ({}));
 
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
@@ -170,7 +167,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       visibleChange,
       appointmentData,
       cancelAppointment,
-      target,
       onHide,
     } = this.props;
     const { appointmentChanges } = this.state;
@@ -182,7 +178,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     const isNewAppointment = appointmentData.id === undefined;
     const applyChanges = () =>
       this.commitAppointment(isNewAppointment ? "added" : "changed");
-
     const textEditorProps = (field) => ({
       variant: "outlined",
       onChange: ({ target: change }) =>
@@ -206,7 +201,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
             : new Date(displayAppointmentData[field]),
         }),
       ampm: false,
-      inputFormat: "DD/MM/YYYY HH:mm",
+      inputFormat: "DD/MM/YYYY",
       onError: () => null,
     });
     const startDatePickerProps = pickerEditorProps("startDate");
@@ -218,91 +213,83 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       visibleChange();
       cancelAppointment();
     };
-
     return (
-      <AppointmentForm.Overlay
-        visible={visible}
-        target={target}
-        onHide={onHide}
-        fullSize={false}
-      >
+      <Dialog open={visible} onClose={onHide}>
         <StyledDiv>
-          <div className={classes.header}>
-            <IconButton
-              className={classes.closeButton}
-              onClick={cancelChanges}
-              size="large"
-            >
-              <Close color="action" />
-            </IconButton>
-          </div>
-          <div className={classes.content}>
-            <div className={classes.wrapper}>
-              <Create className={classes.icon} color="action" />
-              <TextField {...textEditorProps("subject")} />
-            </div>
-            <div className={classes.wrapper}>
-              <CalendarToday className={classes.icon} color="action" />
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-                <div className={classes.flexRow}>
-                  <DateTimePicker
-                    label="Start Date"
-                    renderInput={(props) => (
-                      <TextField
-                        sx={{ mr: 2 }}
-                        className={classes.picker}
-                        {...props}
-                      />
-                    )}
-                    {...startDatePickerProps}
-                  />
-                  <DateTimePicker
-                    label="End Date"
-                    renderInput={(props) => (
-                      <TextField className={classes.picker} {...props} />
-                    )}
-                    {...endDatePickerProps}
-                  />
-                </div>
-              </LocalizationProvider>
-            </div>
-            <div className={classes.wrapper}>
-              <LocationOn className={classes.icon} color="action" />
-              <TextField {...textEditorProps("location")} />
-            </div>
-            <div className={classes.wrapper}>
-              <Notes className={classes.icon} color="action" />
-              <TextField {...textEditorProps("notes")} multiline rows="6" />
-            </div>
-          </div>
-          <div className={classes.buttonGroup}>
-            {!isNewAppointment && (
+          <DialogTitle>
+            <div>
+              {!isNewAppointment && (
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  className={classes.button}
+                  onClick={() => {
+                    visibleChange();
+                    this.commitAppointment("deleted");
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
               <Button
-                variant="outlined"
-                color="secondary"
+                variant="contained"
+                // color="#1976D2"
                 className={classes.button}
                 onClick={() => {
                   visibleChange();
-                  this.commitAppointment("deleted");
+                  applyChanges();
                 }}
               >
-                Delete
+                {isNewAppointment ? "Create" : "Save"}
               </Button>
-            )}
-            <Button
-              variant="outlined"
-              color="primary"
-              className={classes.button}
-              onClick={() => {
-                visibleChange();
-                applyChanges();
-              }}
-            >
-              {isNewAppointment ? "Create" : "Save"}
-            </Button>
-          </div>
+              <Button>
+                
+              </Button>
+            </div>
+          </DialogTitle>
+          <DialogContent style={{ display: "flex" }}>
+            <div className={classes.content}>
+              <div className={classes.wrapper}>
+                <Create className={classes.icon} color="action" />
+                <TextField {...textEditorProps("subject")} />
+              </div>
+              <div className={classes.wrapper}>
+                <CalendarToday className={classes.icon} color="action" />
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <div className={classes.flexRow}>
+                    <DateTimePicker
+                      label="Start Date"
+                      renderInput={(props) => (
+                        <TextField
+                          sx={{ mr: 2 }}
+                          className={classes.picker}
+                          {...props}
+                        />
+                      )}
+                      {...startDatePickerProps}
+                    />
+                    <DateTimePicker
+                      label="End Date"
+                      renderInput={(props) => (
+                        <TextField className={classes.picker} {...props} />
+                      )}
+                      {...endDatePickerProps}
+                    />
+                  </div>
+                </LocalizationProvider>
+              </div>
+              <div className={classes.wrapper}>
+                <LocationOn className={classes.icon} color="action" />
+                <TextField {...textEditorProps("location")} />
+              </div>
+              <div className={classes.wrapper}>
+                <Notes className={classes.icon} color="action" />
+                <TextField {...textEditorProps("notes")} multiline rows="6" />
+              </div>
+            </div>
+          </DialogContent>
         </StyledDiv>
-      </AppointmentForm.Overlay>
+      </Dialog>
     );
   }
 }
@@ -321,6 +308,7 @@ class ScheduleCalendar extends React.PureComponent {
       startDayHour: 8,
       endDayHour: 22,
       isNewAppointment: false,
+      smallcallendarvalue: new Date(),
     };
 
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
@@ -373,7 +361,7 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidMount() {
     const { fetchUserCalenders, app } = this.props;
-    fetchUserCalenders(app)
+    fetchUserCalenders(app);
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -459,23 +447,31 @@ class ScheduleCalendar extends React.PureComponent {
     } = this.state;
 
     return (
-      <Paper sx={{flex: 1}}>
+      <Paper sx={{ flex: 1 }}>
         <Grid container spacing={2} height="100%">
-          {
-            this.props.showSideBar && (
-              <Grid item xs={3}>
-                <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <DateCalendar />
-                </LocalizationProvider>
-                <hr />
-                <UserCalenders data={this.props.calendar} />
-              </Grid>
-            )
-          }
+          {this.props.showSideBar && (
+            <Grid item xs={3}>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <DateCalendar
+                  slots={{ day: smallCallendarDay }}
+                  slotProps={{
+                    day: {
+                      appointments: data,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+              <hr />
+              <UserCalenders data={this.props.calendar} />
+            </Grid>
+          )}
 
           <Grid item xs={this.props.showSideBar ? 9 : 12}>
             <Scheduler data={data}>
-              <ViewState currentDate={currentDate} currentViewName={this.props.calenderView} />
+              <ViewState
+                currentDate={currentDate}
+                currentViewName={this.props.calenderView}
+              />
               <EditingState
                 onCommitChanges={this.commitChanges}
                 onEditingAppointmentChange={this.onEditingAppointmentChange}
@@ -489,7 +485,11 @@ class ScheduleCalendar extends React.PureComponent {
               <AllDayPanel />
               <EditRecurrenceMenu />
               <Appointments />
-              <AppointmentTooltip showOpenButton showCloseButton showDeleteButton />
+              <AppointmentTooltip
+                showOpenButton
+                showCloseButton
+                showDeleteButton
+              />
               <Toolbar />
               <DateNavigator />
               <TodayButton />
@@ -560,29 +560,36 @@ const mapDispatchToProps = (dispatch) => {
     postEvent: async (params) => await dispatch(postEventData(params)),
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
-    fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
+    fetchUserCalenders: async (params) =>
+      await dispatch(fetchUserCalenders(params)),
   };
 };
 
-
-const UserCalenders = ({data}) => {
+const UserCalenders = ({ data }) => {
   const [open, setOpen] = React.useState(true);
-
   return (
     <Box sx={{ pb: open ? 2 : 0 }}>
       <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
-        <KeyboardArrowDown sx={{ mr: -1, transform: open ? 'rotate(0)' : 'rotate(-90deg)', transition: '0.2s' }} />
+        <KeyboardArrowDown
+          sx={{
+            mr: -1,
+            transform: open ? "rotate(0)" : "rotate(-90deg)",
+            transition: "0.2s",
+          }}
+        />
         <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
       </ListItemButton>
       {open &&
         data?.map((item) => (
           <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }}>
-            <ListItemText primary={item.name} primaryTypographyProps={{ml: 2}} />
+            <ListItemText
+              primary={item.name}
+              primaryTypographyProps={{ ml: 2 }}
+            />
           </ListItemButton>
         ))}
     </Box>
-  )
-}
-
+  );
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(ScheduleCalendar);
