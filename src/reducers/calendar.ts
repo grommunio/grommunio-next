@@ -1,20 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH]
 import { Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
   FETCH_EVENTS_DATA,
   FETCH_USER_CALENDER_DATA,
+  POST_CALENDAR_DATA,
 } from '../actions/types';
 
 interface IUserCalender {
   id: string;
   name: string;
+  isDisabled:boolean;
 }
 
 const defaultState = {
   events: [],
   calender: [],
+  timezones: [],
 };
 
 //TODO: Properly implement this function
@@ -22,6 +25,9 @@ const defaultState = {
 function calculateEventtimeInTimezone(event: string, tz: string) {
   return event;
 }
+const disableCondition = (calendar: IUserCalender) => {
+  return !(calendar.name === "Calendar" || calendar.name === "Birthdays");
+};
 
 function formatEvents(rawEvents: Array<Event>) {
   return rawEvents.map((rawEvent: Event) => ({
@@ -47,12 +53,21 @@ function calendarReducer(state = defaultState, action: AnyAction) {
   case FETCH_USER_CALENDER_DATA:
     return {
       ...state,
-      calendar: action.payload ? action.payload.map(({id, name}: IUserCalender) => ({id, name})) : [],
+      calendar: action.payload ? action.payload.map((calendar: IUserCalender) => ({
+        id: calendar.id,
+        name: calendar.name,
+        isDisabled: disableCondition(calendar)})) : [],
     };
-
+    
   default:
     return state;
   }
 }
+
+// Define an action creator function for updating the local user data
+export const updateLocalUser = (userData:any) => ({
+  type: POST_CALENDAR_DATA,
+  payload: userData, // The data to update the local user with
+});
 
 export default calendarReducer;
