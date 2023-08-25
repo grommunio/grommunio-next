@@ -7,19 +7,34 @@ import {
   TextField,
   InputAdornment,
   Switch,
-  Menu
+  Menu,
+  MenuItem,
 } from "@mui/material";
-// import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
 import CalendarToday from "@mui/icons-material/CalendarToday";
 import Create from "@mui/icons-material/Create";
 import { styled } from "@mui/material/styles";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-
-// Import other necessary components and icons
+import { Skypeicon } from './svgicon'
+import dayjs from 'dayjs';
+import LanguageIcon from '@mui/icons-material/Language';
+import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import ImageIcon from '@mui/icons-material/Image';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import TextFormatIcon from '@mui/icons-material/TextFormat';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import Tooltip from '@mui/material/Tooltip';
+import ComputerIcon from '@mui/icons-material/Computer';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloudIcon from '@mui/icons-material/Cloud';
 
 const PREFIX = "Demo";
 const classes = {
@@ -36,12 +51,16 @@ const classes = {
   circleFilled: `${PREFIX}-circleFilled`,
   dropdown: `${PREFIX}-dropdown`,
   svgicon: `${PREFIX}-svgicon`,
-  textFieldfooter: `${PREFIX}-textFieldfooter`
+  textFieldfooter: `${PREFIX}-textFieldfooter`,
+  smallcircle: `${PREFIX}-smallcircle`,
+  flexRow: `${PREFIX}-flexRow`,
+  customSelect: `${PREFIX}-customSelect`,
+  attachmentDropdown: `${PREFIX}-attachmentDropdown`,
+  attachmentDropdownlist: `${PREFIX}-attachmentDropdownlist`
 };
 
 const StyledDiv = styled("div")(({ theme }) => ({
   [`& .${classes.icon}`]: {
-    margin: theme.spacing(2, 0),
     marginRight: theme.spacing(2),
   },
   [`& .${classes.header}`]: {
@@ -56,12 +75,12 @@ const StyledDiv = styled("div")(({ theme }) => ({
     paddingTop: 0,
   },
   [`& .${classes.picker}`]: {
-    margin: theme.spacing(2),
+    width: '200px',
   },
   [`& .${classes.wrapper}`]: {
     display: "flex",
-    // justifyContent: "space-between",
-    padding: theme.spacing(0, 0),
+    alignItems: 'center',
+    justifyContent: "space-between",
   },
   [`& .${classes.buttonGroup}`]: {
     display: "flex",
@@ -74,6 +93,8 @@ const StyledDiv = styled("div")(({ theme }) => ({
   },
   [`& .${classes.flexRow}`]: {
     display: "flex",
+    marginTop: theme.spacing(2),
+    gap: '14px',
   },
   [`& .${classes.circleFilled}`]: {
     background: "#1976D2",
@@ -88,13 +109,53 @@ const StyledDiv = styled("div")(({ theme }) => ({
     width: "30px",
   },
   [`& .${classes.textFieldfooter}`]: {
-
+    background: '#1976D2',
+    marginTop: '-2px',
+    display: 'flex',
+    borderRadius: '0 0 3px 3px'
   },
+  [`& .${classes.smallcircle}`]: {
+    width: '15px',
+    height: '15px',
+    backgroundColor: '#1976D2',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  [`& .${classes.customSelect}`]: {
+    border: 'none',
+    backgroundColor: 'transparent',
+    padding: '10px 5px',
+    fontSize: '17px',
+    cursor: 'pointer',
+    overflow: 'hidden',
+  },
+  [`& .${classes.attachmentDropdown}`]: {
+    position: 'absolute',
+    background: 'white',
+    listStyle: 'none',
+    border: '2px solid rgba(0, 0, 0, 0.04)',
+    borderRadius: '3px',
+    marginTop: '-240px',
+    padding: '10px',
+    zIndex: 1000,
+  },
+  [`& .${classes.attachmentDropdownlist}`]: {
+    marginTop: '10px',
+    display: 'flex',
+    gap: '10px',
+    cursor: 'pointer',
+    "&:hover": {
+      background: 'rgba(0, 0, 0, 0.04)'
+    },
+    padding:'10px 10px'
+  }
 }));
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
-  width: 28,
-  height: 16,
+  width: 38,
+  height: 20,
   padding: 0,
   display: "flex",
   "&:active": {
@@ -108,7 +169,7 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
   "& .MuiSwitch-switchBase": {
     padding: 2,
     "&.Mui-checked": {
-      transform: "translateX(12px)",
+      transform: "translateX(20px)",
       color: "#fff",
       "& + .MuiSwitch-track": {
         opacity: 1,
@@ -118,8 +179,8 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
   },
   "& .MuiSwitch-thumb": {
     boxShadow: "0 2px 4px 0 rgb(0 35 11 / 20%)",
-    width: 12,
-    height: 12,
+    width: 15,
+    height: 15,
     borderRadius: 6,
     transition: theme.transitions.create(["width"], {
       duration: 200,
@@ -142,6 +203,9 @@ class AppointmentFormContainerBasic extends React.PureComponent {
 
     this.state = {
       appointmentChanges: {},
+      anchorEl: null,
+      selectedOption: '',
+      attachment: null
     };
 
     this.getAppointmentData = () => {
@@ -193,7 +257,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       cancelAppointment,
       onHide,
     } = this.props;
-    const { appointmentChanges } = this.state;
+    const { appointmentChanges, anchorEl, selectedOption, attachment } = this.state;
 
     const displayAppointmentData = {
       ...appointmentData,
@@ -214,21 +278,46 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       className: classes.textField,
     });
 
-    const pickerEditorProps = (field) => ({
-      value: displayAppointmentData[field],
-      onChange: (date) =>
-        this.changeAppointment({
-          field: [field],
-          changes: date
-            ? date.toDate()
-            : new Date(displayAppointmentData[field]),
-        }),
-      ampm: false,
-      inputFormat: "DD/MM/YYYY",
-      onError: () => null,
-    });
+    const handleClick = (event) => {
+      this.setState({ anchorEl: event.currentTarget });
+    };
+
+    const handleClicktwo = () => {
+      this.setState({ attachment: !attachment });
+    };
+
+    const handleOptionClick = (option) => () => {
+      this.setState({ selectedOption: option, anchorEl: null });
+    };
+
+    const pickerEditorProps = (field) => {
+      let initialValue = null;
+      let inputFormat = "DD/MM/YYYY"; // Default input format for date fields
+
+      if (field === "startTime" || field === "endTime") {
+        initialValue = initialValue ? dayjs(initialValue) : dayjs(); // Use dayjs to create a date object
+        inputFormat = "HH:mm"; /// Use time format for time fields
+      }
+
+      return {
+        value: initialValue,
+        onChange: (newValue) =>
+          this.changeAppointment({
+            field: [field],
+            changes: newValue ? newValue : null,
+          }),
+        ampm: false, // Enable time selection in 24-hour format
+        inputFormat: inputFormat,
+        onError: () => null,
+        className: classes.picker
+      };
+    };
+
+
     const startDatePickerProps = pickerEditorProps("startDate");
     const endDatePickerProps = pickerEditorProps("endDate");
+    const startTimePickerProps = pickerEditorProps("startTime");
+    const endTimePickerProps = pickerEditorProps("endTime");
 
     const cancelChanges = () => {
       this.setState({
@@ -237,11 +326,26 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       visibleChange();
       cancelAppointment();
     };
+
+    const ActionButton = ({ classes, children, color, tooltip, ...childProps }) => {
+      return (
+        <Tooltip title={tooltip} arrow placement="top">
+          <Button
+            color={color || "inherit"}
+            style={color ? undefined : { color: "white" }} // Can't be part of the class, because it would affect primary buttons too
+            {...childProps}
+          >
+            {children}
+          </Button>
+        </Tooltip>
+      );
+    };
+
     return (
-      <Dialog open={visible} onClose={onHide}>
+      <Dialog open={visible} onClose={onHide} maxWidth='md' fullWidth={true}>
         <StyledDiv>
           <DialogTitle style={{ height: "70px" }}>
-            <div className={classes.wrapper}>
+            <div className={classes.flexRow}>
               {!isNewAppointment && (
                 <Button
                   variant="outlined"
@@ -257,7 +361,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               )}
               <Button
                 variant="contained"
-                // color="#1976D2"
                 className={classes.button}
                 style={{ marginLeft: "15px" }}
                 onClick={() => {
@@ -271,35 +374,38 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 <Button
                   aria-controls="outlook-dropdown"
                   aria-haspopup="true"
-                  // onClick={handleClick}
+                  onClick={handleClick}
+                  endIcon={<KeyboardArrowDownIcon />}
+                  startIcon={<span className={classes.smallcircle} />}
+                  style={{ color: 'black' }}
                 >
-                  Open Outlook Dropdown
+                  {selectedOption ? selectedOption : 'Calender'}
                 </Button>
                 <Menu
                   id="outlook-dropdown"
-                  // anchorEl={anchorEl}
+                  anchorEl={anchorEl}
                   keepMounted
-                  // open={Boolean(anchorEl)}
-                  // onClose={handleClose}
+                  open={Boolean(anchorEl)}
                 >
-                  {/* <MenuItem onClick={handleClose}>Option 1</MenuItem>
-                  <MenuItem onClick={handleClose}>Option 2</MenuItem>
-                  <MenuItem onClick={handleClose}>Option 3</MenuItem> */}
+                  <MenuItem onClick={handleOptionClick('Calender')}>
+                    <span className={classes.smallcircle} />
+                    Calender
+                  </MenuItem>
                 </Menu>
               </div>
             </div>
           </DialogTitle>
-          <DialogContent style={{ display: "flex" }}>
+          <DialogContent>
             <div className={classes.content}>
-              <div className={classes.wrapper}>
+              <div className={classes.flexRow}>
                 <Create className={classes.icon} color="action" />
                 <TextField
                   {...textEditorProps("Add a title")}
                   variant="standard"
                 />
               </div>
-              <div className={classes.wrapper}>
-                <Create className={classes.icon} color="action" />
+              <div className={classes.flexRow}>
+                <PersonAddAltIcon className={classes.icon} color="action" />
                 <TextField
                   {...textEditorProps("Invite attendees")}
                   variant="standard"
@@ -310,76 +416,144 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   }}
                 />
               </div>
-              <div className={classes.wrapper}>
+              <div className={classes.flexRow}>
                 <CalendarToday className={classes.icon} color="action" />
                 <LocalizationProvider dateAdapter={AdapterMoment}>
-                  <div className={classes.flexRow}>
-                    <DateTimePicker
-                      label="Start Date"
-                      renderInput={(props) => (
-                        <TextField
-                          sx={{ mr: 2 }}
-                          className={classes.picker}
-                          {...props}
-                        />
-                      )}
-                      {...startDatePickerProps}
-                    />
-                    <DateTimePicker
-                      label="End Date"
-                      renderInput={(props) => (
-                        <TextField className={classes.picker} {...props} />
-                      )}
-                      {...endDatePickerProps}
-                    />
+                  <div>
+                    <div className={classes.flexRow} style={{ justifyContent: 'center', alignItems: 'center' }}>
+                      <DatePicker
+                        {...startDatePickerProps}
+                      />
+                      <TimePicker
+                        {...startTimePickerProps}
+                      />
+                      <AntSwitch
+                        inputProps={{ "aria-label": "ant design" }}
+                      />
+                      <span>All day</span>
+                      <div className={classes.wrapper}>
+                        <label for="Timezone" >
+                          <LanguageIcon style={{ color: "#177ddc" }} />
+                        </label>
+                        <select name="Timezone" id="Timezone" className={classes.customSelect}>
+                          <option className={classes.customSelectoption}>Timezone</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className={classes.flexRow}>
+                      <DatePicker
+                        {...endDatePickerProps}
+                      />
+                      <TimePicker {...endTimePickerProps} />
+                      <div className={classes.wrapper}>
+                        <label for="Repeat" >
+                          <RepeatIcon style={{ color: "#177ddc" }} />
+                        </label>
+                        <select name="Repeat" id="Repeat" className={classes.customSelect}>
+                          {["Don't repeat", "Daily", "Weekly", "Monthly", "Yearly", "Custom"]
+                            .map((x, index) =>
+                              <option value={x}
+                                key={index} >
+                                {x}
+                              </option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </LocalizationProvider>
               </div>
-              <div className={classes.wrapper}>
+              <div className={classes.flexRow}>
                 <LocationOn className={classes.icon} color="action" />
                 <TextField
                   {...textEditorProps("location")}
                   variant="standard"
-                  // classes.svgicon
                   InputProps={{
                     endAdornment: (
-                      <InputAdornment position="end">
-                        <AntSwitch
-                          inputProps={{ "aria-label": "ant design" }}
-                        />
-                        <i
-                          data-icon-name="IcFluentOfficeSkypeColor"
-                          aria-hidden="true"
-                        >
-                          <svg
-                            // class="Q0K3G"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            class={classes.svgicon}
+                      <Tooltip title='This will be turn on automatically once you add an attende' arrow placement="top">
+                        <InputAdornment position="end" style={{ display: "flex", gap: '10px' }}>
+                          <AntSwitch
+                            inputProps={{ "aria-label": "ant design" }}
+                          />
+                          <i
+                            data-icon-name="IcFluentOfficeSkypeColor"
+                            aria-hidden="true"
                           >
-                            <path
-                              d="M16.4651 10.9137C16.5091 10.6192 16.5327 10.3221 16.5357 10.0244C16.533 8.31327 15.8453 6.673 14.6233 5.46306C13.4012 4.25312 11.7446 3.57221 10.0163 3.56957C9.77413 3.56957 9.54202 3.56957 9.3099 3.56957C8.65266 3.17861 7.89655 2.98105 7.13005 3.00003C6.40763 2.99609 5.69693 3.18087 5.06967 3.53572C4.44242 3.89058 3.92078 4.40296 3.55741 5.02117C3.19403 5.63938 3.00177 6.34154 3.00001 7.05682C2.99826 7.77209 3.18708 8.47517 3.54742 9.09512C3.49466 9.4055 3.46765 9.71963 3.46668 10.0344C3.46671 10.9482 3.66301 11.8515 4.04256 12.6845C4.42212 13.5175 4.97624 14.261 5.66817 14.8658C6.3601 15.4705 7.17401 15.9227 8.0559 16.1922C8.93779 16.4618 9.8675 16.5426 10.7833 16.4292C11.4142 16.804 12.1366 17.001 12.8724 16.9988C13.9653 16.9988 15.0137 16.5696 15.7874 15.8053C16.5612 15.0411 16.9973 14.0042 16.9999 12.922C17.0035 12.2176 16.819 11.5248 16.4651 10.9137Z"
-                              fill="#28A8EA"
-                            ></path>
-                            <path
-                              d="M8.25 9.86999C7.98716 9.69984 7.76794 9.47035 7.61 9.19999C7.45559 8.91495 7.37966 8.59401 7.39 8.26999C7.36797 7.84479 7.50726 7.42694 7.78 7.09999C8.04894 6.78837 8.39321 6.55082 8.78 6.40999C9.21086 6.26082 9.66406 6.18642 10.12 6.18999C10.4215 6.18524 10.7228 6.20867 11.02 6.25999C11.232 6.29012 11.4399 6.34378 11.64 6.41999C11.8243 6.47967 11.9898 6.58654 12.12 6.72999C12.2206 6.84245 12.2743 6.98917 12.27 7.13999C12.2779 7.30042 12.2243 7.45781 12.12 7.57999C12.0679 7.63269 12.0055 7.67408 11.9366 7.70161C11.8678 7.72914 11.7941 7.7422 11.72 7.73999C11.6171 7.73948 11.5152 7.71911 11.42 7.67999C11.1938 7.57517 10.9598 7.48824 10.72 7.41999C10.5095 7.37773 10.2942 7.36427 10.08 7.37999C9.78265 7.3696 9.48829 7.44232 9.23 7.58999C9.12399 7.65696 9.03702 7.75011 8.97747 7.86045C8.91792 7.9708 8.88779 8.09462 8.89 8.21999C8.89135 8.38921 8.95966 8.55101 9.08 8.66999C9.21434 8.81136 9.37369 8.92664 9.55 9.00999C9.75 9.10999 10.05 9.23999 10.44 9.39999H10.57C10.9513 9.54948 11.3165 9.73709 11.66 9.95999C11.9349 10.141 12.167 10.3799 12.34 10.66C12.5129 10.9639 12.5961 11.3107 12.58 11.66C12.596 12.0734 12.4766 12.4807 12.24 12.82C12.0036 13.142 11.6762 13.3858 11.3 13.52C10.8451 13.6845 10.3635 13.7625 9.88 13.75C9.21483 13.7727 8.55274 13.6498 7.94 13.39C7.78419 13.3195 7.64716 13.2133 7.54 13.08C7.45568 12.9561 7.4104 12.8098 7.41 12.66C7.40447 12.5793 7.41787 12.4983 7.44911 12.4237C7.48036 12.349 7.5286 12.2827 7.59 12.23C7.64791 12.1816 7.71486 12.1452 7.78696 12.1229C7.85906 12.1006 7.93487 12.0928 8.01 12.1C8.19069 12.1052 8.3681 12.1496 8.53 12.23L8.99 12.46C9.12057 12.5087 9.25419 12.5488 9.39 12.58C9.56019 12.6214 9.73485 12.6416 9.91 12.64C10.2188 12.6606 10.5254 12.576 10.78 12.4C10.8749 12.3255 10.9506 12.2295 11.0011 12.12C11.0515 12.0105 11.0751 11.8905 11.07 11.77C11.0708 11.5993 11.0064 11.4348 10.89 11.31C10.7331 11.1507 10.5505 11.0189 10.35 10.92C10.11 10.79 9.78 10.64 9.35 10.46C8.96505 10.3076 8.59651 10.1166 8.25 9.88999"
-                              fill="white"
-                            ></path>
-                          </svg>
-                          <label class="ms-Label wj3t5 root-473">
+                            <Skypeicon />
+                          </i>
+                          <p class="ms-Label wj3t5 root-473">
                             Skype meeting
-                          </label>
-                        </i>
-                      </InputAdornment>
+                          </p>
+                        </InputAdornment>
+                      </Tooltip>
                     ),
                   }}
                 />
               </div>
-              <div className={classes.wrapper}>
+              <div className={classes.flexRow}>
                 <Notes className={classes.icon} color="action" />
-                <TextField {...textEditorProps("notes")} multiline rows="6" />
-                <div className={classes.textFieldfooter}></div>
+                <div className={classes.textField}>
+                  <TextField {...textEditorProps("notes")} multiline rows="4" />
+                  <div className={classes.textFieldfooter}>
+                    <div>
+                      <ActionButton
+                        tooltip='Attach'
+                        key={1}
+                        endIcon={<KeyboardArrowDownIcon color={"white"} />}
+                        onClick={handleClicktwo}
+                      >
+                        <AttachFileIcon color={"white"} />
+                      </ActionButton>
+                      {attachment && 
+                        <ul onClick={handleClicktwo} className={classes.attachmentDropdown}>
+                          <span style={{ color: '#177ddc' }}>Attach from</span>
+                          <li className={classes.attachmentDropdownlist}>
+                            <ComputerIcon style={{ color: "#177ddc" }} /> Browse this computer
+                          </li>
+                          <li className={classes.attachmentDropdownlist}>
+                            <CloudIcon style={{ color: "#177ddc" }} />OneDrive
+                          </li>
+                          <li className={classes.attachmentDropdownlist}>
+                            <CloudUploadIcon style={{ color: "#177ddc" }} /> Upload and share
+                          </li>
+                        </ul>}
+                    </div>
+                    <ActionButton
+                      key={2}
+                      tooltip='Insert picture inline'
+                    // onClick={() => setCalenderView("Day")}
+                    >
+                      <ImageIcon color={"white"} />
+                    </ActionButton>
+                    <ActionButton
+                      tooltip='Insert emojis and GIFs'
+                      key={3}
+                    // onClick={() => setCalenderView("Day")}
+                    >
+                      <EmojiEmotionsIcon color={"white"} />
+                    </ActionButton>
+                    <ActionButton
+                      tooltip='Show Formatting options'
+                      key={4}
+                    // onClick={() => setCalenderView("Day")}
+                    >
+                      <TextFormatIcon color={"white"} />
+                    </ActionButton>
+                    <ActionButton
+                      tooltip='Show Formatting options'
+                      key={5}
+                    // onClick={() => setCalenderView("Day")}
+                    >
+                      <DriveFileRenameOutlineIcon color={"white"} />
+                    </ActionButton>
+                    <ActionButton
+                      tooltip='Check for accessibility issues'
+                      key={6}
+                    // onClick={() => setCalenderView("Day")}
+                    >
+                      <FactCheckIcon color={"white"} />
+                    </ActionButton>
+                  </div>
+                </div>
               </div>
             </div>
           </DialogContent>

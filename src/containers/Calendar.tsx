@@ -46,7 +46,7 @@ const styles: any = {
 
 const ActionButton = ({ classes, children, color, ...childProps }: any) => {
   return (
-    <Button  
+    <Button
       color={color || "inherit"}
       style={color ? undefined : { color: "#0000008a" }} // Can't be part of the class, because it would affect primary buttons too
       {...childProps}
@@ -99,13 +99,7 @@ function Calendar({ t, classes }: any) {
               value={selectedOption}
               onChange={handleOptionChange}
             >
-              <MenuItem value="1">Day 1</MenuItem>
-              <MenuItem value="2">Day 2</MenuItem>
-              <MenuItem value="3">Day 3</MenuItem>
-              <MenuItem value="4">Day 4</MenuItem>
-              <MenuItem value="5">Day 5</MenuItem>
-              <MenuItem value="6">Day 6</MenuItem>
-              <MenuItem value="7">Day 7</MenuItem>
+              {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <MenuItem value={x} key={index}>Day {x}</MenuItem>)}
             </Select>
             {/* <ActionButton
               key={1}
@@ -116,28 +110,28 @@ function Calendar({ t, classes }: any) {
               <ExpandMoreIcon />
             </ActionButton> */}
             <ActionButton
-              key={2}
+              key={1}
               startIcon={<DateRangeIcon color={"secondary"} />}
-              // onClick={() => setCalenderView("Day")}
+            // onClick={() => setCalenderView("Day")}
             >
               Work Week
             </ActionButton>
             <ActionButton
-              key={3}
+              key={2}
               startIcon={<CalendarViewWeekIcon color={"secondary"} />}
               onClick={() => setCalenderView("Week")}
             >
               Week
             </ActionButton>
             <ActionButton
-              key={4}
+              key={3}
               startIcon={<CalendarMonthIcon color={"secondary"} />}
               onClick={() => setCalenderView("Month")}
             >
               Month
             </ActionButton>
             <ActionButton
-              key={5}
+              key={4}
               startIcon={<VerticalSplitIcon color={"secondary"} />}
             >
               Split view
@@ -145,12 +139,12 @@ function Calendar({ t, classes }: any) {
           </div>
           <div className="left-items">
             <ActionButton
-              key={6}
+              key={5}
               startIcon={<IosShareIcon color={"secondary"} />}
             >
               Share
             </ActionButton>
-            <ActionButton key={7} startIcon={<PrintIcon color={"secondary"} />}>
+            <ActionButton key={6} startIcon={<PrintIcon color={"secondary"} />}>
               Print
             </ActionButton>
           </div>
