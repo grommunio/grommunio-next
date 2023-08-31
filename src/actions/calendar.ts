@@ -11,8 +11,6 @@ import {
   patchEvent,
   postEvent,
   getUserCalendars,
-  getUserCalendersEvent,
-  getUserCalendersEventByID
 } from "../api/calendar";
 import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA, FETCH_USER_CALENDERS_EVENTS_DATA } from "./types";
 import { defaultFetchHandler, defaultPostHandler } from "./defaults";
@@ -118,24 +116,4 @@ export function fetchUserCalenders() {
   return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA)
 }
 
-export function fetchUserCalendersEvents() {
-  return defaultFetchHandler(getUserCalendersEvent, FETCH_USER_CALENDERS_EVENTS_DATA)
-}
 
-type fetchUserCalendersEventsByIDParams = {
-  id: string,
-}
-
-export const fetchUserCalendersEventsByID = createAsyncThunk(
-  FETCH_USER_CALENDERS_EVENTS_DATA,
-  async ({ id }: fetchUserCalendersEventsByIDParams) => {
-    try {
-      const res = await getUserCalendersEventByID(id);
-      return res;
-    } catch (err) {
-      const error = err as Error;
-      console.error(error);
-      return false;
-    }
-  }
-);

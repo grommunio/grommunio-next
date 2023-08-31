@@ -37,8 +37,6 @@ import {
   patchEventData,
   postEventData,
   fetchUserCalenders,
-  fetchUserCalendersEvents,
-  fetchUserCalendersEventsByID,
   fetchEventsData,
 } from "../../actions/calendar";
 import { Box, ListItemButton, ListItemText } from "@mui/material";
@@ -349,8 +347,6 @@ const mapDispatchToProps = (dispatch) => {
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
     fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
-    fetchUserCalendersEvents: async (params) => await dispatch(fetchUserCalendersEvents(params)),
-    fetchUserCalendersEventsByID: async (params) => await dispatch(fetchUserCalendersEventsByID(params)),
   };
 };
 

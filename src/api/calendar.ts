@@ -89,17 +89,6 @@ export async function deleteEvent(event: string): Promise<Event> {
   return await graphClient!.api("/me/events/" + event).delete();
 }
 
-export async function getUserCalendersEvent(): Promise<Event[]> {
-  const response: PageCollection = await graphClient!.api("/me/events/").get();
-  return response.value;
-}
-
-export async function getUserCalendersEventByID(id: string): Promise<Event[]> {
-  const response: PageCollection = await graphClient!
-    .api(`/me/calendars/${id}/events`)
-    .get();
-  return response.value;
-}
 
 export async function getUserCalendars(): Promise<Event[]> {
   const response: PageCollection = await graphClient!
