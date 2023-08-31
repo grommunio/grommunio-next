@@ -20,7 +20,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Skypeicon } from './svgicon'
-import dayjs from 'dayjs';
+import moment from 'moment';
 import LanguageIcon from '@mui/icons-material/Language';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import RepeatIcon from '@mui/icons-material/Repeat';
@@ -35,6 +35,8 @@ import Tooltip from '@mui/material/Tooltip';
 import ComputerIcon from '@mui/icons-material/Computer';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloudIcon from '@mui/icons-material/Cloud';
+import IconButton from "@mui/material/IconButton";
+import Close from "@mui/icons-material/Close";
 
 const PREFIX = "Demo";
 const classes = {
@@ -149,7 +151,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
     "&:hover": {
       background: 'rgba(0, 0, 0, 0.04)'
     },
-    padding:'10px 10px'
+    padding: '10px 10px'
   }
 }));
 
@@ -266,6 +268,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     const isNewAppointment = appointmentData.id === undefined;
     const applyChanges = () =>
       this.commitAppointment(isNewAppointment ? "added" : "changed");
+      
     const textEditorProps = (field) => ({
       variant: "outlined",
       onChange: ({ target: change }) =>
@@ -290,34 +293,31 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       this.setState({ selectedOption: option, anchorEl: null });
     };
 
-    const pickerEditorProps = (field) => {
-      let initialValue = null;
-      let inputFormat = "DD/MM/YYYY"; // Default input format for date fields
+    const pickerEditorProps = (field) => ({
+      // keyboard: true,
+      value: displayAppointmentData[field],
+      onChange: (date) => {
+        let newEnddate = date
+        if (field == "endDate" || field == "endTime") {
+          const endDate = field == "endDate" ? date : moment(displayAppointmentData["endDate"])
+          const endTime = field == "endTime" ? date : moment(displayAppointmentData["endTime"])
+          newEnddate = moment(endDate.format("YYYYMMDD") + endTime.format("hhmm"), "YYYYMMDDhhmm")
+        }
+        this.changeAppointment({
+          field: [field],
+          changes: newEnddate.toDate(),
+        })
+      },
+      ampm: false,
+      inputFormat: "DD/MM/YYYY",
+      onError: () => null,
+      className: classes.picker
+    });
 
-      if (field === "startTime" || field === "endTime") {
-        initialValue = initialValue ? dayjs(initialValue) : dayjs(); // Use dayjs to create a date object
-        inputFormat = "HH:mm"; /// Use time format for time fields
-      }
-
-      return {
-        value: initialValue,
-        onChange: (newValue) =>
-          this.changeAppointment({
-            field: [field],
-            changes: newValue ? newValue : null,
-          }),
-        ampm: false, // Enable time selection in 24-hour format
-        inputFormat: inputFormat,
-        onError: () => null,
-        className: classes.picker
-      };
-    };
-
-
-    const startDatePickerProps = pickerEditorProps("startDate");
-    const endDatePickerProps = pickerEditorProps("endDate");
     const startTimePickerProps = pickerEditorProps("startTime");
     const endTimePickerProps = pickerEditorProps("endTime");
+    const startDatePickerProps = pickerEditorProps("startDate");
+    const endDatePickerProps = pickerEditorProps("endDate");
 
     const cancelChanges = () => {
       this.setState({
@@ -344,7 +344,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     return (
       <Dialog open={visible} onClose={onHide} maxWidth='md' fullWidth={true}>
         <StyledDiv>
-          <DialogTitle style={{ height: "70px" }}>
+          <DialogTitle style={{ height: "70px" }} className={classes.wrapper}>
             <div className={classes.flexRow}>
               {!isNewAppointment && (
                 <Button
@@ -394,6 +394,13 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 </Menu>
               </div>
             </div>
+            <IconButton
+              className={classes.closeButton}
+              onClick={cancelChanges}
+              size="large"
+            >
+              <Close color="action" />
+            </IconButton>
           </DialogTitle>
           <DialogContent>
             <div className={classes.content}>
@@ -503,7 +510,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       >
                         <AttachFileIcon color={"white"} />
                       </ActionButton>
-                      {attachment && 
+                      {attachment &&
                         <ul onClick={handleClicktwo} className={classes.attachmentDropdown}>
                           <span style={{ color: '#177ddc' }}>Attach from</span>
                           <li className={classes.attachmentDropdownlist}>

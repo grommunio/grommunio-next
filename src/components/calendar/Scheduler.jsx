@@ -37,11 +37,16 @@ import {
   patchEventData,
   postEventData,
   fetchUserCalenders,
+  fetchUserCalendersEvents,
+  fetchUserCalendersEventsByID,
+  fetchEventsData,
 } from "../../actions/calendar";
 import { Box, ListItemButton, ListItemText } from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
 import smallCallendarDay from "./smallCallendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
+import { useTypeDispatch } from "../../store";
+import { useAppContext } from "../../azure/AppContext";
 
 const PREFIX = "Demo";
 const classes = {
@@ -74,7 +79,7 @@ class ScheduleCalendar extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      data: props.events,
+      data: [],
       confirmationVisible: false,
       editingFormVisible: false,
       deletedAppointmentId: undefined,
@@ -86,6 +91,7 @@ class ScheduleCalendar extends React.PureComponent {
       isNewAppointment: false,
       smallcallendarvalue: new Date(),
     };
+
 
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
     this.commitDeletedAppointment = this.commitDeletedAppointment.bind(this);
@@ -133,11 +139,16 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidUpdate() {
     this.appointmentForm.update();
+    this.setState({
+      data: this.props.events,
+    });
   }
 
   componentDidMount() {
-    const { fetchUserCalenders, app } = this.props;
+    const { fetchUserCalenders, fetchUserCalendersEvents, fetchUserCalendersEventsByID, app } = this.props;
     fetchUserCalenders(app);
+    fetchUserCalendersEvents(app);
+    fetchUserCalendersEventsByID({ id: "AQMkADAwATMwMAItNDVjNC04YmRjLTAwAi0wMAoARgAAA0rBNt1VLPpKuK1A4yKu2SMHALGQwMIgcLVEnKNzMyfrOHMAAAIBBgAAALGQwMIgcLVEnKNzMyfrOHMAAADw1jtiAAAA", app });
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -208,6 +219,7 @@ class ScheduleCalendar extends React.PureComponent {
         this.setDeletedAppointmentId(deleted);
         this.toggleConfirmationVisible();
       }
+
       return { data, addedAppointment: {} };
     });
   }
@@ -336,13 +348,16 @@ const mapDispatchToProps = (dispatch) => {
     postEvent: async (params) => await dispatch(postEventData(params)),
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
-    fetchUserCalenders: async (params) =>
-      await dispatch(fetchUserCalenders(params)),
+    fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
+    fetchUserCalendersEvents: async (params) => await dispatch(fetchUserCalendersEvents(params)),
+    fetchUserCalendersEventsByID: async (params) => await dispatch(fetchUserCalendersEventsByID(params)),
   };
 };
 
 const UserCalenders = ({ data }) => {
   const [open, setOpen] = React.useState(true);
+  const dispatch = useTypeDispatch();
+  const app = useAppContext();
   return (
     <Box sx={{ pb: open ? 2 : 0 }}>
       <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
@@ -357,7 +372,7 @@ const UserCalenders = ({ data }) => {
       </ListItemButton>
       {open &&
         data?.map((item) => (
-          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }}>
+          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }} onClick={() => dispatch(fetchEventsData({app, id:item.id}))} >
             <ListItemText
               primary={item.name}
               primaryTypographyProps={{ ml: 2 }}

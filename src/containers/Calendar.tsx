@@ -58,12 +58,12 @@ const ActionButton = ({ classes, children, color, ...childProps }: any) => {
 
 function Calendar({ t, classes }: any) {
   const app = useAppContext();
-  const dispatch = useTypeDispatch();
+  const dispatch:any = useTypeDispatch();
   const [calenderView, setCalenderView] = useState("Month");
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchEventsData(app));
+    dispatch(fetchEventsData({app}));
   }, [app.authProvider]);
 
   const [selectedOption, setSelectedOption] = useState("1");
