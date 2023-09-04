@@ -77,7 +77,7 @@ class ScheduleCalendar extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      data: [],
+      data: this.props.events,
       confirmationVisible: false,
       editingFormVisible: false,
       deletedAppointmentId: undefined,
@@ -136,17 +136,15 @@ class ScheduleCalendar extends React.PureComponent {
   }
 
   componentDidUpdate() {
+    // this.setState({
+    //   data: this.props.events,
+    // });
     this.appointmentForm.update();
-    this.setState({
-      data: this.props.events,
-    });
   }
 
   componentDidMount() {
-    const { fetchUserCalenders, fetchUserCalendersEvents, fetchUserCalendersEventsByID, app } = this.props;
+    const { fetchUserCalenders, app } = this.props;
     fetchUserCalenders(app);
-    fetchUserCalendersEvents(app);
-    fetchUserCalendersEventsByID({ id: "AQMkADAwATMwMAItNDVjNC04YmRjLTAwAi0wMAoARgAAA0rBNt1VLPpKuK1A4yKu2SMHALGQwMIgcLVEnKNzMyfrOHMAAAIBBgAAALGQwMIgcLVEnKNzMyfrOHMAAADw1jtiAAAA", app });
   }
 
   onEditingAppointmentChange(editingAppointment) {
@@ -264,7 +262,8 @@ class ScheduleCalendar extends React.PureComponent {
                 onAddedAppointmentChange={this.onAddedAppointmentChange}
               />
               <DayView />
-              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} />
+              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={[1]}/>
+              {/* <WorkWeekView  startDayHour={startDayHour} endDayHour={endDayHour} /> */}
               <StyledTable>
                 <MonthView />
               </StyledTable>

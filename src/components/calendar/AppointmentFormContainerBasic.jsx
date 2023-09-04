@@ -16,25 +16,25 @@ import CalendarToday from "@mui/icons-material/CalendarToday";
 import Create from "@mui/icons-material/Create";
 import { styled } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { Skypeicon } from './svgicon'
-import moment from 'moment';
-import LanguageIcon from '@mui/icons-material/Language';
-import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
-import RepeatIcon from '@mui/icons-material/Repeat';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
-import ImageIcon from '@mui/icons-material/Image';
-import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
-import TextFormatIcon from '@mui/icons-material/TextFormat';
-import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
-import Tooltip from '@mui/material/Tooltip';
-import ComputerIcon from '@mui/icons-material/Computer';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CloudIcon from '@mui/icons-material/Cloud';
+import { Skypeicon } from "./svgicon";
+import moment from "moment";
+import LanguageIcon from "@mui/icons-material/Language";
+import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import RepeatIcon from "@mui/icons-material/Repeat";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import ImageIcon from "@mui/icons-material/Image";
+import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
+import TextFormatIcon from "@mui/icons-material/TextFormat";
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import FactCheckIcon from "@mui/icons-material/FactCheck";
+import Tooltip from "@mui/material/Tooltip";
+import ComputerIcon from "@mui/icons-material/Computer";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import CloudIcon from "@mui/icons-material/Cloud";
 import IconButton from "@mui/material/IconButton";
 import Close from "@mui/icons-material/Close";
 
@@ -58,7 +58,7 @@ const classes = {
   flexRow: `${PREFIX}-flexRow`,
   customSelect: `${PREFIX}-customSelect`,
   attachmentDropdown: `${PREFIX}-attachmentDropdown`,
-  attachmentDropdownlist: `${PREFIX}-attachmentDropdownlist`
+  attachmentDropdownlist: `${PREFIX}-attachmentDropdownlist`,
 };
 
 const StyledDiv = styled("div")(({ theme }) => ({
@@ -77,11 +77,11 @@ const StyledDiv = styled("div")(({ theme }) => ({
     paddingTop: 0,
   },
   [`& .${classes.picker}`]: {
-    width: '200px',
+    width: "200px",
   },
   [`& .${classes.wrapper}`]: {
     display: "flex",
-    alignItems: 'center',
+    alignItems: "center",
     justifyContent: "space-between",
   },
   [`& .${classes.buttonGroup}`]: {
@@ -96,7 +96,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
   [`& .${classes.flexRow}`]: {
     display: "flex",
     marginTop: theme.spacing(2),
-    gap: '14px',
+    gap: "14px",
   },
   [`& .${classes.circleFilled}`]: {
     background: "#1976D2",
@@ -111,48 +111,48 @@ const StyledDiv = styled("div")(({ theme }) => ({
     width: "30px",
   },
   [`& .${classes.textFieldfooter}`]: {
-    background: '#1976D2',
-    marginTop: '-2px',
-    display: 'flex',
-    borderRadius: '0 0 3px 3px'
+    background: "#1976D2",
+    marginTop: "-2px",
+    display: "flex",
+    borderRadius: "0 0 3px 3px",
   },
   [`& .${classes.smallcircle}`]: {
-    width: '15px',
-    height: '15px',
-    backgroundColor: '#1976D2',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "15px",
+    height: "15px",
+    backgroundColor: "#1976D2",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   [`& .${classes.customSelect}`]: {
-    border: 'none',
-    backgroundColor: 'transparent',
-    padding: '10px 5px',
-    fontSize: '17px',
-    cursor: 'pointer',
-    overflow: 'hidden',
+    border: "none",
+    backgroundColor: "transparent",
+    padding: "10px 5px",
+    fontSize: "17px",
+    cursor: "pointer",
+    overflow: "hidden",
   },
   [`& .${classes.attachmentDropdown}`]: {
-    position: 'absolute',
-    background: 'white',
-    listStyle: 'none',
-    border: '2px solid rgba(0, 0, 0, 0.04)',
-    borderRadius: '3px',
-    marginTop: '-240px',
-    padding: '10px',
+    position: "absolute",
+    background: "white",
+    listStyle: "none",
+    border: "2px solid rgba(0, 0, 0, 0.04)",
+    borderRadius: "3px",
+    marginTop: "-240px",
+    padding: "10px",
     zIndex: 1000,
   },
   [`& .${classes.attachmentDropdownlist}`]: {
-    marginTop: '10px',
-    display: 'flex',
-    gap: '10px',
-    cursor: 'pointer',
+    marginTop: "10px",
+    display: "flex",
+    gap: "10px",
+    cursor: "pointer",
     "&:hover": {
-      background: 'rgba(0, 0, 0, 0.04)'
+      background: "rgba(0, 0, 0, 0.04)",
     },
-    padding: '10px 10px'
-  }
+    padding: "10px 10px",
+  },
 }));
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
@@ -206,8 +206,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     this.state = {
       appointmentChanges: {},
       anchorEl: null,
-      selectedOption: '',
-      attachment: null
+      selectedOption: "",
+      attachment: null,
     };
 
     this.getAppointmentData = () => {
@@ -259,7 +259,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       cancelAppointment,
       onHide,
     } = this.props;
-    const { appointmentChanges, anchorEl, selectedOption, attachment } = this.state;
+    const { appointmentChanges, anchorEl, selectedOption, attachment } =
+      this.state;
 
     const displayAppointmentData = {
       ...appointmentData,
@@ -268,7 +269,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     const isNewAppointment = appointmentData.id === undefined;
     const applyChanges = () =>
       this.commitAppointment(isNewAppointment ? "added" : "changed");
-      
+
     const textEditorProps = (field) => ({
       variant: "outlined",
       onChange: ({ target: change }) =>
@@ -293,26 +294,68 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       this.setState({ selectedOption: option, anchorEl: null });
     };
 
-    const pickerEditorProps = (field) => ({
-      // keyboard: true,
-      value: displayAppointmentData[field],
-      onChange: (date) => {
-        let newEnddate = date
-        if (field == "endDate" || field == "endTime") {
-          const endDate = field == "endDate" ? date : moment(displayAppointmentData["endDate"])
-          const endTime = field == "endTime" ? date : moment(displayAppointmentData["endTime"])
-          newEnddate = moment(endDate.format("YYYYMMDD") + endTime.format("hhmm"), "YYYYMMDDhhmm")
-        }
-        this.changeAppointment({
-          field: [field],
-          changes: newEnddate.toDate(),
-        })
-      },
-      ampm: false,
-      inputFormat: "DD/MM/YYYY",
-      onError: () => null,
-      className: classes.picker
-    });
+    const pickerEditorProps = (field) => {
+      return {
+        // keyboard: true,
+        value: displayAppointmentData[field],
+        onChange: (date) => {
+          var newEnddate = date;
+          if (field == "endDate" || field == "endTime") {
+            const endDate =
+              field == "endDate"
+                ? date
+                : moment(displayAppointmentData["endDate"]);
+            const endTime =
+              field == "endTime"
+                ? date
+                : moment(displayAppointmentData["endTime"]);
+            newEnddate = moment(
+              endDate.format("YYYYMMDD") + endTime.format("hhmm"),
+              "YYYYMMDDhhmm"
+            );
+            console.log(
+              "===",
+              "newEnddate:",
+              newEnddate
+            );
+          }
+          this.changeAppointment({
+            field: [field],
+            changes: newEnddate.toDate(),
+          });
+        },
+        ampm: false,
+        inputFormat: "DD/MM/YYYY",
+        onError: () => null,
+        className: classes.picker,
+      };
+    };
+    // {...textEditorProps("Add a title")}
+
+    // const pickerEditorProps = (field) => {
+
+    //   return {
+    //     value: displayAppointmentData[field],
+    //     onChange: (date) => {
+    //       let newEnddate = date; // Initialize it with the current value
+
+    //       if (field == "endDate" || field == "endTime") {
+    //         const endDate = field == "endDate" ? date : moment(displayAppointmentData["endDate"])
+    //         const endTime = field == "endTime" ? date : moment(displayAppointmentData["endTime"])
+    //         newEnddate = moment(endDate.format("YYYYMMDD") + endTime.format("hhmm"), "YYYYMMDDhhmm")
+    //       }
+    //       console.log(field,":", newEnddate)
+    //       this.changeAppointment({
+    //         field: [field],
+    //         changes: newEnddate.toDate(),
+    //       });
+    //     },
+    //     ampm: false, // Use 12-hour format with AM/PM
+    //     inputFormat: "DD/MM/YYYY", // Adjust as needed
+    //     onError: () => null,
+    //     className: classes.picker,
+    //   };
+    // };
 
     const startTimePickerProps = pickerEditorProps("startTime");
     const endTimePickerProps = pickerEditorProps("endTime");
@@ -327,7 +370,13 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       cancelAppointment();
     };
 
-    const ActionButton = ({ classes, children, color, tooltip, ...childProps }) => {
+    const ActionButton = ({
+      classes,
+      children,
+      color,
+      tooltip,
+      ...childProps
+    }) => {
       return (
         <Tooltip title={tooltip} arrow placement="top">
           <Button
@@ -342,7 +391,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     };
 
     return (
-      <Dialog open={visible} onClose={onHide} maxWidth='md' fullWidth={true}>
+      <Dialog open={visible} onClose={onHide} maxWidth="md" fullWidth={true}>
         <StyledDiv>
           <DialogTitle style={{ height: "70px" }} className={classes.wrapper}>
             <div className={classes.flexRow}>
@@ -377,9 +426,9 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   onClick={handleClick}
                   endIcon={<KeyboardArrowDownIcon />}
                   startIcon={<span className={classes.smallcircle} />}
-                  style={{ color: 'black' }}
+                  style={{ color: "black" }}
                 >
-                  {selectedOption ? selectedOption : 'Calender'}
+                  {selectedOption ? selectedOption : "Calender"}
                 </Button>
                 <Menu
                   id="outlook-dropdown"
@@ -387,7 +436,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   keepMounted
                   open={Boolean(anchorEl)}
                 >
-                  <MenuItem onClick={handleOptionClick('Calender')}>
+                  <MenuItem onClick={handleOptionClick("Calender")}>
                     <span className={classes.smallcircle} />
                     Calender
                   </MenuItem>
@@ -427,42 +476,53 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 <CalendarToday className={classes.icon} color="action" />
                 <LocalizationProvider dateAdapter={AdapterMoment}>
                   <div>
-                    <div className={classes.flexRow} style={{ justifyContent: 'center', alignItems: 'center' }}>
-                      <DatePicker
-                        {...startDatePickerProps}
-                      />
-                      <TimePicker
-                        {...startTimePickerProps}
-                      />
-                      <AntSwitch
-                        inputProps={{ "aria-label": "ant design" }}
-                      />
+                    <div
+                      className={classes.flexRow}
+                      style={{ justifyContent: "center", alignItems: "center" }}
+                    >
+                      <DatePicker {...startDatePickerProps} />
+                      <TimePicker {...startTimePickerProps} />
+                      <AntSwitch inputProps={{ "aria-label": "ant design" }} />
                       <span>All day</span>
                       <div className={classes.wrapper}>
-                        <label for="Timezone" >
+                        <label htmlFor="Timezone">
                           <LanguageIcon style={{ color: "#177ddc" }} />
                         </label>
-                        <select name="Timezone" id="Timezone" className={classes.customSelect}>
-                          <option className={classes.customSelectoption}>Timezone</option>
+                        <select
+                          name="Timezone"
+                          id="Timezone"
+                          className={classes.customSelect}
+                        >
+                          <option className={classes.customSelectoption}>
+                            Timezone
+                          </option>
                         </select>
                       </div>
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker
-                        {...endDatePickerProps}
-                      />
+                      <DatePicker {...endDatePickerProps} />
                       <TimePicker {...endTimePickerProps} />
                       <div className={classes.wrapper}>
-                        <label for="Repeat" >
+                        <label htmlFor="Repeat">
                           <RepeatIcon style={{ color: "#177ddc" }} />
                         </label>
-                        <select name="Repeat" id="Repeat" className={classes.customSelect}>
-                          {["Don't repeat", "Daily", "Weekly", "Monthly", "Yearly", "Custom"]
-                            .map((x, index) =>
-                              <option value={x}
-                                key={index} >
-                                {x}
-                              </option>)}
+                        <select
+                          name="Repeat"
+                          id="Repeat"
+                          className={classes.customSelect}
+                        >
+                          {[
+                            "Don't repeat",
+                            "Daily",
+                            "Weekly",
+                            "Monthly",
+                            "Yearly",
+                            "Custom",
+                          ].map((x, index) => (
+                            <option value={x} key={index}>
+                              {x}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -476,8 +536,15 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   variant="standard"
                   InputProps={{
                     endAdornment: (
-                      <Tooltip title='This will be turn on automatically once you add an attende' arrow placement="top">
-                        <InputAdornment position="end" style={{ display: "flex", gap: '10px' }}>
+                      <Tooltip
+                        title="This will be turn on automatically once you add an attende"
+                        arrow
+                        placement="top"
+                      >
+                        <InputAdornment
+                          position="end"
+                          style={{ display: "flex", gap: "10px" }}
+                        >
                           <AntSwitch
                             inputProps={{ "aria-label": "ant design" }}
                           />
@@ -487,7 +554,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                           >
                             <Skypeicon />
                           </i>
-                          <p class="ms-Label wj3t5 root-473">
+                          <p className="ms-Label wj3t5 root-473">
                             Skype meeting
                           </p>
                         </InputAdornment>
@@ -503,59 +570,66 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   <div className={classes.textFieldfooter}>
                     <div>
                       <ActionButton
-                        tooltip='Attach'
+                        tooltip="Attach"
                         key={1}
                         endIcon={<KeyboardArrowDownIcon color={"white"} />}
                         onClick={handleClicktwo}
                       >
                         <AttachFileIcon color={"white"} />
                       </ActionButton>
-                      {attachment &&
-                        <ul onClick={handleClicktwo} className={classes.attachmentDropdown}>
-                          <span style={{ color: '#177ddc' }}>Attach from</span>
+                      {attachment && (
+                        <ul
+                          onClick={handleClicktwo}
+                          className={classes.attachmentDropdown}
+                        >
+                          <span style={{ color: "#177ddc" }}>Attach from</span>
                           <li className={classes.attachmentDropdownlist}>
-                            <ComputerIcon style={{ color: "#177ddc" }} /> Browse this computer
+                            <ComputerIcon style={{ color: "#177ddc" }} /> Browse
+                            this computer
                           </li>
                           <li className={classes.attachmentDropdownlist}>
-                            <CloudIcon style={{ color: "#177ddc" }} />OneDrive
+                            <CloudIcon style={{ color: "#177ddc" }} />
+                            OneDrive
                           </li>
                           <li className={classes.attachmentDropdownlist}>
-                            <CloudUploadIcon style={{ color: "#177ddc" }} /> Upload and share
+                            <CloudUploadIcon style={{ color: "#177ddc" }} />{" "}
+                            Upload and share
                           </li>
-                        </ul>}
+                        </ul>
+                      )}
                     </div>
                     <ActionButton
                       key={2}
-                      tooltip='Insert picture inline'
-                    // onClick={() => setCalenderView("Day")}
+                      tooltip="Insert picture inline"
+                      // onClick={() => setCalenderView("Day")}
                     >
                       <ImageIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
-                      tooltip='Insert emojis and GIFs'
+                      tooltip="Insert emojis and GIFs"
                       key={3}
-                    // onClick={() => setCalenderView("Day")}
+                      // onClick={() => setCalenderView("Day")}
                     >
                       <EmojiEmotionsIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
-                      tooltip='Show Formatting options'
+                      tooltip="Show Formatting options"
                       key={4}
-                    // onClick={() => setCalenderView("Day")}
+                      // onClick={() => setCalenderView("Day")}
                     >
                       <TextFormatIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
-                      tooltip='Show Formatting options'
+                      tooltip="Show Formatting options"
                       key={5}
-                    // onClick={() => setCalenderView("Day")}
+                      // onClick={() => setCalenderView("Day")}
                     >
                       <DriveFileRenameOutlineIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
-                      tooltip='Check for accessibility issues'
+                      tooltip="Check for accessibility issues"
                       key={6}
-                    // onClick={() => setCalenderView("Day")}
+                      // onClick={() => setCalenderView("Day")}
                     >
                       <FactCheckIcon color={"white"} />
                     </ActionButton>

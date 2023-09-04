@@ -61,15 +61,17 @@ function Calendar({ t, classes }: any) {
   const dispatch:any = useTypeDispatch();
   const [calenderView, setCalenderView] = useState("Month");
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
+  const [selectDays, SetselectDays] = useState(7);
+
 
   useEffect(() => {
     dispatch(fetchEventsData({app}));
   }, [app.authProvider]);
 
-  const [selectedOption, setSelectedOption] = useState("1");
 
   const handleOptionChange = (event: any) => {
-    setSelectedOption(event.target.value);
+    const selectedDay = parseInt(event.target.value, 10);
+    SetselectDays(selectedDay);
   };
 
 
@@ -96,7 +98,7 @@ function Calendar({ t, classes }: any) {
               labelId="dropdown-label"
               id="dropdown"
               className={classes.dropdown}
-              value={selectedOption}
+              value={selectDays}
               onChange={handleOptionChange}
             >
               {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <MenuItem value={x} key={index}>Day {x}</MenuItem>)}
@@ -112,7 +114,7 @@ function Calendar({ t, classes }: any) {
             <ActionButton
               key={1}
               startIcon={<DateRangeIcon color={"secondary"} />}
-            // onClick={() => setCalenderView("Day")}
+              onClick={() => setCalenderView("WorkWeek")}
             >
               Work Week
             </ActionButton>
@@ -129,12 +131,6 @@ function Calendar({ t, classes }: any) {
               onClick={() => setCalenderView("Month")}
             >
               Month
-            </ActionButton>
-            <ActionButton
-              key={4}
-              startIcon={<VerticalSplitIcon color={"secondary"} />}
-            >
-              Split view
             </ActionButton>
           </div>
           <div className="left-items">
@@ -155,6 +151,7 @@ function Calendar({ t, classes }: any) {
         app={app}
         calenderView={calenderView}
         showSideBar={showCalenderSidebar}
+        selectDays={selectDays}
       />
     </AuthenticatedView>
   );
