@@ -78,6 +78,7 @@ class ScheduleCalendar extends React.PureComponent {
     super(props);
     this.state = {
       data: this.props.events,
+      eventProps: this.props.events,
       confirmationVisible: false,
       editingFormVisible: false,
       deletedAppointmentId: undefined,
@@ -136,9 +137,9 @@ class ScheduleCalendar extends React.PureComponent {
   }
 
   componentDidUpdate() {
-    // this.setState({
-    //   data: this.props.events,
-    // });
+    if (this.props.events !== this.state.eventProps) {
+      this.setState({eventProps: this.props.events, data: this.props.events,});
+    }
     this.appointmentForm.update();
   }
 

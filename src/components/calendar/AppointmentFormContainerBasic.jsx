@@ -224,13 +224,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
   }
 
   changeAppointment({ field, changes }) {
-    const nextChanges = {
-      ...this.getAppointmentChanges(),
-      [field]: changes,
-    };
-    this.setState({
-      appointmentChanges: nextChanges,
-    });
+    const nextChanges = {...this.getAppointmentChanges(), [field]: changes};
+    this.setState({appointmentChanges: nextChanges });
   }
 
   commitAppointment(type) {
@@ -294,34 +289,35 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       this.setState({ selectedOption: option, anchorEl: null });
     };
 
+    const getDateOrTime = (date, field_name, get_for_field_name) => {
+      if (field_name === get_for_field_name){
+        return date
+      }
+      let currentDate = displayAppointmentData[get_for_field_name] || undefined
+      return moment(currentDate)
+    }
+
     const pickerEditorProps = (field) => {
       return {
         // keyboard: true,
-        value: displayAppointmentData[field],
+        // value: displayAppointmentData[field],
         onChange: (date) => {
-          var newEnddate = date;
+          let currentDate;
+          let currentTime;
+
           if (field == "endDate" || field == "endTime") {
-            const endDate =
-              field == "endDate"
-                ? date
-                : moment(displayAppointmentData["endDate"]);
-            const endTime =
-              field == "endTime"
-                ? date
-                : moment(displayAppointmentData["endTime"]);
-            newEnddate = moment(
-              endDate.format("YYYYMMDD") + endTime.format("hhmm"),
-              "YYYYMMDDhhmm"
-            );
-            console.log(
-              "===",
-              "newEnddate:",
-              newEnddate
-            );
+            currentDate = getDateOrTime(date, field, "endDate");
+            currentTime = getDateOrTime(date, field, "endTime");
           }
+          else {
+            currentDate = getDateOrTime(date, field, "startDate");
+            currentTime = getDateOrTime(date, field, "startTime");
+          }
+          let newDateTime = moment(currentDate.format("YYYYMMDD") + currentTime.format("hhmm"), "YYYYMMDDhhmm");
+
           this.changeAppointment({
             field: [field],
-            changes: newEnddate.toDate(),
+            changes: newDateTime.toDate(),
           });
         },
         ampm: false,
@@ -330,32 +326,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
         className: classes.picker,
       };
     };
-    // {...textEditorProps("Add a title")}
-
-    // const pickerEditorProps = (field) => {
-
-    //   return {
-    //     value: displayAppointmentData[field],
-    //     onChange: (date) => {
-    //       let newEnddate = date; // Initialize it with the current value
-
-    //       if (field == "endDate" || field == "endTime") {
-    //         const endDate = field == "endDate" ? date : moment(displayAppointmentData["endDate"])
-    //         const endTime = field == "endTime" ? date : moment(displayAppointmentData["endTime"])
-    //         newEnddate = moment(endDate.format("YYYYMMDD") + endTime.format("hhmm"), "YYYYMMDDhhmm")
-    //       }
-    //       console.log(field,":", newEnddate)
-    //       this.changeAppointment({
-    //         field: [field],
-    //         changes: newEnddate.toDate(),
-    //       });
-    //     },
-    //     ampm: false, // Use 12-hour format with AM/PM
-    //     inputFormat: "DD/MM/YYYY", // Adjust as needed
-    //     onError: () => null,
-    //     className: classes.picker,
-    //   };
-    // };
 
     const startTimePickerProps = pickerEditorProps("startTime");
     const endTimePickerProps = pickerEditorProps("endTime");
