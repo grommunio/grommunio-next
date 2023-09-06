@@ -52,7 +52,6 @@ const classes = {
   addButton: `${PREFIX}-addButton`,
   circleFilled: `${PREFIX}-circleFilled`,
   dropdown: `${PREFIX}-dropdown`,
-  svgicon: `${PREFIX}-svgicon`,
   textFieldfooter: `${PREFIX}-textFieldfooter`,
   smallcircle: `${PREFIX}-smallcircle`,
   flexRow: `${PREFIX}-flexRow`,
@@ -106,9 +105,6 @@ const StyledDiv = styled("div")(({ theme }) => ({
   },
   [`& .${classes.dropdown}`]: {
     position: "absolute",
-  },
-  [`& .${classes.svgicon}`]: {
-    width: "30px",
   },
   [`& .${classes.textFieldfooter}`]: {
     background: "#1976D2",

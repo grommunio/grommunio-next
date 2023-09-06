@@ -221,6 +221,22 @@ class ScheduleCalendar extends React.PureComponent {
     });
   }
 
+  excludedDays = (numberOfDays) => {
+    const dayMappings = {
+      1: [0, 2, 3, 4, 5, 6],
+      2: [0, 3, 4, 5, 6],
+      3: [0, 4, 5, 6],
+      4: [0, 5, 6],
+      5: [0, 6],
+      6: [0],
+      7: [],
+      workWeek: [0, 6],
+      // Add more mappings for other values of numberOfDays if needed
+    };
+  
+    return dayMappings[numberOfDays] || [];
+  };
+
   render() {
     const {
       currentDate,
@@ -231,6 +247,7 @@ class ScheduleCalendar extends React.PureComponent {
       endDayHour,
     } = this.state;
 
+     
     return (
       <Paper sx={{ flex: 1 }}>
         <Grid container spacing={2} height="100%">
@@ -263,7 +280,7 @@ class ScheduleCalendar extends React.PureComponent {
                 onAddedAppointmentChange={this.onAddedAppointmentChange}
               />
               <DayView />
-              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={[1]}/>
+              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={this.excludedDays(this.props.selectDays)}/>
               {/* <WorkWeekView  startDayHour={startDayHour} endDayHour={endDayHour} /> */}
               <StyledTable>
                 <MonthView />
@@ -278,7 +295,7 @@ class ScheduleCalendar extends React.PureComponent {
               />
               <Toolbar />
               <DateNavigator />
-              <TodayButton />
+              <TodayButton styele={{border:'white', background:'white'}}/>
               <AppointmentForm
                 overlayComponent={this.appointmentForm}
                 visible={editingFormVisible}

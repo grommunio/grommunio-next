@@ -14,7 +14,6 @@ import { withTranslation } from "react-i18next";
 import {
   Button,
   IconButton,
-  Select,
   MenuItem,
 } from "@mui/material";
 // import TodayIcon from "@mui/icons-material/Today";
@@ -40,15 +39,36 @@ const styles: any = {
     paddingRight: "10px",
   },
   dropdown: {
-    height: "40px",
+    border: 'none',
+    fontSize: '16px',
+    color: 'rgba(0, 0, 0, 0.54)',
+    outline: 'none',
+    background:'none',
+    cursor:'pointer',
   },
+  dropdownOption:{
+    width:'200px'
+  },
+  dropdownParent:{
+    display: "flex", 
+    gap: "4px", 
+    justifyContent:'center', 
+    alignItems:'center', 
+    color:'rgba(0, 0, 0, 0.54)', 
+    "&:hover": {
+      background: "rgba(0, 0, 0, 0.04)",
+    },
+    cursor:'pointer',
+    padding:'0px 10px',
+    borderRadius:'5px'
+  }
 };
 
 const ActionButton = ({ classes, children, color, ...childProps }: any) => {
   return (
     <Button
       color={color || "inherit"}
-      style={color ? undefined : { color: "#0000008a" }} // Can't be part of the class, because it would affect primary buttons too
+      style={color ? undefined : { color: "#0000008a" }} 
       {...childProps}
     >
       {children}
@@ -58,20 +78,19 @@ const ActionButton = ({ classes, children, color, ...childProps }: any) => {
 
 function Calendar({ t, classes }: any) {
   const app = useAppContext();
-  const dispatch:any = useTypeDispatch();
+  const dispatch: any = useTypeDispatch();
   const [calenderView, setCalenderView] = useState("Month");
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
-  const [selectDays, SetselectDays] = useState(7);
-
+  const [selectDays, SetselectDays] = useState();
 
   useEffect(() => {
-    dispatch(fetchEventsData({app}));
+    dispatch(fetchEventsData({ app }));
   }, [app.authProvider]);
 
 
   const handleOptionChange = (event: any) => {
-    const selectedDay = parseInt(event.target.value, 10);
-    SetselectDays(selectedDay);
+    SetselectDays(event.target.value);
+    setCalenderView("Week")
   };
 
 
@@ -94,34 +113,29 @@ function Calendar({ t, classes }: any) {
             >
               New event
             </ActionButton> */}
-            <Select
-              labelId="dropdown-label"
-              id="dropdown"
-              className={classes.dropdown}
-              value={selectDays}
-              onChange={handleOptionChange}
-            >
-              {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <MenuItem value={x} key={index}>Day {x}</MenuItem>)}
-            </Select>
-            {/* <ActionButton
-              key={1}
-              startIcon={<TodayIcon color={"secondary"} />}
-              onClick={() => setCalenderView("Day")}
-            >
-              Day
-              <ExpandMoreIcon />
-            </ActionButton> */}
+            <div className={classes.dropdownParent}>
+              <VerticalSplitIcon />
+              <select
+                id="dropdown"
+                className={classes.dropdown}
+                style={{ border: 'none' }}
+                onChange={handleOptionChange}>
+                {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <option className={classes.dropdownOption} value={x} key={index}>Day {x}</option>)}
+              </select>
+            </div>
             <ActionButton
               key={1}
               startIcon={<DateRangeIcon color={"secondary"} />}
-              onClick={() => setCalenderView("WorkWeek")}
+              value="workWeek"
+              onClick={handleOptionChange}
             >
               Work Week
             </ActionButton>
             <ActionButton
               key={2}
               startIcon={<CalendarViewWeekIcon color={"secondary"} />}
-              onClick={() => setCalenderView("Week")}
+              value='week'
+              onClick={handleOptionChange}
             >
               Week
             </ActionButton>
