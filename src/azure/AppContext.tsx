@@ -51,7 +51,7 @@ const appContext = createContext<AppContext>({
   signOut: undefined,
   displayError: undefined,
   clearError: undefined,
-  authProvider: undefined
+  authProvider: undefined,
 });
 
 export function useAppContext(): AppContext {
@@ -166,6 +166,6 @@ function useProvideAppContext() {
     signOut,
     displayError,
     clearError,
-    authProvider
+    authProvider,
   };
 }
