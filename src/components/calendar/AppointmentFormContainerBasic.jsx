@@ -37,6 +37,11 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloudIcon from "@mui/icons-material/Cloud";
 import IconButton from "@mui/material/IconButton";
 import Close from "@mui/icons-material/Close";
+import { Editor } from '@tinymce/tinymce-react';
+import ReactQuill from 'react-quill';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import 'react-quill/dist/quill.snow.css';
 
 const PREFIX = "Demo";
 const classes = {
@@ -220,8 +225,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
   }
 
   changeAppointment({ field, changes }) {
-    const nextChanges = {...this.getAppointmentChanges(), [field]: changes};
-    this.setState({appointmentChanges: nextChanges });
+    const nextChanges = { ...this.getAppointmentChanges(), [field]: changes };
+    this.setState({ appointmentChanges: nextChanges });
   }
 
   commitAppointment(type) {
@@ -263,15 +268,20 @@ class AppointmentFormContainerBasic extends React.PureComponent {
 
     const textEditorProps = (field) => ({
       variant: "outlined",
-      onChange: ({ target: change }) =>
+      onChange: (event) => {
+        const newValue = event.target.value;
+
+        // Call the changeAppointment function with the new value
         this.changeAppointment({
           field: [field],
-          changes: change.value,
-        }),
+          changes: newValue,
+        });
+      },
       value: displayAppointmentData[field] || "",
       placeholder: field[0].toUpperCase() + field.slice(1),
       className: classes.textField,
     });
+
 
     const handleClick = (event) => {
       this.setState({ anchorEl: event.currentTarget });
@@ -286,7 +296,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     };
 
     const getDateOrTime = (date, field_name, get_for_field_name) => {
-      if (field_name === get_for_field_name){
+      if (field_name === get_for_field_name) {
         return date
       }
       let currentDate = displayAppointmentData[get_for_field_name] || undefined
@@ -295,8 +305,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
 
     const pickerEditorProps = (field) => {
       return {
-        // keyboard: true,
-        // value: displayAppointmentData[field],
+
         onChange: (date) => {
           let currentDate;
           let currentTime;
@@ -334,6 +343,15 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       });
       visibleChange();
       cancelAppointment();
+    };
+    const handleEditorChange = (event, editor) => {
+      const data = editor.getData();
+      this.setState({
+        appointmentChanges: {
+          ...this.state.appointmentChanges,
+          notes: data,
+        },
+      });
     };
 
     const ActionButton = ({
@@ -533,6 +551,29 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 <Notes className={classes.icon} color="action" />
                 <div className={classes.textField}>
                   <TextField {...textEditorProps("notes")} multiline rows="4" />
+                  {/* <ReactQuill
+                    value={this.appointmentChanges?.notes}
+                    onChange={handleEditorChange}
+                  // placeholder="Rich Text Editor"
+                  /> */}
+                  <CKEditor
+                    editor={ClassicEditor}
+                    data={this.appointmentChanges?.notes}
+                    onChange={handleEditorChange}
+                  />
+                  {/* <Editor
+                    initialValue={this.appointmentChanges?.notes}
+                    tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+                    // apiKey="YOUR_TINYMCE_API_KEY"
+                    init={{
+                      width: '100%',
+                      height: '100%',
+                      menubar: false,
+                      plugins: ['advlist autolink lists link image charmap print preview anchor', 'searchreplace visualblocks code fullscreen', 'insertdatetime media table paste code help wordcount'],
+                      toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+                    }}
+                    onEditorChange={handleEditorChange}
+                  /> */}
                   <div className={classes.textFieldfooter}>
                     <div>
                       <ActionButton
@@ -567,35 +608,35 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                     <ActionButton
                       key={2}
                       tooltip="Insert picture inline"
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <ImageIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Insert emojis and GIFs"
                       key={3}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <EmojiEmotionsIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Show Formatting options"
                       key={4}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <TextFormatIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Show Formatting options"
                       key={5}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <DriveFileRenameOutlineIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Check for accessibility issues"
                       key={6}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <FactCheckIcon color={"white"} />
                     </ActionButton>
