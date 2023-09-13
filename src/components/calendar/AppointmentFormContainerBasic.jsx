@@ -37,6 +37,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloudIcon from "@mui/icons-material/Cloud";
 import IconButton from "@mui/material/IconButton";
 import Close from "@mui/icons-material/Close";
+import { zonedTimeToUtc } from "date-fns-tz";
 
 const PREFIX = "Demo";
 const classes = {
@@ -128,6 +129,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
     fontSize: "17px",
     cursor: "pointer",
     overflow: "hidden",
+    outline: 'none'
   },
   [`& .${classes.attachmentDropdown}`]: {
     position: "absolute",
@@ -220,8 +222,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
   }
 
   changeAppointment({ field, changes }) {
-    const nextChanges = {...this.getAppointmentChanges(), [field]: changes};
-    this.setState({appointmentChanges: nextChanges });
+    const nextChanges = { ...this.getAppointmentChanges(), [field]: changes };
+    this.setState({ appointmentChanges: nextChanges });
   }
 
   commitAppointment(type) {
@@ -240,6 +242,13 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     this.setState({
       appointmentChanges: {},
     });
+  }
+
+  componentDidUpdate() {
+    console.log(">> List of Supported Timezones:",zonedTimeToUtc);
+    // allTimeZones.forEach((timezone, index) => {
+    //   console.log(`>>${index + 1}. ${timezone}`);
+    // });
   }
 
   render() {
@@ -286,7 +295,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     };
 
     const getDateOrTime = (date, field_name, get_for_field_name) => {
-      if (field_name === get_for_field_name){
+      if (field_name === get_for_field_name) {
         return date
       }
       let currentDate = displayAppointmentData[get_for_field_name] || undefined
@@ -459,7 +468,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                           id="Timezone"
                           className={classes.customSelect}
                         >
-                          <option className={classes.customSelectoption}>
+                          <option>
                             Timezone
                           </option>
                         </select>
@@ -567,35 +576,35 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                     <ActionButton
                       key={2}
                       tooltip="Insert picture inline"
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <ImageIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Insert emojis and GIFs"
                       key={3}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <EmojiEmotionsIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Show Formatting options"
                       key={4}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <TextFormatIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Show Formatting options"
                       key={5}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <DriveFileRenameOutlineIcon color={"white"} />
                     </ActionButton>
                     <ActionButton
                       tooltip="Check for accessibility issues"
                       key={6}
-                      // onClick={() => setCalenderView("Day")}
+                    // onClick={() => setCalenderView("Day")}
                     >
                       <FactCheckIcon color={"white"} />
                     </ActionButton>
