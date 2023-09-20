@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef  } from "react";
 import { useAppContext } from "../azure/AppContext";
 import { withStyles } from "@mui/styles";
 import { fetchEventsData } from "../actions/calendar";
@@ -14,18 +13,16 @@ import { withTranslation } from "react-i18next";
 import {
   Button,
   IconButton,
-  MenuItem,
 } from "@mui/material";
-// import TodayIcon from "@mui/icons-material/Today";
 import MenuIcon from "@mui/icons-material/Menu";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
 import VerticalSplitIcon from "@mui/icons-material/VerticalSplit";
 import PrintIcon from "@mui/icons-material/Print";
-import EventIcon from "@mui/icons-material/Event";
 import IosShareIcon from "@mui/icons-material/IosShare";
-// import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DateRangeIcon from "@mui/icons-material/DateRange";
+import ReactToPrint from 'react-to-print';
+
 
 const styles: any = {
   nav: {
@@ -43,24 +40,24 @@ const styles: any = {
     fontSize: '16px',
     color: 'rgba(0, 0, 0, 0.54)',
     outline: 'none',
-    background:'none',
-    cursor:'pointer',
+    background: 'none',
+    cursor: 'pointer',
   },
-  dropdownOption:{
-    width:'200px'
+  dropdownOption: {
+    width: '200px'
   },
-  dropdownParent:{
-    display: "flex", 
-    gap: "4px", 
-    justifyContent:'center', 
-    alignItems:'center', 
-    color:'rgba(0, 0, 0, 0.54)', 
+  dropdownParent: {
+    display: "flex",
+    gap: "4px",
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: 'rgba(0, 0, 0, 0.54)',
     "&:hover": {
       background: "rgba(0, 0, 0, 0.04)",
     },
-    cursor:'pointer',
-    padding:'0px 10px',
-    borderRadius:'5px'
+    cursor: 'pointer',
+    padding: '0px 10px',
+    borderRadius: '5px'
   }
 };
 
@@ -68,7 +65,7 @@ const ActionButton = ({ classes, children, color, ...childProps }: any) => {
   return (
     <Button
       color={color || "inherit"}
-      style={color ? undefined : { color: "#0000008a" }} 
+      style={color ? undefined : { color: "#0000008a" }}
       {...childProps}
     >
       {children}
@@ -76,7 +73,9 @@ const ActionButton = ({ classes, children, color, ...childProps }: any) => {
   );
 };
 
+
 function Calendar({ t, classes }: any) {
+  
   const app = useAppContext();
   const dispatch: any = useTypeDispatch();
   const [calenderView, setCalenderView] = useState("Month");
@@ -93,6 +92,7 @@ function Calendar({ t, classes }: any) {
     setCalenderView("Week")
   };
 
+  const componentRef = useRef(null);
 
   return (
     <AuthenticatedView
@@ -105,14 +105,6 @@ function Calendar({ t, classes }: any) {
             >
               <MenuIcon />
             </IconButton>
-            {/* <ActionButton
-              key={0}
-              variant="contained"
-              color="primary"
-              startIcon={<EventIcon />}
-            >
-              New event
-            </ActionButton> */}
             <div className={classes.dropdownParent}>
               <VerticalSplitIcon />
               <select
@@ -154,9 +146,14 @@ function Calendar({ t, classes }: any) {
             >
               Share
             </ActionButton>
-            <ActionButton key={6} startIcon={<PrintIcon color={"secondary"} />}>
-              Print
-            </ActionButton>
+            <ReactToPrint
+              trigger={() => <ActionButton key={6} startIcon={<PrintIcon color={"secondary"} />}>
+                Print
+              </ActionButton>}
+              content={() => componentRef.current}
+              documentTitle='new Calendar'
+            />
+
           </div>
         </nav>,
       ]}
@@ -166,6 +163,7 @@ function Calendar({ t, classes }: any) {
         calenderView={calenderView}
         showSideBar={showCalenderSidebar}
         selectDays={selectDays}
+        componentRef={componentRef}
       />
     </AuthenticatedView>
   );

@@ -91,7 +91,7 @@ class ScheduleCalendar extends React.PureComponent {
       smallcallendarvalue: new Date(),
     };
 
-
+    this.componentRef = React.createRef();
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
     this.commitDeletedAppointment = this.commitDeletedAppointment.bind(this);
     this.toggleEditingFormVisibility =
@@ -138,7 +138,7 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidUpdate() {
     if (this.props.events !== this.state.eventProps) {
-      this.setState({eventProps: this.props.events, data: this.props.events,});
+      this.setState({ eventProps: this.props.events, data: this.props.events, });
     }
     this.appointmentForm.update();
   }
@@ -233,7 +233,7 @@ class ScheduleCalendar extends React.PureComponent {
       workWeek: [0, 6],
       // Add more mappings for other values of numberOfDays if needed
     };
-  
+
     return dayMappings[numberOfDays] || [];
   };
 
@@ -247,7 +247,7 @@ class ScheduleCalendar extends React.PureComponent {
       endDayHour,
     } = this.state;
 
-     
+
     return (
       <Paper sx={{ flex: 1 }}>
         <Grid container spacing={2} height="100%">
@@ -269,39 +269,41 @@ class ScheduleCalendar extends React.PureComponent {
           )}
 
           <Grid item xs={this.props.showSideBar ? 9 : 12}>
-            <Scheduler data={data}>
-              <ViewState
-                currentDate={currentDate}
-                currentViewName={this.props.calenderView}
-              />
-              <EditingState
-                onCommitChanges={this.commitChanges}
-                onEditingAppointmentChange={this.onEditingAppointmentChange}
-                onAddedAppointmentChange={this.onAddedAppointmentChange}
-              />
-              <DayView />
-              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={this.excludedDays(this.props.selectDays)}/>
-              <StyledTable>
-                <MonthView />
-              </StyledTable>
-              <AllDayPanel />
-              <EditRecurrenceMenu />
-              <Appointments />
-              <AppointmentTooltip
-                showOpenButton
-                showCloseButton
-                showDeleteButton
-              />
-              <Toolbar />
-              <DateNavigator />
-              <TodayButton styele={{border:'white', background:'white'}}/>
-              <AppointmentForm
-                overlayComponent={this.appointmentForm}
-                visible={editingFormVisible}
-                onVisibilityChange={this.toggleEditingFormVisibility}
-              />
-              <DragDropProvider />
-            </Scheduler>
+            <div ref={this.props.componentRef}>
+              <Scheduler data={data}>
+                <ViewState
+                  currentDate={currentDate}
+                  currentViewName={this.props.calenderView}
+                />
+                <EditingState
+                  onCommitChanges={this.commitChanges}
+                  onEditingAppointmentChange={this.onEditingAppointmentChange}
+                  onAddedAppointmentChange={this.onAddedAppointmentChange}
+                />
+                <DayView />
+                <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={this.excludedDays(this.props.selectDays)} />
+                <StyledTable>
+                  <MonthView />
+                </StyledTable>
+                <AllDayPanel />
+                <EditRecurrenceMenu />
+                <Appointments />
+                <AppointmentTooltip
+                  showOpenButton
+                  showCloseButton
+                  showDeleteButton
+                />
+                <Toolbar />
+                <DateNavigator />
+                <TodayButton styele={{ border: 'white', background: 'white' }} />
+                <AppointmentForm
+                  overlayComponent={this.appointmentForm}
+                  visible={editingFormVisible}
+                  onVisibilityChange={this.toggleEditingFormVisibility}
+                />
+                <DragDropProvider />
+              </Scheduler>
+            </div>
           </Grid>
         </Grid>
 
@@ -384,7 +386,7 @@ const UserCalenders = ({ data }) => {
       </ListItemButton>
       {open &&
         data?.map((item) => (
-          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }} onClick={() => dispatch(fetchEventsData({app, id:item.id}))} >
+          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }} onClick={() => dispatch(fetchEventsData({ app, id: item.id }))} >
             <ListItemText
               primary={item.name}
               primaryTypographyProps={{ ml: 2 }}
