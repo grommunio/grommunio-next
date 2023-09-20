@@ -14,12 +14,13 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
 import { Event } from "microsoft-graph";
 import { graphClient } from "./utils";
+import axios from 'axios';
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(
   authProvider: AuthCodeMSALBrowserAuthenticationProvider,
   timeZone: string,
-  id?:string
+  id?: string
 ): Promise<Event[]> {
   // Generate startDateTime and endDateTime query params
   // to display a 7-day window
@@ -34,9 +35,9 @@ export async function getUserWeekCalendar(
   // &$select=subject,organizer,start,end
   // &$orderby=start/dateTime
   // &$top=50
-  
+
   const response: PageCollection = await graphClient!
-    .api(id ? `/me/calendars/${id}/calendarview` : `/me/calendarview` )
+    .api(id ? `/me/calendars/${id}/calendarview` : `/me/calendarview`)
     .header("Prefer", `outlook.timezone="${timeZone}"`)
     .query({ startDateTime: startDateTime, endDateTime: endDateTime })
     .orderby("start/dateTime")
@@ -96,3 +97,4 @@ export async function getUserCalendars(): Promise<Event[]> {
     .get();
   return response.value;
 }
+

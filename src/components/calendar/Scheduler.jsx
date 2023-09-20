@@ -41,7 +41,7 @@ import {
 } from "../../actions/calendar";
 import { Box, ListItemButton, ListItemText } from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
-import smallCallendarDay from "./smallCallendar";
+import SmallCalendarDay from "./smallCallendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
 import { useTypeDispatch } from "../../store";
 import { useAppContext } from "../../azure/AppContext";
@@ -255,7 +255,7 @@ class ScheduleCalendar extends React.PureComponent {
             <Grid item xs={3}>
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DateCalendar
-                  slots={{ day: smallCallendarDay }}
+                  slots={{ day: SmallCalendarDay }}
                   slotProps={{
                     day: {
                       appointments: data,
@@ -281,7 +281,6 @@ class ScheduleCalendar extends React.PureComponent {
               />
               <DayView />
               <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={this.excludedDays(this.props.selectDays)}/>
-              {/* <WorkWeekView  startDayHour={startDayHour} endDayHour={endDayHour} /> */}
               <StyledTable>
                 <MonthView />
               </StyledTable>

@@ -12,7 +12,7 @@ import {
   postEvent,
   getUserCalendars,
 } from "../api/calendar";
-import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA, FETCH_USER_CALENDERS_EVENTS_DATA } from "./types";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA} from "./types";
 import { defaultFetchHandler, defaultPostHandler } from "./defaults";
 
 
@@ -90,7 +90,7 @@ export const deleteEventData = createAsyncThunk<
 
 
 function formatEvent(rawEvent: any): Event {
-  const { id, subject, location, notes, startDate, endDate } = rawEvent;
+  const { id, subject, location, notes, startDate, endDate, timezone } = rawEvent;
   return {
     id,
     subject,
@@ -100,11 +100,11 @@ function formatEvent(rawEvent: any): Event {
     },
     start: {
       dateTime: startDate,
-      timeZone: 'Europe/Berlin'  // TODO: Remove hardcoded timezone
+      timeZone: 'America/Los_Angeles'  // TODO: Remove hardcoded timezone
     },
     end: {
       dateTime: endDate,
-      timeZone: 'Europe/Berlin'  // TODO: Remove hardcoded timezone
+      timeZone: 'America/Los_Angeles'  // TODO: Remove hardcoded timezone
     },
     location: {
       displayName: location,
@@ -115,5 +115,3 @@ function formatEvent(rawEvent: any): Event {
 export function fetchUserCalenders() {
   return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA)
 }
-
-

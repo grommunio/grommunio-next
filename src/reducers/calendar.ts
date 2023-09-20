@@ -15,6 +15,7 @@ interface IUserCalender {
 const defaultState = {
   events: [],
   calender: [],
+  timezones: []
 };
 
 //TODO: Properly implement this function
@@ -49,7 +50,7 @@ function calendarReducer(state = defaultState, action: AnyAction) {
       ...state,
       calendar: action.payload ? action.payload.map(({id, name}: IUserCalender) => ({id, name})) : [],
     };
-
+    
   default:
     return state;
   }
