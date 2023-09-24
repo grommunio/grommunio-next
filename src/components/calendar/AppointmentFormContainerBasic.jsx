@@ -287,8 +287,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       return moment(currentDate);
     };
 
+    const dateDefaultValue = !ButtonSwitch ? moment() : null
     const pickerEditorProps = (field) => {
-
       return {
         onChange: (date) => {
           let currentDate;
@@ -313,7 +313,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
           });
         },
         ampm: false,
-        defaultValue: moment(),
         onError: () => null,
         className: classes.picker,
         minDate: field === "endDate" ? selectedStartDate : undefined,
@@ -336,17 +335,20 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       this.setState({ selectedTimezone: event.target.value })
     }
 
-    // const updatedModules = {
-    //   toolbar: [
-    //     ...modules.toolbar,
-    //     ['customItem'], // Add or remove the custom item here
-    //     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-    //     ['image'],
-    //   ],
-
     const handleSwitch = () => {
       this.setState({ ButtonSwitch: !ButtonSwitch });
       pickerSize = !pickerSize
+
+      this.changeAppointment({
+        "startDate":"startDate",
+        changes: dateDefaultValue,
+      });
+
+      this.changeAppointment({
+        "endDate": "endDate",
+        changes: dateDefaultValue,
+      });
+
     }
 
     return (
@@ -438,7 +440,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                     <div
                       className={classes.flexRow}
                     >
-                      <DatePicker {...startDatePickerProps} />
+                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue}/>
                       {ButtonSwitch && <TimePicker {...startTimePickerProps} />}
                       <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
                       {ButtonSwitch && <div className={classes.wrapper}>
@@ -463,7 +465,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       </div>}
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker {...endDatePickerProps} />
+                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue}/>
                       {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">

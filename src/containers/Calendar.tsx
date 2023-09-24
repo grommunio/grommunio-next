@@ -22,7 +22,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import IosShareIcon from "@mui/icons-material/IosShare";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import ReactToPrint from 'react-to-print';
-
+import ShareCalendar from "../components/calendar/ShareCalendar"
 
 const styles: any = {
   nav: {
@@ -81,6 +81,7 @@ function Calendar({ t, classes }: any) {
   const [calenderView, setCalenderView] = useState("Month");
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
   const [selectDays, SetselectDays] = useState();
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     dispatch(fetchEventsData({ app }));
@@ -90,6 +91,14 @@ function Calendar({ t, classes }: any) {
   const handleOptionChange = (event: any) => {
     SetselectDays(event.target.value);
     setCalenderView("Week")
+  };
+
+  const handleClickOpen = () => {
+    setVisible(true);
+  };
+
+  const onHide = () => {
+    setVisible(false);
   };
 
   const componentRef = useRef(null);
@@ -143,6 +152,7 @@ function Calendar({ t, classes }: any) {
             <ActionButton
               key={5}
               startIcon={<IosShareIcon color={"secondary"} />}
+              onClick={handleClickOpen}
             >
               Share
             </ActionButton>
@@ -165,6 +175,7 @@ function Calendar({ t, classes }: any) {
         selectDays={selectDays}
         componentRef={componentRef}
       />
+      <ShareCalendar onHide={onHide} visible={visible}/>
     </AuthenticatedView>
   );
 }

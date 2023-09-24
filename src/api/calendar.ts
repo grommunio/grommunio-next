@@ -98,3 +98,15 @@ export async function getUserCalendars(): Promise<Event[]> {
   return response.value;
 }
 
+export async function patchUserCalendar(id?: string, calendar?: string): Promise<Event[]> {
+  return await graphClient!.api(`/me/calendars/${id}`).patch({
+    "name": calendar
+  });     
+}
+
+
+
+
+
+
+

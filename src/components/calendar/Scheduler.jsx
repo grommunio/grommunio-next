@@ -31,6 +31,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
+import { BsCalendarPlus } from 'react-icons/bs';
 import { connect } from "react-redux";
 import {
   deleteEventData,
@@ -42,6 +43,7 @@ import {
 import { Box, ListItemButton, ListItemText } from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
 import SmallCalendarDay from "./smallCallendar";
+import AddCalendar from "./AddCalendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
 import { useTypeDispatch } from "../../store";
 import { useAppContext } from "../../azure/AppContext";
@@ -138,7 +140,7 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidUpdate() {
     if (this.props.events !== this.state.eventProps) {
-      this.setState({ eventProps: this.props.events, data: this.props.events, });
+      this.setState({ eventProps: this.props.events, data: this.props.events });
     }
     this.appointmentForm.update();
   }
@@ -247,7 +249,6 @@ class ScheduleCalendar extends React.PureComponent {
       endDayHour,
     } = this.state;
 
-
     return (
       <Paper sx={{ flex: 1 }}>
         <Grid container spacing={2} height="100%">
@@ -281,7 +282,11 @@ class ScheduleCalendar extends React.PureComponent {
                   onAddedAppointmentChange={this.onAddedAppointmentChange}
                 />
                 <DayView />
-                <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={this.excludedDays(this.props.selectDays)} />
+                <WeekView
+                  startDayHour={startDayHour}
+                  endDayHour={endDayHour}
+                  excludedDays={this.excludedDays(this.props.selectDays)}
+                />
                 <StyledTable>
                   <MonthView />
                 </StyledTable>
@@ -295,7 +300,9 @@ class ScheduleCalendar extends React.PureComponent {
                 />
                 <Toolbar />
                 <DateNavigator />
-                <TodayButton styele={{ border: 'white', background: 'white' }} />
+                <TodayButton
+                  styele={{ border: "white", background: "white" }}
+                />
                 <AppointmentForm
                   overlayComponent={this.appointmentForm}
                   visible={editingFormVisible}
@@ -364,16 +371,33 @@ const mapDispatchToProps = (dispatch) => {
     postEvent: async (params) => await dispatch(postEventData(params)),
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
-    fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
+    fetchUserCalenders: async (params) =>
+      await dispatch(fetchUserCalenders(params)),
   };
 };
 
 const UserCalenders = ({ data }) => {
   const [open, setOpen] = React.useState(true);
+  const [selectedItem, setSelectedItem] = React.useState(0);
   const dispatch = useTypeDispatch();
   const app = useAppContext();
+  const [visible, setVisible] = React.useState(false);
+
+  const onHide = () => {
+    setVisible(false);
+  };
+
+  const handleClickOpen = () => {
+    setVisible(true);
+  };
+
   return (
     <Box sx={{ pb: open ? 2 : 0 }}>
+      <AddCalendar onHide={onHide} visible={visible}/>
+      <ListItemButton alignItems="flex-start" onClick={() => handleClickOpen()}>
+        <BsCalendarPlus/>
+        <ListItemText primary="Add calendar" sx={{ my: 0, pl: 2 }} />
+      </ListItemButton>
       <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
         <KeyboardArrowDown
           sx={{
@@ -385,8 +409,19 @@ const UserCalenders = ({ data }) => {
         <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
       </ListItemButton>
       {open &&
-        data?.map((item) => (
-          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }} onClick={() => dispatch(fetchEventsData({ app, id: item.id }))} >
+        data?.map((item, index) => (
+          <ListItemButton
+            style={{
+              background: selectedItem === index ? "#64B5F6" : "transparent",
+              color: selectedItem === index ? "white" : "black",
+            }}
+            key={item.id}
+            sx={{ py: 0, minHeight: 32 }}
+            onClick={() => {
+              setSelectedItem(index);
+              dispatch(fetchEventsData({ app, id: item.id }));
+            }}
+          >
             <ListItemText
               primary={item.name}
               primaryTypographyProps={{ ml: 2 }}

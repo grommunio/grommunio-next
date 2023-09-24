@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Event } from "microsoft-graph";
+import { Event, Calendar } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
 import {
@@ -11,9 +11,10 @@ import {
   patchEvent,
   postEvent,
   getUserCalendars,
+  patchUserCalendar
 } from "../api/calendar";
-import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA} from "./types";
-import { defaultFetchHandler, defaultPostHandler } from "./defaults";
+import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA, PATCH_CALENDAR_DATA} from "./types";
+import { defaultFetchHandler, defaultPostHandler,defaultPatchHandler  } from "./defaults";
 
 
 type calendarAppContext ={
@@ -115,3 +116,17 @@ function formatEvent(rawEvent: any): Event {
 export function fetchUserCalenders() {
   return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA)
 }
+
+type postCalendarDataParams = {
+  updateCalendar?: string; 
+  id?: string;
+};
+
+export function patchCalendarData({id,updateCalendar}: postCalendarDataParams) {
+  return defaultPatchHandler(patchUserCalendar, PATCH_CALENDAR_DATA, "updated", id,updateCalendar)
+}
+
+
+
+
+

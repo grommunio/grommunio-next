@@ -9,8 +9,8 @@ dayjs.extend(isBetweenPlugin);
 const CustomPickersDay = styled(PickersDay, {
   shouldForwardProp: (prop) =>
     !["dayIsBetween", "isFirstDay", "isLastDay"].includes(prop),
-})(({ theme, dayIsBetween, isFirstDay, isLastDay }) => ({
-  ...(dayIsBetween && !isFirstDay && !isLastDay &&{
+})(({ theme, dayIsBetween, isFirstDay, isLastDay,colorDay }) => ({
+  ...(dayIsBetween && colorDay &&{
     borderRadius:  "0" ,
     backgroundColor: "#64B5F6",
     color: theme.palette.common.white,
@@ -18,7 +18,7 @@ const CustomPickersDay = styled(PickersDay, {
       backgroundColor: "#2196F3",
     },
   }),
-  ...(isFirstDay && {
+  ...(isFirstDay && colorDay &&{
     borderTopLeftRadius: "50% !important",
     borderBottomLeftRadius: "50% !important",
     backgroundColor: "#64B5F6",
@@ -27,14 +27,9 @@ const CustomPickersDay = styled(PickersDay, {
       backgroundColor: "#2196F3",
     },
   }),
-  ...(isLastDay && {
+  ...(isLastDay && colorDay &&{
     borderTopRightRadius: "50% !important",
     borderBottomRightRadius: "50% !important",
-    backgroundColor: "#64B5F6",
-    color: theme.palette.common.white,
-    "&:hover, &:focus": {
-      backgroundColor: "#2196F3",
-    },
   }),
 }));
 
@@ -42,8 +37,8 @@ function isDayBetween(day, startDate, endDate) {
   return (
     dayjs(day).isBetween(startDate, endDate, null, "[]") ||
     (dayjs(day).isSame(startDate, "day") &&
-      dayjs(day).isBefore(endDate, "day")) ||
-    (dayjs(day).isSame(endDate, "day") && dayjs(day).isAfter(startDate, "day"))
+      dayjs(day).isBefore(endDate, "day")) 
+    // (dayjs(day).isSame(endDate, "day") && dayjs(day).isAfter(startDate, "day"))
   );
 }
 
@@ -74,6 +69,7 @@ export default function smallCallendarDay(props) {
   //   dayjs(day).isSame(element.startDate, 'day') &&
   //   dayjs(day).isSame(element.endDate, 'day')
   // );
+  const colorDay = false
 
   const customStyles = dayIsBetween ? { px: 2.5, mx: 0 } : {};
 
@@ -85,6 +81,7 @@ export default function smallCallendarDay(props) {
       dayIsBetween={dayIsBetween}
       isFirstDay={isFirstDay}
       isLastDay={isLastDay}
+      colorDay={colorDay}
       // isOneDayAppointment={isOneDayAppointment}
       // isSameDay={isSameDay}
     />
