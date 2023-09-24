@@ -42,7 +42,7 @@ import {
 } from "../../actions/calendar";
 import { Box, ListItemButton, ListItemText } from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
-import SmallCalendarDay from "./smallCallendar";
+import SmallCalendarDay from "./SmallCalendar";
 import AddCalendar from "./AddCalendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
 import { useTypeDispatch } from "../../store";
