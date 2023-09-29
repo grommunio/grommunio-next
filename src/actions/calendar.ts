@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Event } from "microsoft-graph";
+import { Event, Calendar } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
 import {
@@ -11,25 +11,40 @@ import {
   patchEvent,
   postEvent,
   getUserCalendars,
+  patchUserCalendar,
+  createUserCalendar,
+  deleteUserCalendar
 } from "../api/calendar";
-import { FETCH_EVENTS_DATA, POST_EVENT_DATA, PATCH_EVENT_DATA, FETCH_USER_CALENDER_DATA, FETCH_USER_CALENDERS_EVENTS_DATA } from "./types";
-import { defaultFetchHandler, defaultPostHandler } from "./defaults";
-
-
-type calendarAppContext ={
-  app:AppContext,
-  id?:string
-}
-export const fetchEventsData = createAsyncThunk<
-  Event[],
-  calendarAppContext
->(
+import {
   FETCH_EVENTS_DATA,
-  async ({app, id}: calendarAppContext) => {
+  POST_EVENT_DATA,
+  PATCH_EVENT_DATA,
+  FETCH_USER_CALENDER_DATA,
+  PATCH_CALENDAR_DATA,
+  POST_CALENDAR_DATA,
+} from "./types";
+import {
+  defaultFetchHandler,
+  defaultPostHandler,
+  defaultPatchHandler,
+  defaultDeleteHandler
+} from "./defaults";
+
+type calendarAppContext = {
+  app: AppContext;
+  id?: string;
+};
+export const fetchEventsData = createAsyncThunk<Event[], calendarAppContext>(
+  FETCH_EVENTS_DATA,
+  async ({ app, id }: calendarAppContext) => {
     if (app.user) {
       try {
         const ianaTimeZones = findIana(app.user?.timeZone!);
-        const events = await getUserWeekCalendar(app.authProvider!, ianaTimeZones[0].valueOf(),id);
+        const events = await getUserWeekCalendar(
+          app.authProvider!,
+          ianaTimeZones[0].valueOf(),
+          id
+        );
         return events;
       } catch (err) {
         const error = err as Error;
@@ -41,56 +56,53 @@ export const fetchEventsData = createAsyncThunk<
 );
 
 type postEventDataParams = {
-  event: Event,
-}
+  event: Event;
+};
 export function postEventData(event: Event) {
-  return defaultPostHandler(postEvent, POST_EVENT_DATA, ...[formatEvent(event)])
+  return defaultPostHandler(
+    postEvent,
+    POST_EVENT_DATA,
+    ...[formatEvent(event)]
+  );
 }
 
 export const patchEventData = createAsyncThunk<
   Event | boolean,
   postEventDataParams
->(
-  PATCH_EVENT_DATA,
-  async ({ event }: postEventDataParams) => {
-    try {
-      const res = await patchEvent(formatEvent(event));
-      return res;
-    } catch (err) {
-      const error = err as Error;
-      console.error(error);
-      return false;
-    }
+>(PATCH_EVENT_DATA, async ({ event }: postEventDataParams) => {
+  try {
+    const res = await patchEvent(formatEvent(event));
+    return res;
+  } catch (err) {
+    const error = err as Error;
+    console.error(error);
     return false;
   }
-);
-
+  return false;
+});
 
 type deleteEventDataParams = {
-  eventId: string,
-}
+  eventId: string;
+};
 
 export const deleteEventData = createAsyncThunk<
   Event | boolean,
   deleteEventDataParams
->(
-  PATCH_EVENT_DATA,
-  async ({ eventId }: deleteEventDataParams) => {
-    try {
-      const res = await deleteEvent(eventId);
-      return res;
-    } catch (err) {
-      const error = err as Error;
-      console.error(error);
-      return false;
-    }
+>(PATCH_EVENT_DATA, async ({ eventId }: deleteEventDataParams) => {
+  try {
+    const res = await deleteEvent(eventId);
+    return res;
+  } catch (err) {
+    const error = err as Error;
+    console.error(error);
     return false;
   }
-);
-
+  return false;
+});
 
 function formatEvent(rawEvent: any): Event {
-  const { id, subject, location, notes, startDate, endDate } = rawEvent;
+  const { id, subject, location, notes, startDate, endDate, timezone } =
+    rawEvent;
   return {
     id,
     subject,
@@ -100,11 +112,11 @@ function formatEvent(rawEvent: any): Event {
     },
     start: {
       dateTime: startDate,
-      timeZone: 'Europe/Berlin'  // TODO: Remove hardcoded timezone
+      timeZone: "America/Los_Angeles", // TODO: Remove hardcoded timezone
     },
     end: {
       dateTime: endDate,
-      timeZone: 'Europe/Berlin'  // TODO: Remove hardcoded timezone
+      timeZone: "America/Los_Angeles", // TODO: Remove hardcoded timezone
     },
     location: {
       displayName: location,
@@ -113,7 +125,36 @@ function formatEvent(rawEvent: any): Event {
 }
 
 export function fetchUserCalenders() {
-  return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA)
+  return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA);
 }
 
+type CalendarDataParams = {
+  updateCalendar?: string;
+  id?: string;
+};
 
+export function patchCalendarData({ id, updateCalendar }: CalendarDataParams) {
+  return defaultPatchHandler(
+    patchUserCalendar,
+    PATCH_CALENDAR_DATA,
+    "updated sucessfully",
+    id,
+    updateCalendar
+  );
+}
+
+export function postUserCalendar(calendarName: string) {
+  return defaultPostHandler(
+    createUserCalendar,
+    POST_CALENDAR_DATA,
+    calendarName
+  );
+}
+
+export function deleteCalendarData(id: string) {
+  return defaultDeleteHandler(
+    deleteUserCalendar,
+    PATCH_CALENDAR_DATA,
+    id
+  );
+}

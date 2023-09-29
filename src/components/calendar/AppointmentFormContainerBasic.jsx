@@ -24,20 +24,13 @@ import moment from "moment";
 import LanguageIcon from "@mui/icons-material/Language";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import RepeatIcon from "@mui/icons-material/Repeat";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import ImageIcon from "@mui/icons-material/Image";
-import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
-import TextFormatIcon from "@mui/icons-material/TextFormat";
-import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import FactCheckIcon from "@mui/icons-material/FactCheck";
 import Tooltip from "@mui/material/Tooltip";
-import ComputerIcon from "@mui/icons-material/Computer";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import CloudIcon from "@mui/icons-material/Cloud";
 import IconButton from "@mui/material/IconButton";
 import Close from "@mui/icons-material/Close";
-import { zonedTimeToUtc } from "date-fns-tz";
+import ReactQuill from "react-quill";
+import 'react-quill/dist/quill.snow.css';
+import 'moment-timezone';
 
 const PREFIX = "Demo";
 const classes = {
@@ -53,7 +46,6 @@ const classes = {
   addButton: `${PREFIX}-addButton`,
   circleFilled: `${PREFIX}-circleFilled`,
   dropdown: `${PREFIX}-dropdown`,
-  textFieldfooter: `${PREFIX}-textFieldfooter`,
   smallcircle: `${PREFIX}-smallcircle`,
   flexRow: `${PREFIX}-flexRow`,
   customSelect: `${PREFIX}-customSelect`,
@@ -61,6 +53,7 @@ const classes = {
   attachmentDropdownlist: `${PREFIX}-attachmentDropdownlist`,
 };
 
+let pickerSize = false;
 const StyledDiv = styled("div")(({ theme }) => ({
   [`& .${classes.icon}`]: {
     marginRight: theme.spacing(2),
@@ -77,7 +70,7 @@ const StyledDiv = styled("div")(({ theme }) => ({
     paddingTop: 0,
   },
   [`& .${classes.picker}`]: {
-    width: "200px",
+    width: pickerSize ? "400px" : "200px",
   },
   [`& .${classes.wrapper}`]: {
     display: "flex",
@@ -107,12 +100,6 @@ const StyledDiv = styled("div")(({ theme }) => ({
   [`& .${classes.dropdown}`]: {
     position: "absolute",
   },
-  [`& .${classes.textFieldfooter}`]: {
-    background: "#1976D2",
-    marginTop: "-2px",
-    display: "flex",
-    borderRadius: "0 0 3px 3px",
-  },
   [`& .${classes.smallcircle}`]: {
     width: "15px",
     height: "15px",
@@ -128,8 +115,8 @@ const StyledDiv = styled("div")(({ theme }) => ({
     padding: "10px 5px",
     fontSize: "17px",
     cursor: "pointer",
-    overflow: "hidden",
-    outline: 'none'
+    outline: 'none',
+    fontWeight: "500"
   },
   [`& .${classes.attachmentDropdown}`]: {
     position: "absolute",
@@ -206,7 +193,13 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       anchorEl: null,
       selectedOption: "",
       attachment: null,
+      selectedTimezone: moment.tz.guess(),
+      timezones: moment.tz.names(),
+      ButtonSwitch: true,
+      showCustomItem: true,
+      selectedStartDate: null,
     };
+
 
     this.getAppointmentData = () => {
       const { appointmentData } = this.props;
@@ -219,6 +212,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
 
     this.changeAppointment = this.changeAppointment.bind(this);
     this.commitAppointment = this.commitAppointment.bind(this);
+
+    this.editorRef = React.createRef();
   }
 
   changeAppointment({ field, changes }) {
@@ -243,14 +238,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       appointmentChanges: {},
     });
   }
-
-  componentDidUpdate() {
-    console.log(">> List of Supported Timezones:",zonedTimeToUtc);
-    // allTimeZones.forEach((timezone, index) => {
-    //   console.log(`>>${index + 1}. ${timezone}`);
-    // });
-  }
-
   render() {
     const {
       visible,
@@ -259,7 +246,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       cancelAppointment,
       onHide,
     } = this.props;
-    const { appointmentChanges, anchorEl, selectedOption, attachment } =
+    const { appointmentChanges, anchorEl, selectedOption, selectedTimezone, timezones, ButtonSwitch, selectedStartDate } =
       this.state;
 
     const displayAppointmentData = {
@@ -272,11 +259,13 @@ class AppointmentFormContainerBasic extends React.PureComponent {
 
     const textEditorProps = (field) => ({
       variant: "outlined",
-      onChange: ({ target: change }) =>
+      onChange: (event) => {
+        const newValue = event.target.value;
         this.changeAppointment({
           field: [field],
-          changes: change.value,
-        }),
+          changes: newValue,
+        });
+      },
       value: displayAppointmentData[field] || "",
       placeholder: field[0].toUpperCase() + field.slice(1),
       className: classes.textField,
@@ -286,39 +275,37 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       this.setState({ anchorEl: event.currentTarget });
     };
 
-    const handleClicktwo = () => {
-      this.setState({ attachment: !attachment });
-    };
-
     const handleOptionClick = (option) => () => {
       this.setState({ selectedOption: option, anchorEl: null });
     };
 
     const getDateOrTime = (date, field_name, get_for_field_name) => {
       if (field_name === get_for_field_name) {
-        return date
+        return date;
       }
-      let currentDate = displayAppointmentData[get_for_field_name] || undefined
-      return moment(currentDate)
-    }
+      let currentDate = displayAppointmentData[get_for_field_name] || undefined;
+      return moment(currentDate);
+    };
 
+    const dateDefaultValue = !ButtonSwitch ? moment() : null
     const pickerEditorProps = (field) => {
       return {
-        // keyboard: true,
-        // value: displayAppointmentData[field],
         onChange: (date) => {
           let currentDate;
           let currentTime;
-
           if (field == "endDate" || field == "endTime") {
             currentDate = getDateOrTime(date, field, "endDate");
             currentTime = getDateOrTime(date, field, "endTime");
-          }
-          else {
+          } else {
             currentDate = getDateOrTime(date, field, "startDate");
             currentTime = getDateOrTime(date, field, "startTime");
+            this.setState({ selectedStartDate: date });
+
           }
-          let newDateTime = moment(currentDate.format("YYYYMMDD") + currentTime.format("hhmm"), "YYYYMMDDhhmm");
+          let newDateTime = moment(
+            currentDate.format("YYYYMMDD") + currentTime.format("hhmm"),
+            "YYYYMMDDhhmm"
+          ).tz(selectedTimezone)
 
           this.changeAppointment({
             field: [field],
@@ -326,12 +313,11 @@ class AppointmentFormContainerBasic extends React.PureComponent {
           });
         },
         ampm: false,
-        inputFormat: "DD/MM/YYYY",
         onError: () => null,
         className: classes.picker,
+        minDate: field === "endDate" ? selectedStartDate : undefined,
       };
     };
-
     const startTimePickerProps = pickerEditorProps("startTime");
     const endTimePickerProps = pickerEditorProps("endTime");
     const startDatePickerProps = pickerEditorProps("startDate");
@@ -345,25 +331,25 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       cancelAppointment();
     };
 
-    const ActionButton = ({
-      classes,
-      children,
-      color,
-      tooltip,
-      ...childProps
-    }) => {
-      return (
-        <Tooltip title={tooltip} arrow placement="top">
-          <Button
-            color={color || "inherit"}
-            style={color ? undefined : { color: "white" }} // Can't be part of the class, because it would affect primary buttons too
-            {...childProps}
-          >
-            {children}
-          </Button>
-        </Tooltip>
-      );
-    };
+    const timezoneHandlechange = (event) => {
+      this.setState({ selectedTimezone: event.target.value })
+    }
+
+    const handleSwitch = () => {
+      this.setState({ ButtonSwitch: !ButtonSwitch });
+      pickerSize = !pickerSize
+
+      this.changeAppointment({
+        "startDate":"startDate",
+        changes: dateDefaultValue,
+      });
+
+      this.changeAppointment({
+        "endDate": "endDate",
+        changes: dateDefaultValue,
+      });
+
+    }
 
     return (
       <Dialog open={visible} onClose={onHide} maxWidth="md" fullWidth={true}>
@@ -426,7 +412,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               <Close color="action" />
             </IconButton>
           </DialogTitle>
-          <DialogContent>
+          <DialogContent style={{ paddingBottom: '70px' }}>
             <div className={classes.content}>
               <div className={classes.flexRow}>
                 <Create className={classes.icon} color="action" />
@@ -453,13 +439,11 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   <div>
                     <div
                       className={classes.flexRow}
-                      style={{ justifyContent: "center", alignItems: "center" }}
                     >
-                      <DatePicker {...startDatePickerProps} />
-                      <TimePicker {...startTimePickerProps} />
-                      <AntSwitch inputProps={{ "aria-label": "ant design" }} />
-                      <span>All day</span>
-                      <div className={classes.wrapper}>
+                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue}/>
+                      {ButtonSwitch && <TimePicker {...startTimePickerProps} />}
+                      <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
+                      {ButtonSwitch && <div className={classes.wrapper}>
                         <label htmlFor="Timezone">
                           <LanguageIcon style={{ color: "#177ddc" }} />
                         </label>
@@ -467,16 +451,22 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                           name="Timezone"
                           id="Timezone"
                           className={classes.customSelect}
+                          style={{ width: '160px' }}
+                          value={selectedTimezone}
+                          onChange={timezoneHandlechange}
                         >
-                          <option>
-                            Timezone
-                          </option>
+                          <option value={moment.tz.guess()}>{moment.tz.guess()}</option>
+                          {timezones && timezones.map((timezone, index) => (
+                            <option key={index} value={timezone}>
+                              {timezone}
+                            </option>
+                          ))}
                         </select>
-                      </div>
+                      </div>}
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker {...endDatePickerProps} />
-                      <TimePicker {...endTimePickerProps} />
+                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue}/>
+                      {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">
                           <RepeatIcon style={{ color: "#177ddc" }} />
@@ -540,75 +530,19 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               </div>
               <div className={classes.flexRow}>
                 <Notes className={classes.icon} color="action" />
-                <div className={classes.textField}>
-                  <TextField {...textEditorProps("notes")} multiline rows="4" />
-                  <div className={classes.textFieldfooter}>
-                    <div>
-                      <ActionButton
-                        tooltip="Attach"
-                        key={1}
-                        endIcon={<KeyboardArrowDownIcon color={"white"} />}
-                        onClick={handleClicktwo}
-                      >
-                        <AttachFileIcon color={"white"} />
-                      </ActionButton>
-                      {attachment && (
-                        <ul
-                          onClick={handleClicktwo}
-                          className={classes.attachmentDropdown}
-                        >
-                          <span style={{ color: "#177ddc" }}>Attach from</span>
-                          <li className={classes.attachmentDropdownlist}>
-                            <ComputerIcon style={{ color: "#177ddc" }} /> Browse
-                            this computer
-                          </li>
-                          <li className={classes.attachmentDropdownlist}>
-                            <CloudIcon style={{ color: "#177ddc" }} />
-                            OneDrive
-                          </li>
-                          <li className={classes.attachmentDropdownlist}>
-                            <CloudUploadIcon style={{ color: "#177ddc" }} />{" "}
-                            Upload and share
-                          </li>
-                        </ul>
-                      )}
-                    </div>
-                    <ActionButton
-                      key={2}
-                      tooltip="Insert picture inline"
-                    // onClick={() => setCalenderView("Day")}
-                    >
-                      <ImageIcon color={"white"} />
-                    </ActionButton>
-                    <ActionButton
-                      tooltip="Insert emojis and GIFs"
-                      key={3}
-                    // onClick={() => setCalenderView("Day")}
-                    >
-                      <EmojiEmotionsIcon color={"white"} />
-                    </ActionButton>
-                    <ActionButton
-                      tooltip="Show Formatting options"
-                      key={4}
-                    // onClick={() => setCalenderView("Day")}
-                    >
-                      <TextFormatIcon color={"white"} />
-                    </ActionButton>
-                    <ActionButton
-                      tooltip="Show Formatting options"
-                      key={5}
-                    // onClick={() => setCalenderView("Day")}
-                    >
-                      <DriveFileRenameOutlineIcon color={"white"} />
-                    </ActionButton>
-                    <ActionButton
-                      tooltip="Check for accessibility issues"
-                      key={6}
-                    // onClick={() => setCalenderView("Day")}
-                    >
-                      <FactCheckIcon color={"white"} />
-                    </ActionButton>
-                  </div>
+                <div>
+                  <ReactQuill {...textEditorProps("notes")} theme="snow" style={{ height: '200px' }} modules={{
+                    toolbar: [
+                      [{ font: [] }],
+                      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ color: [] }, { background: [] }],
+                      [{ script: "sub" }, { script: "super" }],
+                      ["blockquote", "code-block"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link", "image", "video"],
+                    ],
+                  }} />
                 </div>
               </div>
             </div>
@@ -618,5 +552,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     );
   }
 }
+
 
 export default AppointmentFormContainerBasic;
