@@ -138,8 +138,8 @@ function ShareCalendar(props) {
             <List>
               <ListItem
                 secondaryAction={
-                  <IconButton edge="end" aria-label="delete">
-                    <DeleteIcon onClick={handleClose} />
+                  <IconButton edge="end" aria-label="delete" onClick={handleClose}>
+                    <DeleteIcon  />
                   </IconButton>
                 }
               >

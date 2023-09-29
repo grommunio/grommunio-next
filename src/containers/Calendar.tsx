@@ -107,7 +107,7 @@ function Calendar({ t, classes }: any) {
     <AuthenticatedView
       header={t("Calendar")}
       actions={[
-        <nav className={classes.nav}>
+        <nav className={classes.nav} key={1}>
           <div className={classes.iconButtondiv}>
             <IconButton
               onClick={() => SetShowCalenderSidebar(!showCalenderSidebar)}
@@ -121,6 +121,7 @@ function Calendar({ t, classes }: any) {
                 className={classes.dropdown}
                 style={{ border: 'none' }}
                 onChange={handleOptionChange}>
+                  hello
                 {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <option className={classes.dropdownOption} value={x} key={index}>Day {x}</option>)}
               </select>
             </div>
@@ -150,14 +151,14 @@ function Calendar({ t, classes }: any) {
           </div>
           <div className="left-items">
             <ActionButton
-              key={5}
+              key={4}
               startIcon={<IosShareIcon color={"secondary"} />}
               onClick={handleClickOpen}
             >
               Share
             </ActionButton>
             <ReactToPrint
-              trigger={() => <ActionButton key={6} startIcon={<PrintIcon color={"secondary"} />}>
+              trigger={() => <ActionButton key={5} startIcon={<PrintIcon color={"secondary"} />}>
                 Print
               </ActionButton>}
               content={() => componentRef.current}

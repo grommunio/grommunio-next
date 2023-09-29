@@ -14,7 +14,7 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
 import { Event } from "microsoft-graph";
 import { graphClient } from "./utils";
-import axios from 'axios';
+import axios from "axios";
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(
@@ -90,7 +90,6 @@ export async function deleteEvent(event: string): Promise<Event> {
   return await graphClient!.api("/me/events/" + event).delete();
 }
 
-
 export async function getUserCalendars(): Promise<Event[]> {
   const response: PageCollection = await graphClient!
     .api("/me/calendars")
@@ -98,15 +97,21 @@ export async function getUserCalendars(): Promise<Event[]> {
   return response.value;
 }
 
-export async function patchUserCalendar(id?: string, calendar?: string): Promise<Event[]> {
+export async function patchUserCalendar(
+  id?: string,
+  calendar?: string
+): Promise<Event[]> {
   return await graphClient!.api(`/me/calendars/${id}`).patch({
-    "name": calendar
-  });     
+    name: calendar,
+  });
 }
 
+export async function createUserCalendar(calendarName: string): Promise<Event> {
+  return await graphClient!.api("/me/calendars/").post({
+    name: calendarName,
+  });
+}
 
-
-
-
-
-
+export async function deleteUserCalendar(id?: string): Promise<Event> {
+  return await graphClient!.api(`/me/calendars/${id}`).delete();
+}
