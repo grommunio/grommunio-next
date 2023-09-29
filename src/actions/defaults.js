@@ -6,9 +6,10 @@ import { pushAlertStack } from "./alerts";
 export function defaultPostHandler(endpoint, actionType, ...endpointProps) {
   return async (dispatch) => {
     try {
+      const dataProps = [...endpointProps]
       const data = await endpoint(...endpointProps);
-      if(actionType) await dispatch({ type: actionType, payload: data });
-      await dispatch(pushAlertStack());
+      if(actionType) await dispatch({ type: actionType, payload: data ? data : dataProps });
+      await dispatch(pushAlertStack({message:"created successfully"}));
       return data;
     } catch (error) {
       await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
@@ -35,7 +36,7 @@ export function defaultDeleteHandler(endpoint, actionType, id, ...endpointProps)
     try {
       await endpoint(id, ...endpointProps);
       if(actionType) await dispatch({ type: actionType, payload: id });
-      await dispatch(pushAlertStack());
+      await dispatch(pushAlertStack({message:"deleted successfully"}));
       return true;
     } catch (error) {
       await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
@@ -49,7 +50,7 @@ export function defaultPatchHandler(endpoint, actionType, suppressAlert, ...endp
     try {
       const resp = await endpoint(...endpointParams);
       if(actionType) await dispatch({ type: actionType, payload: resp });
-      if(!suppressAlert) await dispatch(pushAlertStack());
+      if(suppressAlert) await dispatch(pushAlertStack({message:"updated successfully"}));
       return resp;
     } catch(error) {
       await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));

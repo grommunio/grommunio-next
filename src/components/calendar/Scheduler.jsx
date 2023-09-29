@@ -17,7 +17,6 @@ import {
   DragDropProvider,
   EditRecurrenceMenu,
   AllDayPanel,
-  TodayButton,
   DateNavigator,
 } from "@devexpress/dx-react-scheduler-material-ui";
 import { connectProps } from "@devexpress/dx-react-core";
@@ -31,6 +30,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
+import { BsCalendarPlus } from "react-icons/bs";
 import { connect } from "react-redux";
 import {
   deleteEventData,
@@ -38,13 +38,28 @@ import {
   postEventData,
   fetchUserCalenders,
   fetchEventsData,
+  deleteCalendarData,
 } from "../../actions/calendar";
-import { Box, ListItemButton, ListItemText } from "@mui/material";
+import {
+  Box,
+  ListItemButton,
+  ListItemText,
+  List,
+  ListItem,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+} from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
-import smallCallendarDay from "./smallCallendar";
+import SmallCalendarDay from "./SmallCalendar";
+import AddandEditCalendar from "./AddandEditCalendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
 import { useTypeDispatch } from "../../store";
 import { useAppContext } from "../../azure/AppContext";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
 
 const PREFIX = "Demo";
 const classes = {
@@ -91,7 +106,7 @@ class ScheduleCalendar extends React.PureComponent {
       smallcallendarvalue: new Date(),
     };
 
-
+    this.componentRef = React.createRef();
     this.toggleConfirmationVisible = this.toggleConfirmationVisible.bind(this);
     this.commitDeletedAppointment = this.commitDeletedAppointment.bind(this);
     this.toggleEditingFormVisibility =
@@ -138,7 +153,7 @@ class ScheduleCalendar extends React.PureComponent {
 
   componentDidUpdate() {
     if (this.props.events !== this.state.eventProps) {
-      this.setState({eventProps: this.props.events, data: this.props.events,});
+      this.setState({ eventProps: this.props.events, data: this.props.events });
     }
     this.appointmentForm.update();
   }
@@ -231,9 +246,8 @@ class ScheduleCalendar extends React.PureComponent {
       6: [0],
       7: [],
       workWeek: [0, 6],
-      // Add more mappings for other values of numberOfDays if needed
     };
-  
+
     return dayMappings[numberOfDays] || [];
   };
 
@@ -247,7 +261,6 @@ class ScheduleCalendar extends React.PureComponent {
       endDayHour,
     } = this.state;
 
-     
     return (
       <Paper sx={{ flex: 1 }}>
         <Grid container spacing={2} height="100%">
@@ -255,7 +268,7 @@ class ScheduleCalendar extends React.PureComponent {
             <Grid item xs={3}>
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DateCalendar
-                  slots={{ day: smallCallendarDay }}
+                  slots={{ day: SmallCalendarDay }}
                   slotProps={{
                     day: {
                       appointments: data,
@@ -269,40 +282,44 @@ class ScheduleCalendar extends React.PureComponent {
           )}
 
           <Grid item xs={this.props.showSideBar ? 9 : 12}>
-            <Scheduler data={data}>
-              <ViewState
-                currentDate={currentDate}
-                currentViewName={this.props.calenderView}
-              />
-              <EditingState
-                onCommitChanges={this.commitChanges}
-                onEditingAppointmentChange={this.onEditingAppointmentChange}
-                onAddedAppointmentChange={this.onAddedAppointmentChange}
-              />
-              <DayView />
-              <WeekView startDayHour={startDayHour} endDayHour={endDayHour} excludedDays={this.excludedDays(this.props.selectDays)}/>
-              {/* <WorkWeekView  startDayHour={startDayHour} endDayHour={endDayHour} /> */}
-              <StyledTable>
-                <MonthView />
-              </StyledTable>
-              <AllDayPanel />
-              <EditRecurrenceMenu />
-              <Appointments />
-              <AppointmentTooltip
-                showOpenButton
-                showCloseButton
-                showDeleteButton
-              />
-              <Toolbar />
-              <DateNavigator />
-              <TodayButton styele={{border:'white', background:'white'}}/>
-              <AppointmentForm
-                overlayComponent={this.appointmentForm}
-                visible={editingFormVisible}
-                onVisibilityChange={this.toggleEditingFormVisibility}
-              />
-              <DragDropProvider />
-            </Scheduler>
+            <div ref={this.props.componentRef}>
+              <Scheduler data={data}>
+                <ViewState
+                  currentDate={currentDate}
+                  currentViewName={this.props.calenderView}
+                />
+                <EditingState
+                  onCommitChanges={this.commitChanges}
+                  onEditingAppointmentChange={this.onEditingAppointmentChange}
+                  onAddedAppointmentChange={this.onAddedAppointmentChange}
+                />
+                <DayView />
+                <WeekView
+                  startDayHour={startDayHour}
+                  endDayHour={endDayHour}
+                  excludedDays={this.excludedDays(this.props.selectDays)}
+                />
+                <StyledTable>
+                  <MonthView />
+                </StyledTable>
+                <AllDayPanel />
+                <EditRecurrenceMenu />
+                <Appointments />
+                <AppointmentTooltip
+                  showOpenButton
+                  showCloseButton
+                  showDeleteButton
+                />
+                <Toolbar />
+                <DateNavigator />
+                <AppointmentForm
+                  overlayComponent={this.appointmentForm}
+                  visible={editingFormVisible}
+                  onVisibilityChange={this.toggleEditingFormVisibility}
+                />
+                <DragDropProvider />
+              </Scheduler>
+            </div>
           </Grid>
         </Grid>
 
@@ -357,22 +374,66 @@ const mapStateToProps = (state) => {
     calendar: calendar.calendar,
   };
 };
-
+deleteCalendarData;
 const mapDispatchToProps = (dispatch) => {
   return {
     postEvent: async (params) => await dispatch(postEventData(params)),
     patchEvent: async (params) => await dispatch(patchEventData(params)),
     deleteEvent: async (params) => await dispatch(deleteEventData(params)),
-    fetchUserCalenders: async (params) => await dispatch(fetchUserCalenders(params)),
+    fetchUserCalenders: async (params) =>
+      await dispatch(fetchUserCalenders(params)),
   };
 };
 
 const UserCalenders = ({ data }) => {
   const [open, setOpen] = React.useState(true);
+  const [selectedItem, setSelectedItem] = React.useState(0);
   const dispatch = useTypeDispatch();
   const app = useAppContext();
+  const [visible, setVisible] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [switchside, setSwitchside] = React.useState(null);
+  const [calendar, setCalendarId] = React.useState({id:"",name:""});
+
+  const open2 = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const onHide = () => {
+    setVisible(false);
+  };
+
+  const handleClickOpen = () => {
+    setVisible(true);
+    setSwitchside(true);
+  };
+
+  const handleClickOpen2 = (id,name) => {
+    setVisible(true);
+    setSwitchside(false);
+    handleClose();
+    setCalendarId({id,name});
+  };
+
+  const {id, name} = calendar;
+
   return (
     <Box sx={{ pb: open ? 2 : 0 }}>
+      <AddandEditCalendar
+        onHide={onHide}
+        visible={visible}
+        switchside={switchside}
+        id={id}
+        name={name}
+      />
+      <ListItemButton alignItems="flex-start" onClick={() => handleClickOpen()}>
+        <BsCalendarPlus />
+        <ListItemText primary="Add calendar" sx={{ my: 0, pl: 2 }} />
+      </ListItemButton>
       <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
         <KeyboardArrowDown
           sx={{
@@ -383,15 +444,111 @@ const UserCalenders = ({ data }) => {
         />
         <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
       </ListItemButton>
-      {open &&
-        data?.map((item) => (
-          <ListItemButton key={item.id} sx={{ py: 0, minHeight: 32 }} onClick={() => dispatch(fetchEventsData({app, id:item.id}))} >
-            <ListItemText
-              primary={item.name}
-              primaryTypographyProps={{ ml: 2 }}
-            />
-          </ListItemButton>
-        ))}
+      <List>
+        {open &&
+          data?.map((item, index) => (
+            <ListItem
+              key={item.id}
+              style={{
+                background: selectedItem === index ? "#64B5F6" : "transparent",
+                color: selectedItem === index ? "white" : "black",
+                height: 38,
+                // padding: 0
+              }}
+              secondaryAction={
+                selectedItem === index &&
+                item.isDisabled && (
+                  <span>
+                    <IconButton
+                      aria-label="more"
+                      id="long-button"
+                      aria-controls={open ? "long-menu" : undefined}
+                      aria-expanded={open ? "true" : undefined}
+                      aria-haspopup="true"
+                      onClick={handleClick}
+                      edge="end"
+                      style={{ color: "white" }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                    <Menu
+                      MenuListProps={{
+                        "aria-labelledby": "long-button",
+                      }}
+                      anchorEl={anchorEl}
+                      open={open2}
+                      onClose={handleClose}
+                      id="account-menu"
+                      transformOrigin={{
+                        horizontal: "left",
+                        vertical: "bottom",
+                      }}
+                      anchorOrigin={{ horizontal: "left", vertical: "top" }}
+                      PaperProps={{
+                        elevation: 0,
+                        sx: {
+                          overflow: "visible",
+                          filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                          mt: 1.5,
+                          "& .MuiAvatar-root": {
+                            width: 32,
+                            height: 32,
+                            ml: -0.5,
+                            mr: 1,
+                          },
+                          "&:before": {
+                            content: '""',
+                            display: "block",
+                            position: "absolute",
+                            top: 0,
+                            right: 14,
+                            width: 10,
+                            height: 10,
+                            bgcolor: "background.paper",
+                            transform: "translateY(-50%) rotate(45deg)",
+                            zIndex: 0,
+                          },
+                        },
+                      }}
+                    >
+                      <MenuItem onClick={handleClose}>
+                        <span
+                          onClick={() =>
+                            dispatch(deleteCalendarData(item.id))
+                          }
+                        >
+                          <IconButton>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                          Delete
+                        </span>
+                      </MenuItem>
+                      <MenuItem onClick={() => handleClickOpen2(item.id,item.name)}>
+                        <ListItemIcon>
+                          <EditIcon fontSize="small" />
+                        </ListItemIcon>
+                        Edit
+                      </MenuItem>
+                    </Menu>
+                  </span>
+                )
+              }
+            >
+              <ListItemButton
+                sx={{ py: 0, minHeight: 32 }}
+                onClick={() => {
+                  setSelectedItem(index);
+                  dispatch(fetchEventsData({ app, id: item.id }));
+                }}
+              >
+                <ListItemText
+                  primary={item.name}
+                  primaryTypographyProps={{ ml: 2 }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+      </List>
     </Box>
   );
 };
