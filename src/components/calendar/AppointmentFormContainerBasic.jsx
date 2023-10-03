@@ -31,6 +31,7 @@ import Close from "@mui/icons-material/Close";
 import ReactQuill from "react-quill";
 import 'react-quill/dist/quill.snow.css';
 import 'moment-timezone';
+import CircleIcon from '@mui/icons-material/Circle';
 
 const PREFIX = "Demo";
 const classes = {
@@ -46,7 +47,6 @@ const classes = {
   addButton: `${PREFIX}-addButton`,
   circleFilled: `${PREFIX}-circleFilled`,
   dropdown: `${PREFIX}-dropdown`,
-  smallcircle: `${PREFIX}-smallcircle`,
   flexRow: `${PREFIX}-flexRow`,
   customSelect: `${PREFIX}-customSelect`,
   attachmentDropdown: `${PREFIX}-attachmentDropdown`,
@@ -83,7 +83,6 @@ const StyledDiv = styled("div")(({ theme }) => ({
     padding: theme.spacing(0, 2),
   },
   [`& .${classes.button}`]: {
-    background: "#1976D2",
     marginRight: "30px",
   },
   [`& .${classes.flexRow}`]: {
@@ -99,15 +98,6 @@ const StyledDiv = styled("div")(({ theme }) => ({
   },
   [`& .${classes.dropdown}`]: {
     position: "absolute",
-  },
-  [`& .${classes.smallcircle}`]: {
-    width: "15px",
-    height: "15px",
-    backgroundColor: "#1976D2",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
   },
   [`& .${classes.customSelect}`]: {
     border: "none",
@@ -160,7 +150,7 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
       color: "#fff",
       "& + .MuiSwitch-track": {
         opacity: 1,
-        backgroundColor: theme.palette.mode === "dark" ? "#177ddc" : "#1890ff",
+        backgroundColor: theme.palette.mode === "dark" && "#177ddc",
       },
     },
   },
@@ -359,7 +349,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               {!isNewAppointment && (
                 <Button
                   variant="outlined"
-                  color="secondary"
+                  color="primary"
                   className={classes.button}
                   onClick={() => {
                     visibleChange();
@@ -386,7 +376,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   aria-haspopup="true"
                   onClick={handleClick}
                   endIcon={<KeyboardArrowDownIcon />}
-                  startIcon={<span className={classes.smallcircle} />}
+                  startIcon={<CircleIcon color="primary"/>}
                   style={{ color: "black" }}
                 >
                   {selectedOption ? selectedOption : "Calender"}
@@ -445,7 +435,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
                       {ButtonSwitch && <div className={classes.wrapper}>
                         <label htmlFor="Timezone">
-                          <LanguageIcon style={{ color: "#177ddc" }} />
+                          <LanguageIcon color='primary'/>
                         </label>
                         <select
                           name="Timezone"
@@ -469,7 +459,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">
-                          <RepeatIcon style={{ color: "#177ddc" }} />
+                          <RepeatIcon color='primary' />
                         </label>
                         <select
                           name="Repeat"

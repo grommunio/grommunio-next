@@ -5,6 +5,11 @@ import { teal } from "@mui/material/colors";
 import grey from "../colors/grey";
 import defaultStyles from "./defaultStyles";
 
+const teal1 = {
+  500: "#67b7b0",
+};
+
+
 const tealTheme = mode => ({
   components: {
     ...defaultStyles(mode),
@@ -35,6 +40,20 @@ const tealTheme = mode => ({
         },
       },
     },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            background: `linear-gradient(150deg, ${teal['500']}, ${teal['800']})`,
+            color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
+          },
+        },
+      },
+    },
     MuiListItem: {
       styleOverrides: {
         root: {
@@ -48,7 +67,7 @@ const tealTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: teal,
+    primary: teal1,
     secondary: grey,
     ...(mode === 'light' ?
       {

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
-
 import blue from "../colors/blue";
 import grey from "../colors/grey";
 import red from "../colors/red";
@@ -21,7 +20,7 @@ const grommunioTheme = mode => ({
     MuiToolbar: {
       styleOverrides: {
         root: {
-          backgroundImage: 'linear-gradient(150deg, rgb(0, 159, 253), rgb(42, 42, 114))',
+          backgroundImage: 'linear-gradient(150deg, #1D4B99, #0985DE)',
         },
       },
     },

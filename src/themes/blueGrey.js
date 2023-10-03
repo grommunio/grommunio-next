@@ -5,6 +5,12 @@ import { blueGrey } from "@mui/material/colors";
 import grey from "../colors/grey";
 import defaultStyles from "./defaultStyles";
 
+
+const blueGrey1 = {
+  500: "#98bdcf",
+};
+
+
 const blueGreyTheme = mode => ({
   components: {
     ...defaultStyles(mode),
@@ -35,6 +41,20 @@ const blueGreyTheme = mode => ({
         },
       },
     },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            background: `linear-gradient(150deg, ${blueGrey['500']}, ${blueGrey['800']})`,
+            color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
+          },
+        },
+      },
+    },
     MuiListItem: {
       styleOverrides: {
         root: {
@@ -48,7 +68,7 @@ const blueGreyTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: blueGrey,
+    primary: blueGrey1,
     secondary: grey,
     ...(mode === 'light' ?
       {

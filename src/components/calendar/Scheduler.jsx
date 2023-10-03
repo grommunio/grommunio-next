@@ -45,7 +45,6 @@ import {
   ListItemButton,
   ListItemText,
   List,
-  ListItem,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -349,7 +348,7 @@ class ScheduleCalendar extends React.PureComponent {
         </Dialog>
 
         <StyledFab
-          color="secondary"
+          color="primary"
           className={classes.addButton}
           onClick={() => {
             this.setState({ editingFormVisible: true });
@@ -393,7 +392,7 @@ const UserCalenders = ({ data }) => {
   const [visible, setVisible] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [switchside, setSwitchside] = React.useState(null);
-  const [calendar, setCalendarId] = React.useState({id:"",name:""});
+  const [calendar, setCalendarId] = React.useState({ id: "", name: "" });
 
   const open2 = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -412,14 +411,14 @@ const UserCalenders = ({ data }) => {
     setSwitchside(true);
   };
 
-  const handleClickOpen2 = (id,name) => {
+  const handleClickOpen2 = (id, name) => {
     setVisible(true);
     setSwitchside(false);
     handleClose();
-    setCalendarId({id,name});
+    setCalendarId({ id, name });
   };
 
-  const {id, name} = calendar;
+  const { id, name } = calendar;
 
   return (
     <Box sx={{ pb: open ? 2 : 0 }}>
@@ -447,15 +446,23 @@ const UserCalenders = ({ data }) => {
       <List>
         {open &&
           data?.map((item, index) => (
-            <ListItem
+            <ListItemButton
               key={item.id}
-              style={{
-                background: selectedItem === index ? "#64B5F6" : "transparent",
-                color: selectedItem === index ? "white" : "black",
-                height: 38,
-                // padding: 0
+              selected={selectedItem === index}
+              onClick={() => {
+                setSelectedItem(index);
+                dispatch(fetchEventsData({ app, id: item.id }));
               }}
-              secondaryAction={
+              style={{
+                height: 38,
+              }}
+            >
+
+              <ListItemText
+                primary={item.name}
+                primaryTypographyProps={{ ml: 2 }}
+              />
+              {
                 selectedItem === index &&
                 item.isDisabled && (
                   <span>
@@ -523,7 +530,7 @@ const UserCalenders = ({ data }) => {
                           Delete
                         </span>
                       </MenuItem>
-                      <MenuItem onClick={() => handleClickOpen2(item.id,item.name)}>
+                      <MenuItem onClick={() => handleClickOpen2(item.id, item.name)}>
                         <ListItemIcon>
                           <EditIcon fontSize="small" />
                         </ListItemIcon>
@@ -533,20 +540,7 @@ const UserCalenders = ({ data }) => {
                   </span>
                 )
               }
-            >
-              <ListItemButton
-                sx={{ py: 0, minHeight: 32 }}
-                onClick={() => {
-                  setSelectedItem(index);
-                  dispatch(fetchEventsData({ app, id: item.id }));
-                }}
-              >
-                <ListItemText
-                  primary={item.name}
-                  primaryTypographyProps={{ ml: 2 }}
-                />
-              </ListItemButton>
-            </ListItem>
+            </ListItemButton>
           ))}
       </List>
     </Box>

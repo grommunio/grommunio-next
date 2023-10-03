@@ -17,14 +17,15 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
-import VerticalSplitIcon from "@mui/icons-material/VerticalSplit";
 import PrintIcon from "@mui/icons-material/Print";
 import IosShareIcon from "@mui/icons-material/IosShare";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import ReactToPrint from 'react-to-print';
 import ShareCalendar from "../components/calendar/ShareCalendar"
+import ViewDayOutlinedIcon from '@mui/icons-material/ViewDayOutlined';
+import { useTheme } from '@mui/material/styles';
 
-const styles: any = {
+const styles = (theme: any) => ({
   nav: {
     display: "flex",
     gap: "10px",
@@ -38,20 +39,20 @@ const styles: any = {
   dropdown: {
     border: 'none',
     fontSize: '16px',
-    color: 'rgba(0, 0, 0, 0.54)',
     outline: 'none',
     background: 'none',
     cursor: 'pointer',
   },
   dropdownOption: {
-    width: '200px'
+    width: '200px',
+    background: 'black',
+    color:'white'
   },
   dropdownParent: {
     display: "flex",
     gap: "4px",
     justifyContent: 'center',
     alignItems: 'center',
-    color: 'rgba(0, 0, 0, 0.54)',
     "&:hover": {
       background: "rgba(0, 0, 0, 0.04)",
     },
@@ -59,13 +60,13 @@ const styles: any = {
     padding: '0px 10px',
     borderRadius: '5px'
   }
-};
+});
 
-const ActionButton = ({ classes, children, color, ...childProps }: any) => {
+const ActionButton = ({children, color, ...childProps }: any) => {
   return (
     <Button
       color={color || "inherit"}
-      style={color ? undefined : { color: "#0000008a" }}
+      style={color ? undefined : { color: "secondary" }}
       {...childProps}
     >
       {children}
@@ -75,6 +76,8 @@ const ActionButton = ({ classes, children, color, ...childProps }: any) => {
 
 
 function Calendar({ t, classes }: any) {
+
+  const theme = useTheme();
   
   const app = useAppContext();
   const dispatch: any = useTypeDispatch();
@@ -85,8 +88,8 @@ function Calendar({ t, classes }: any) {
 
   useEffect(() => {
     dispatch(fetchEventsData({ app }));
+    console.log()
   }, [app.authProvider]);
-
 
   const handleOptionChange = (event: any) => {
     SetselectDays(event.target.value);
@@ -115,11 +118,11 @@ function Calendar({ t, classes }: any) {
               <MenuIcon />
             </IconButton>
             <div className={classes.dropdownParent}>
-              <VerticalSplitIcon />
+              <ViewDayOutlinedIcon />
               <select
                 id="dropdown"
                 className={classes.dropdown}
-                style={{ border: 'none' }}
+                style={{ border: 'none', color:theme.palette.text.primary}}
                 onChange={handleOptionChange}>
                   hello
                 {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <option className={classes.dropdownOption} value={x} key={index}>Day {x}</option>)}
@@ -127,7 +130,7 @@ function Calendar({ t, classes }: any) {
             </div>
             <ActionButton
               key={1}
-              startIcon={<DateRangeIcon color={"secondary"} />}
+              startIcon={<DateRangeIcon />}
               value="workWeek"
               onClick={handleOptionChange}
             >
@@ -135,7 +138,7 @@ function Calendar({ t, classes }: any) {
             </ActionButton>
             <ActionButton
               key={2}
-              startIcon={<CalendarViewWeekIcon color={"secondary"} />}
+              startIcon={<CalendarViewWeekIcon />}
               value='week'
               onClick={handleOptionChange}
             >
@@ -143,7 +146,7 @@ function Calendar({ t, classes }: any) {
             </ActionButton>
             <ActionButton
               key={3}
-              startIcon={<CalendarMonthIcon color={"secondary"} />}
+              startIcon={<CalendarMonthIcon/>}
               onClick={() => setCalenderView("Month")}
             >
               Month
@@ -152,13 +155,13 @@ function Calendar({ t, classes }: any) {
           <div className="left-items">
             <ActionButton
               key={4}
-              startIcon={<IosShareIcon color={"secondary"} />}
+              startIcon={<IosShareIcon/>}
               onClick={handleClickOpen}
             >
               Share
             </ActionButton>
             <ReactToPrint
-              trigger={() => <ActionButton key={5} startIcon={<PrintIcon color={"secondary"} />}>
+              trigger={() => <ActionButton key={5} startIcon={<PrintIcon/>}>
                 Print
               </ActionButton>}
               content={() => componentRef.current}

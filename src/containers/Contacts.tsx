@@ -12,6 +12,7 @@ import { Delete } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import { useNavigate } from 'react-router-dom';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 const styles: any = {
   paper: {

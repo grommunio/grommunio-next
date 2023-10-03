@@ -3,6 +3,7 @@
 
 import { green } from "@mui/material/colors";
 import grey from "../colors/grey";
+import green1 from "../colors/green";
 import defaultStyles from "./defaultStyles";
 
 const greenTheme = mode => ({
@@ -35,6 +36,20 @@ const greenTheme = mode => ({
         },
       },
     },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            background: `linear-gradient(150deg, ${green['500']}, ${green['800']})`,
+            color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
+          },
+        },
+      },
+    },
     MuiListItem: {
       styleOverrides: {
         root: {
@@ -48,7 +63,7 @@ const greenTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: green,
+    primary: green1,
     secondary: grey,
     ...(mode === 'light' ?
       {
