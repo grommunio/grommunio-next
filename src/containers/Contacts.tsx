@@ -12,11 +12,14 @@ import { Delete } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import { useNavigate } from 'react-router-dom';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Checkbox from '@mui/material/Checkbox';
 
 const styles: any = {
   paper: {
     flex: 1,
+  },
+  nav: {
+    display: "flex",
   },
 };
 
@@ -26,6 +29,9 @@ function Contacts({ classes }: any) {
   const dispatch = useTypeDispatch();
   const { contacts } = useTypeSelector(state => state.contacts);
   const [adding, setAdding] = useState<boolean>(false);
+  const [selected, setSelected] = useState<readonly string[]>([]);
+
+  const isSelected = (name: string) => selected.indexOf(name) !== -1;
 
   useEffect(() => {
     dispatch(fetchContactsData());
@@ -39,42 +45,68 @@ function Contacts({ classes }: any) {
   }
 
   const handleContact = (contact: Contact) => () => {
-    navigate('/contacts/'+ contact.id)
+    navigate('/contacts/' + contact.id)
   }
 
   return (
     <AuthenticatedView
       header={t('Contacts')}
-      actions={<Button onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
-        {t("New contact")}
-      </Button>
+      actions={
+        <nav className={classes.nav} key={1}>
+          <Button onClick={handleAdding(true)} variant='contained' color="primary" className={classes.addButton}>
+            {t("New contact")}
+          </Button>
+          <div>
+
+          </div>
+        </nav>
       }
     >
       <Paper className={classes.paper}>
         <Table>
           <TableHead>
-            <TableRow>
+            <TableRow
+            >
+              <TableCell>{t("#")}</TableCell>
               <TableCell>{t("Name")}</TableCell>
               <TableCell>{t("E-Mail Addresses")}</TableCell>
               <TableCell padding='checkbox' />
             </TableRow>
           </TableHead>
           <TableBody>
-            {contacts.map((contact: Contact, idx: number) =>
-              <TableRow key={idx} hover onClick={handleContact(contact)}>
-                <TableCell>
-                  {contact.displayName}
-                </TableCell>
-                <TableCell>
-                  {contact.emailAddresses?.map((obj: EmailAddress) => obj.address).join(', ')}
-                </TableCell>
-                <TableCell padding='checkbox'>
-                  <IconButton onClick={handleDelete(contact.id || '')}>
-                    <Delete color="error" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            )}
+            {contacts.map((contact: Contact, idx: number) => {
+              // const isItemSelected = isSelected(contact.displayName);
+              const labelId = `enhanced-table-checkbox-${idx}`;
+              return (
+                <TableRow
+                  hover
+                  role="checkbox"
+                  key={idx}
+                  onClick={handleContact(contact)}
+                  selected={isItemSelected}
+                  sx={{ cursor: 'pointer' }}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      color="primary"
+                      checked={isItemSelected}
+                      inputProps={{
+                        'aria-labelledby': labelId,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {contact.displayName}
+                  </TableCell>
+                  <TableCell>
+                    {contact.emailAddresses?.map((obj: EmailAddress) => obj.address).join(', ')}
+                  </TableCell>
+                  <TableCell padding='checkbox'>
+                    <IconButton onClick={handleDelete(contact.id || '')}>
+                      <Delete color="error" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>)
+            })}
           </TableBody>
         </Table>
       </Paper>
