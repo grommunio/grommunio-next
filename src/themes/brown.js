@@ -5,7 +5,7 @@ import { brown } from "@mui/material/colors";
 import grey from "../colors/grey";
 import defaultStyles from "./defaultStyles";
 
-const brown1 = {
+const lightBrown = {
   500: "#aa9289",
 };
 
@@ -67,7 +67,7 @@ const brownTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: brown1,
+    primary: lightBrown,
     secondary: grey,
     ...(mode === 'light' ?
       {

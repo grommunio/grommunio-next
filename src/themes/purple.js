@@ -3,7 +3,7 @@
 
 import { purple } from "@mui/material/colors";
 import grey from "../colors/grey";
-import purple1 from "../colors/purple";
+import lightPurple from "../colors/purple";
 import defaultStyles from "./defaultStyles";
 
 const purpleTheme = mode => ({
@@ -63,7 +63,7 @@ const purpleTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: purple1,
+    primary: lightPurple,
     secondary: grey,
     ...(mode === 'light' ?
       {

@@ -6,7 +6,7 @@ import grey from "../colors/grey";
 import defaultStyles from "./defaultStyles";
 
 
-const blueGrey1 = {
+const lightBlueGrey = {
   500: "#98bdcf",
 };
 
@@ -68,7 +68,7 @@ const blueGreyTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: blueGrey1,
+    primary: lightBlueGrey,
     secondary: grey,
     ...(mode === 'light' ?
       {

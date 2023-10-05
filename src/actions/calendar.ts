@@ -21,6 +21,7 @@ import {
   PATCH_EVENT_DATA,
   FETCH_USER_CALENDER_DATA,
   PATCH_CALENDAR_DATA,
+  DELETE_CALENDAR_DATA,
   POST_CALENDAR_DATA,
 } from "./types";
 import {
@@ -147,14 +148,14 @@ export function postUserCalendar(calendarName: string) {
   return defaultPostHandler(
     createUserCalendar,
     POST_CALENDAR_DATA,
-    calendarName
+    calendarName,
   );
 }
 
 export function deleteCalendarData(id: string) {
   return defaultDeleteHandler(
     deleteUserCalendar,
-    PATCH_CALENDAR_DATA,
+    DELETE_CALENDAR_DATA,
     id
   );
 }

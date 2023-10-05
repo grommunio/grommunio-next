@@ -2840,6 +2840,13 @@
   resolved "https://registry.npmjs.org/@types/range-parser/-/range-parser-1.2.4.tgz"
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
 
+"@types/react-csv@^1.1.6":
+  version "1.1.6"
+  resolved "https://registry.npmjs.org/@types/react-csv/-/react-csv-1.1.6.tgz"
+  integrity sha512-D8MmuwIrqVr1ilgCEhB5U7uyMeojPC+Ffr/Zg/galVEFMDy/dbmegj38Bs5hWwgC3VVjCyo9GR+YHrC1fnFm1w==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-dom@^16.8 || ^17.0 || ^18.0", "@types/react-dom@^18.0.0":
   version "18.0.9"
   resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-18.0.9.tgz"
@@ -8750,6 +8757,11 @@ react-color@^2.19.3:
     prop-types "^15.5.10"
     reactcss "^1.2.0"
     tinycolor2 "^1.4.1"
+
+react-csv@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.npmjs.org/react-csv/-/react-csv-2.2.2.tgz"
+  integrity sha512-RG5hOcZKZFigIGE8LxIEV/OgS1vigFQT4EkaHeKgyuCbUAu9Nbd/1RYq++bJcJJ9VOqO/n9TZRADsXNDR4VEpw==
 
 react-dev-utils@^12.0.1:
   version "12.0.1"
