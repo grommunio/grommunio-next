@@ -277,7 +277,7 @@ class ScheduleCalendar extends React.PureComponent {
                 />
               </LocalizationProvider>
               <hr />
-              <UserCalenders data={this.props.calendar} />
+              <UserCalenders data={this.props.calendars} />
             </Grid>
           )}
 
@@ -371,7 +371,7 @@ const mapStateToProps = (state) => {
   const { calendar } = state;
   return {
     events: calendar.events,
-    calendar: calendar.calendar,
+    calendars: calendar.calendars,
   };
 };
 deleteCalendarData;

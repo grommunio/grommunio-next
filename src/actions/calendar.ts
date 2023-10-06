@@ -22,6 +22,7 @@ import {
   FETCH_USER_CALENDER_DATA,
   PATCH_CALENDAR_DATA,
   POST_CALENDAR_DATA,
+  DELETE_CALENDAR_DATA
 } from "./types";
 import {
   defaultFetchHandler,
@@ -154,7 +155,7 @@ export function postUserCalendar(calendarName: string) {
 export function deleteCalendarData(id: string) {
   return defaultDeleteHandler(
     deleteUserCalendar,
-    PATCH_CALENDAR_DATA,
+    DELETE_CALENDAR_DATA,
     id
   );
 }

@@ -6,7 +6,10 @@ import {
   FETCH_EVENTS_DATA,
   FETCH_USER_CALENDER_DATA,
   POST_CALENDAR_DATA,
+  DELETE_CALENDAR_DATA,
+  PATCH_CALENDAR_DATA
 } from '../actions/types';
+import { addItem } from '../utils';
 
 interface IUserCalender {
   id: string;
@@ -16,8 +19,7 @@ interface IUserCalender {
 
 const defaultState = {
   events: [],
-  calender: [],
-  timezones: [],
+  calendars: [],
 };
 
 //TODO: Properly implement this function
@@ -41,6 +43,7 @@ function formatEvents(rawEvents: Array<Event>) {
   }))
 }
 
+// Modify your reducer to use these types
 function calendarReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
@@ -53,21 +56,47 @@ function calendarReducer(state = defaultState, action: AnyAction) {
   case FETCH_USER_CALENDER_DATA:
     return {
       ...state,
-      calendar: action.payload ? action.payload.map((calendar: IUserCalender) => ({
+      calendars: action.payload ? action.payload.map((calendar: IUserCalender) => ({
         id: calendar.id,
         name: calendar.name,
         isDisabled: disableCondition(calendar)})) : [],
+    };
+
+  case POST_CALENDAR_DATA: {
+    const newItemWithIsDisabled = { ...action.payload, isDisabled: true,};
+    return { ...state, calendars: addItem(state.calendars, newItemWithIsDisabled),};
+  }
+
+  case PATCH_CALENDAR_DATA: {
+    // Find the index of the calendar item to be updated in the calendars array
+    const updatedIndex = state.calendars.findIndex((calendar: IUserCalender) => calendar.id === action.payload.id);
+
+    if (updatedIndex === -1) {
+      // If the calendar item is not found, return the current state
+      return state;
+    }
+
+    // Create a new array with the updated calendar item
+    const updatedCalendars: any = [...state.calendars];
+    const updatedItem: IUserCalender = {
+      ...(state.calendars[updatedIndex] as IUserCalender),
+      ...(action.payload as IUserCalender),
+    };
+
+    updatedCalendars[updatedIndex] = updatedItem;
+    
+    return { ...state, calendars: updatedCalendars};
+  }
+
+  case DELETE_CALENDAR_DATA:
+    return {
+      ...state,
+      calendars: action.payload ? state.calendars.filter((calender: IUserCalender) => calender.id !== action.payload) : state.calendars,
     };
     
   default:
     return state;
   }
 }
-
-// Define an action creator function for updating the local user data
-export const updateLocalUser = (userData:any) => ({
-  type: POST_CALENDAR_DATA,
-  payload: userData, // The data to update the local user with
-});
 
 export default calendarReducer;

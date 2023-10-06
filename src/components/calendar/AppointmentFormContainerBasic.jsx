@@ -31,6 +31,8 @@ import Close from "@mui/icons-material/Close";
 import ReactQuill from "react-quill";
 import 'react-quill/dist/quill.snow.css';
 import 'moment-timezone';
+import { Editor } from '@tinymce/tinymce-react';
+
 
 const PREFIX = "Demo";
 const classes = {
@@ -340,7 +342,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       pickerSize = !pickerSize
 
       this.changeAppointment({
-        "startDate":"startDate",
+        "startDate": "startDate",
         changes: dateDefaultValue,
       });
 
@@ -350,6 +352,15 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       });
 
     }
+
+    const handleEditorChange = (content, editor) => {
+      console.log('Content was updated:', content);
+      this.changeAppointment({
+        field: ['note'],
+        changes: content,
+      });
+    }
+ 
 
     return (
       <Dialog open={visible} onClose={onHide} maxWidth="md" fullWidth={true}>
@@ -440,7 +451,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                     <div
                       className={classes.flexRow}
                     >
-                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue}/>
+                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue} />
                       {ButtonSwitch && <TimePicker {...startTimePickerProps} />}
                       <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
                       {ButtonSwitch && <div className={classes.wrapper}>
@@ -465,7 +476,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       </div>}
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue}/>
+                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue} />
                       {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">
@@ -531,18 +542,27 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               <div className={classes.flexRow}>
                 <Notes className={classes.icon} color="action" />
                 <div>
-                  <ReactQuill {...textEditorProps("notes")} theme="snow" style={{ height: '200px' }} modules={{
-                    toolbar: [
-                      [{ font: [] }],
-                      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-                      ["bold", "italic", "underline", "strike"],
-                      [{ color: [] }, { background: [] }],
-                      [{ script: "sub" }, { script: "super" }],
-                      ["blockquote", "code-block"],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      ["link", "image", "video"],
-                    ],
-                  }} />
+                  <Editor
+                    tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+                    initialValue={displayAppointmentData['note'] || ""}
+                    init={{
+                      disabled: false,
+                      menubar: false,
+                      plugins: ['wordcount'],
+                      toolbar:
+                        'undo redo | formatselect | ' +
+                        'bold italic underline strikethrough | ' +
+                        'alignleft aligncenter alignright alignjustify | ' +
+                        'bullist numlist outdent indent | ' +
+                        'fontselect fontsizeselect | forecolor backcolor | ' +
+                        'link unlink image | table | removeformat | ' +
+                        'subscript superscript | code | searchreplace | ' +
+                        'customButton',
+                      width: '770',
+                      height: '200',
+                    }}
+                    onEditorChange={handleEditorChange}
+                  />
                 </div>
               </div>
             </div>
