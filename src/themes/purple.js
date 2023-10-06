@@ -3,6 +3,7 @@
 
 import { purple } from "@mui/material/colors";
 import grey from "../colors/grey";
+import purple1 from "../colors/purple";
 import defaultStyles from "./defaultStyles";
 
 const purpleTheme = mode => ({
@@ -35,6 +36,20 @@ const purpleTheme = mode => ({
         },
       },
     },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            background: `linear-gradient(150deg, ${purple['500']}, ${purple['800']})`,
+            color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
+          },
+        },
+      },
+    },
     MuiListItem: {
       styleOverrides: {
         root: {
@@ -48,7 +63,7 @@ const purpleTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: purple,
+    primary: purple1,
     secondary: grey,
     ...(mode === 'light' ?
       {

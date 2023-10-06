@@ -35,6 +35,20 @@ const orangeTheme = mode => ({
         },
       },
     },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            background: `linear-gradient(150deg, ${orange['500']}, ${orange['800']})`,
+            color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
+          },
+        },
+      },
+    },
     MuiListItem: {
       styleOverrides: {
         root: {

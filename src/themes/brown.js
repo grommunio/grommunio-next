@@ -5,6 +5,11 @@ import { brown } from "@mui/material/colors";
 import grey from "../colors/grey";
 import defaultStyles from "./defaultStyles";
 
+const brown1 = {
+  500: "#aa9289",
+};
+
+
 const brownTheme = mode => ({
   components: {
     ...defaultStyles(mode),
@@ -35,6 +40,20 @@ const brownTheme = mode => ({
         },
       },
     },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            background: `linear-gradient(150deg, ${brown['500']}, ${brown['800']})`,
+            color: '#fff',
+            '&:hover': {
+              color: 'black',
+            },
+          },
+        },
+      },
+    },
     MuiListItem: {
       styleOverrides: {
         root: {
@@ -48,7 +67,7 @@ const brownTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: brown,
+    primary: brown1,
     secondary: grey,
     ...(mode === 'light' ?
       {

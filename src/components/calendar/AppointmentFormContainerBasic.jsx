@@ -31,8 +31,7 @@ import Close from "@mui/icons-material/Close";
 import ReactQuill from "react-quill";
 import 'react-quill/dist/quill.snow.css';
 import 'moment-timezone';
-import { Editor } from '@tinymce/tinymce-react';
-
+import CircleIcon from '@mui/icons-material/Circle';
 
 const PREFIX = "Demo";
 const classes = {
@@ -48,7 +47,6 @@ const classes = {
   addButton: `${PREFIX}-addButton`,
   circleFilled: `${PREFIX}-circleFilled`,
   dropdown: `${PREFIX}-dropdown`,
-  smallcircle: `${PREFIX}-smallcircle`,
   flexRow: `${PREFIX}-flexRow`,
   customSelect: `${PREFIX}-customSelect`,
   attachmentDropdown: `${PREFIX}-attachmentDropdown`,
@@ -85,7 +83,6 @@ const StyledDiv = styled("div")(({ theme }) => ({
     padding: theme.spacing(0, 2),
   },
   [`& .${classes.button}`]: {
-    background: "#1976D2",
     marginRight: "30px",
   },
   [`& .${classes.flexRow}`]: {
@@ -101,15 +98,6 @@ const StyledDiv = styled("div")(({ theme }) => ({
   },
   [`& .${classes.dropdown}`]: {
     position: "absolute",
-  },
-  [`& .${classes.smallcircle}`]: {
-    width: "15px",
-    height: "15px",
-    backgroundColor: "#1976D2",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
   },
   [`& .${classes.customSelect}`]: {
     border: "none",
@@ -162,7 +150,7 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
       color: "#fff",
       "& + .MuiSwitch-track": {
         opacity: 1,
-        backgroundColor: theme.palette.mode === "dark" ? "#177ddc" : "#1890ff",
+        backgroundColor: theme.palette.mode === "dark" && "#177ddc",
       },
     },
   },
@@ -342,7 +330,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       pickerSize = !pickerSize
 
       this.changeAppointment({
-        "startDate": "startDate",
+        "startDate":"startDate",
         changes: dateDefaultValue,
       });
 
@@ -353,15 +341,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
 
     }
 
-    const handleEditorChange = (content, editor) => {
-      console.log('Content was updated:', content);
-      this.changeAppointment({
-        field: ['note'],
-        changes: content,
-      });
-    }
- 
-
     return (
       <Dialog open={visible} onClose={onHide} maxWidth="md" fullWidth={true}>
         <StyledDiv>
@@ -370,7 +349,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               {!isNewAppointment && (
                 <Button
                   variant="outlined"
-                  color="secondary"
+                  color="primary"
                   className={classes.button}
                   onClick={() => {
                     visibleChange();
@@ -397,7 +376,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   aria-haspopup="true"
                   onClick={handleClick}
                   endIcon={<KeyboardArrowDownIcon />}
-                  startIcon={<span className={classes.smallcircle} />}
+                  startIcon={<CircleIcon color="primary"/>}
                   style={{ color: "black" }}
                 >
                   {selectedOption ? selectedOption : "Calender"}
@@ -451,12 +430,12 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                     <div
                       className={classes.flexRow}
                     >
-                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue} />
+                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue}/>
                       {ButtonSwitch && <TimePicker {...startTimePickerProps} />}
                       <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
                       {ButtonSwitch && <div className={classes.wrapper}>
                         <label htmlFor="Timezone">
-                          <LanguageIcon style={{ color: "#177ddc" }} />
+                          <LanguageIcon color='primary'/>
                         </label>
                         <select
                           name="Timezone"
@@ -476,11 +455,11 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       </div>}
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue} />
+                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue}/>
                       {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">
-                          <RepeatIcon style={{ color: "#177ddc" }} />
+                          <RepeatIcon color='primary' />
                         </label>
                         <select
                           name="Repeat"
@@ -542,27 +521,18 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               <div className={classes.flexRow}>
                 <Notes className={classes.icon} color="action" />
                 <div>
-                  <Editor
-                    tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-                    initialValue={displayAppointmentData['note'] || ""}
-                    init={{
-                      disabled: false,
-                      menubar: false,
-                      plugins: ['wordcount'],
-                      toolbar:
-                        'undo redo | formatselect | ' +
-                        'bold italic underline strikethrough | ' +
-                        'alignleft aligncenter alignright alignjustify | ' +
-                        'bullist numlist outdent indent | ' +
-                        'fontselect fontsizeselect | forecolor backcolor | ' +
-                        'link unlink image | table | removeformat | ' +
-                        'subscript superscript | code | searchreplace | ' +
-                        'customButton',
-                      width: '770',
-                      height: '200',
-                    }}
-                    onEditorChange={handleEditorChange}
-                  />
+                  <ReactQuill {...textEditorProps("notes")} theme="snow" style={{ height: '200px' }} modules={{
+                    toolbar: [
+                      [{ font: [] }],
+                      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ color: [] }, { background: [] }],
+                      [{ script: "sub" }, { script: "super" }],
+                      ["blockquote", "code-block"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link", "image", "video"],
+                    ],
+                  }} />
                 </div>
               </div>
             </div>
