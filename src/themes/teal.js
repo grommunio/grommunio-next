@@ -5,7 +5,7 @@ import { teal } from "@mui/material/colors";
 import grey from "../colors/grey";
 import defaultStyles from "./defaultStyles";
 
-const teal1 = {
+const lightTeal = {
   500: "#67b7b0",
 };
 
@@ -67,7 +67,7 @@ const tealTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: teal1,
+    primary: lightTeal,
     secondary: grey,
     ...(mode === 'light' ?
       {

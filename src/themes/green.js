@@ -3,7 +3,7 @@
 
 import { green } from "@mui/material/colors";
 import grey from "../colors/grey";
-import green1 from "../colors/green";
+import lightGreen from "../colors/green";
 import defaultStyles from "./defaultStyles";
 
 const greenTheme = mode => ({
@@ -63,7 +63,7 @@ const greenTheme = mode => ({
   },
   palette: {
     mode: mode,
-    primary: green1,
+    primary: lightGreen,
     secondary: grey,
     ...(mode === 'light' ?
       {
