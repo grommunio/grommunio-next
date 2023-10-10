@@ -28,7 +28,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Close from "@mui/icons-material/Close";
-import ReactQuill from "react-quill";
+import { Editor } from '@tinymce/tinymce-react';
 import 'react-quill/dist/quill.snow.css';
 import 'moment-timezone';
 import CircleIcon from '@mui/icons-material/Circle';
@@ -106,7 +106,10 @@ const StyledDiv = styled("div")(({ theme }) => ({
     fontSize: "17px",
     cursor: "pointer",
     outline: 'none',
-    fontWeight: "500"
+    fontWeight: "500",
+    color: theme.palette.mode === "dark"
+      ? "rgba(255,255,255,.35)"
+      : "rgba(0,0,0,.25)",
   },
   [`& .${classes.attachmentDropdown}`]: {
     position: "absolute",
@@ -173,6 +176,7 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
     boxSizing: "border-box",
   },
 }));
+
 
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
@@ -330,7 +334,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       pickerSize = !pickerSize
 
       this.changeAppointment({
-        "startDate":"startDate",
+        "startDate": "startDate",
         changes: dateDefaultValue,
       });
 
@@ -340,6 +344,18 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       });
 
     }
+    const handleEditorChange = (content, editor) => {
+      this.changeAppointment({
+        field: ['note'],
+        changes: content,
+      });
+    }
+
+    const toolbar = `undo redo | formatselect | bold italic underline strikethrough link unlink image
+     | alignleft aligncenter alignright | 'bullist numlist' | outdent indent |
+       table | removeformat | code ` + 'fontselect fontsizeselect | forecolor backcolor | ' +
+      'link unlink image | table | removeformat | ' + 'subscript superscript | code | searchreplace | ' ;
+
 
     return (
       <Dialog open={visible} onClose={onHide} maxWidth="md" fullWidth={true}>
@@ -376,8 +392,8 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   aria-haspopup="true"
                   onClick={handleClick}
                   endIcon={<KeyboardArrowDownIcon />}
-                  startIcon={<CircleIcon color="primary"/>}
-                  style={{ color: "black" }}
+                  startIcon={<CircleIcon color="primary" />}
+                  color='primary'
                 >
                   {selectedOption ? selectedOption : "Calender"}
                 </Button>
@@ -402,7 +418,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               <Close color="action" />
             </IconButton>
           </DialogTitle>
-          <DialogContent style={{ paddingBottom: '70px' }}>
+          <DialogContent style={{ paddingBottom: '20px' }}>
             <div className={classes.content}>
               <div className={classes.flexRow}>
                 <Create className={classes.icon} color="action" />
@@ -430,12 +446,12 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                     <div
                       className={classes.flexRow}
                     >
-                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue}/>
+                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue} />
                       {ButtonSwitch && <TimePicker {...startTimePickerProps} />}
                       <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
                       {ButtonSwitch && <div className={classes.wrapper}>
                         <label htmlFor="Timezone">
-                          <LanguageIcon color='primary'/>
+                          <LanguageIcon color='primary' />
                         </label>
                         <select
                           name="Timezone"
@@ -447,7 +463,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                         >
                           <option value={moment.tz.guess()}>{moment.tz.guess()}</option>
                           {timezones && timezones.map((timezone, index) => (
-                            <option key={index} value={timezone}>
+                            <option key={index} value={timezone} style={{ color: "black" }}>
                               {timezone}
                             </option>
                           ))}
@@ -455,7 +471,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                       </div>}
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue}/>
+                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue} />
                       {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">
@@ -521,18 +537,19 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               <div className={classes.flexRow}>
                 <Notes className={classes.icon} color="action" />
                 <div>
-                  <ReactQuill {...textEditorProps("notes")} theme="snow" style={{ height: '200px' }} modules={{
-                    toolbar: [
-                      [{ font: [] }],
-                      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-                      ["bold", "italic", "underline", "strike"],
-                      [{ color: [] }, { background: [] }],
-                      [{ script: "sub" }, { script: "super" }],
-                      ["blockquote", "code-block"],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      ["link", "image", "video"],
-                    ],
-                  }} />
+                  <Editor
+                    tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+                    initialValue={displayAppointmentData['note'] || ""}
+                    init={{
+                      menubar: false,
+                      readonly: true,
+                      toolbar,
+                      plugins: ['wordcount'],
+                      width: 760,
+                      height: 350, // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
+                    }}
+                    onEditorChange={handleEditorChange}
+                  />
                 </div>
               </div>
             </div>
