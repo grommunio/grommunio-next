@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Event, Calendar } from "microsoft-graph";
+import { Event } from "microsoft-graph";
 import { findIana } from "windows-iana";
 import { AppContext } from "../azure/AppContext";
 import {
@@ -102,7 +102,7 @@ export const deleteEventData = createAsyncThunk<
 });
 
 function formatEvent(rawEvent: any): Event {
-  const { id, subject, location, notes, startDate, endDate, timezone } =
+  const { id, subject, location, notes, startDate, endDate } =
     rawEvent;
   return {
     id,

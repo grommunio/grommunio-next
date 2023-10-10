@@ -22,7 +22,7 @@ const classes = {
   select: `${PREFIX}-select`,
 };
 
-const StyledDiv = styled("div")(({ theme }) => ({
+const StyledDiv = styled("div")(() => ({
   [`& .${classes.wrapper}`]: {
     display: "flex",
     alignItems: "center",

@@ -14,7 +14,6 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
 import { Event } from "microsoft-graph";
 import { graphClient } from "./utils";
-import axios from "axios";
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(

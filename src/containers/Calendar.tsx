@@ -25,7 +25,7 @@ import ShareCalendar from "../components/calendar/ShareCalendar"
 import ViewDayOutlinedIcon from '@mui/icons-material/ViewDayOutlined';
 import { useTheme } from '@mui/material/styles';
 
-const styles = (theme: any) => ({
+const styles = () => ({
   nav: {
     display: "flex",
     gap: "10px",

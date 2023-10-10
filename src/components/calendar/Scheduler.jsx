@@ -85,7 +85,7 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   },
 }));
 
-const StyledTable = styled(MonthView)(({ theme }) => ({}));
+const StyledTable = styled(MonthView)(() => ({}));
 
 class ScheduleCalendar extends React.PureComponent {
   constructor(props) {

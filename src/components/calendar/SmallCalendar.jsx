@@ -1,4 +1,3 @@
-import * as React from "react";
 import dayjs from "dayjs";
 import isBetweenPlugin from "dayjs/plugin/isBetween";
 import { styled } from "@mui/material/styles";
@@ -7,7 +6,7 @@ import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 dayjs.extend(isBetweenPlugin);
 // Illd make this code more readable
 
-const addStyleToComponent = ({ theme, colorStyle, day }) => {
+const addStyleToComponent = ({ theme, colorStyle }) => {
   const styling = {
     backgroundColor: "#64B5F6",
     color: theme.palette.common.white,
