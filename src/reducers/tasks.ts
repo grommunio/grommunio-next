@@ -14,9 +14,21 @@ import {
 import { addItem, editItem } from '../utils';
 
 const defaultState = {
-  taskLists: [],
-  tasks: [],
+  taskLists: [] as Array<TodoTaskList>,
+  tasks: [] as Array<TodoTask>,
 };
+
+const sortTasks = (tasks: Array<TodoTask>) => {
+  const copy: Array<TodoTask> = [...tasks];
+  copy.sort((a, b) => {
+    if(a.status !== "completed" && b.status !== "completed") {
+      return 0;
+    } else if(a.status == "completed") {
+      return 1;
+    } else return -1;
+  });
+  return copy;
+}
 
 function tasksReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
@@ -30,7 +42,7 @@ function tasksReducer(state = defaultState, action: AnyAction) {
   case FETCH_TASKS_DATA:
     return {
       ...state,
-      tasks: action.payload ?? [],
+      tasks: sortTasks(action.payload) ?? [],
     }
   
   case DELETE_TASKS_DATA:
@@ -60,7 +72,7 @@ function tasksReducer(state = defaultState, action: AnyAction) {
   case PATCH_TASK_DATA:
     return {
       ...state,
-      tasks: editItem(state.tasks, action.payload),
+      tasks: sortTasks(editItem(state.tasks, action.payload)),
     };
 
   default:
