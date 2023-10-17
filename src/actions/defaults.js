@@ -50,7 +50,7 @@ export function defaultPatchHandler(endpoint, actionType, suppressAlert, ...endp
     try {
       const resp = await endpoint(...endpointParams);
       if(actionType) await dispatch({ type: actionType, payload: resp });
-      if(suppressAlert) await dispatch(pushAlertStack({message:"updated successfully"}));
+      if(!suppressAlert) await dispatch(pushAlertStack({ message:"Updated successfully" }));
       return resp;
     } catch(error) {
       await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));

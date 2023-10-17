@@ -138,7 +138,7 @@ export function patchCalendarData({ id, updateCalendar }: CalendarDataParams) {
   return defaultPatchHandler(
     patchUserCalendar,
     PATCH_CALENDAR_DATA,
-    "updated sucessfully",
+    false,
     id,
     updateCalendar
   );

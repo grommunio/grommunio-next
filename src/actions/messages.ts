@@ -14,9 +14,8 @@ export function fetchMessagesData(folderid = 'inbox', params={}) {
 }
 
 export function patchMessageData(message: Message, specificProps?: any) {
-  return defaultPatchHandler(patchMessage, PATCH_MESSAGE_DATA, true, message, specificProps)
+  return defaultPatchHandler(patchMessage, PATCH_MESSAGE_DATA, false, message, specificProps)
 }
-
 
 export function deleteMessageData(messages: Array<Message>, force?: boolean) {
   return defaultMultiMailHandler(deleteMessage, DELETE_MESSAGE_DATA, messages, force)

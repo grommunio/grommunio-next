@@ -5,7 +5,7 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { deleteTaskData, deleteTaskListData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
-import { Button, IconButton, List, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
+import { Button, Checkbox, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
@@ -39,7 +39,6 @@ const styles: any = {
 function Tasks({ t, classes }: any) {
   const editorRef = useRef<any>(null);
   const dispatch = useTypeDispatch();
-  const [ dirty, setDirty ] = useState<boolean>(false);
   const { taskLists, tasks } = useTypeSelector(state => state.tasks);
   const [addingTaskList, setAddingTaskList] = useState<boolean>(false);
   const [addingTask, setAddingTask] = useState<boolean>(false);
@@ -54,13 +53,11 @@ function Tasks({ t, classes }: any) {
   const handleTaskListClick = (taskList: TodoTaskList) => () => {
     setSelectedTaskList(taskList);
     setSelectedTask(null);
-    setDirty(false);
     dispatch(fetchTasksData(taskList));
   }
 
   const handleTaskClick = (task: TodoTask) => () => {
     setSelectedTask(task);
-    setDirty(false);
   }
 
   const handleAddingTask = (val: boolean) => () => setAddingTask(val || false);
@@ -87,8 +84,7 @@ function Tasks({ t, classes }: any) {
     dispatch(patchTaskData(
       mergedTask,
       selectedTaskList?.id || '',
-    ))
-      .then(() => setDirty(false));
+    ));
   }
 
   const handleDeleteTaskList = (taskList: TodoTaskList) => (e: MouseEvent<HTMLElement>) => {
@@ -157,7 +153,6 @@ function Tasks({ t, classes }: any) {
             tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
             onInit={(evt, editor) => editorRef.current = editor}
             initialValue={selectedTask?.body?.content}
-            onDirty={() => setDirty(true)}
             init={{
               height: 400,
               content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
@@ -166,7 +161,6 @@ function Tasks({ t, classes }: any) {
           {selectedTask &&
           <div className={classes.buttonRow}>
             <Button
-              disabled={!dirty}
               onClick={handleSave}
               variant="contained"
             >

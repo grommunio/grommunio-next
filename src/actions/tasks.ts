@@ -21,7 +21,7 @@ export function deleteTaskData(taskId: string, taskListId: string) {
 }
 
 export function patchTaskData(task: TodoTask, taskListId: string) {
-  return defaultPatchHandler(patchTask, null, task, taskListId)
+  return defaultPatchHandler(patchTask, null, false, task, taskListId)
 }
   
 export function postTaskListData(...endpointProps: [TodoTaskList]) {
