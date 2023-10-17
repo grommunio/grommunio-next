@@ -92,9 +92,13 @@ function Tasks({ t, classes }: any) {
     dispatch(deleteTaskListData(taskList.id!));
   }
 
-  const handleTaskCompleted = (id: string) => (e: MouseEvent<HTMLElement>) => {
+  const handleTaskCompleted = (task: TodoTask) => (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    dispatch(patchTaskData({ id, status: "completed" }, selectedTaskList?.id || ''));
+    dispatch(patchTaskData({
+      id: task.id || "",
+      status: task.status === "completed" ? "notStarted" : "completed"
+    },
+    selectedTaskList?.id || ''));
   }
 
   return (
@@ -146,7 +150,7 @@ function Tasks({ t, classes }: any) {
                 <ListItemIcon>
                   <Checkbox
                     checked={task.status == "completed"}
-                    onClick={handleTaskCompleted(task.id || "")}
+                    onClick={handleTaskCompleted(task)}
                   />
                 </ListItemIcon>
                 <ListItemText
