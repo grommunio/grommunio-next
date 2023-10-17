@@ -4,7 +4,7 @@
 import { TodoTask, TodoTaskList } from "microsoft-graph";
 import { deleteTask, getUserTaskLists, getUserTasks, patchTask, postTask, postTaskList, deleteTaskList } from "../api/tasks";
 import { DELETE_TASKS_DATA, FETCH_TASKS_DATA, FETCH_TASK_LISTS_DATA, POST_TASK_DATA,
-  POST_TASK_LIST_DATA, DELETE_TASK_LIST_DATA } from "./types";
+  POST_TASK_LIST_DATA, DELETE_TASK_LIST_DATA, PATCH_TASK_DATA } from "./types";
 import { defaultDeleteHandler, defaultFetchHandler, defaultPatchHandler, defaultPostHandler } from "./defaults";
 
 
@@ -21,7 +21,7 @@ export function deleteTaskData(taskId: string, taskListId: string) {
 }
 
 export function patchTaskData(task: TodoTask, taskListId: string) {
-  return defaultPatchHandler(patchTask, null, false, task, taskListId)
+  return defaultPatchHandler(patchTask, PATCH_TASK_DATA, false, task, taskListId)
 }
   
 export function postTaskListData(...endpointProps: [TodoTaskList]) {

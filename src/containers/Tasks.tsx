@@ -92,6 +92,11 @@ function Tasks({ t, classes }: any) {
     dispatch(deleteTaskListData(taskList.id!));
   }
 
+  const handleTaskCompleted = (id: string) => (e: MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    dispatch(patchTaskData({ id, status: "completed" }, selectedTaskList?.id || ''));
+  }
+
   return (
     <AuthenticatedView
       header={t("Tasks")}
@@ -138,6 +143,12 @@ function Tasks({ t, classes }: any) {
                 onClick={handleTaskClick(task)}
                 divider
               >
+                <ListItemIcon>
+                  <Checkbox
+                    checked={task.status == "completed"}
+                    onClick={handleTaskCompleted(task.id || "")}
+                  />
+                </ListItemIcon>
                 <ListItemText
                   primary={task.title}
                 />

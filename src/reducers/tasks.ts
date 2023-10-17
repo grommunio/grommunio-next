@@ -9,8 +9,9 @@ import {
   POST_TASK_LIST_DATA,
   POST_TASK_DATA,
   DELETE_TASK_LIST_DATA,
+  PATCH_TASK_DATA,
 } from '../actions/types';
-import { addItem } from '../utils';
+import { addItem, editItem } from '../utils';
 
 const defaultState = {
   taskLists: [],
@@ -55,6 +56,12 @@ function tasksReducer(state = defaultState, action: AnyAction) {
       ...state,
       tasks: addItem(state.tasks, action.payload),
     }
+
+  case PATCH_TASK_DATA:
+    return {
+      ...state,
+      tasks: editItem(state.tasks, action.payload),
+    };
 
   default:
     return state;
