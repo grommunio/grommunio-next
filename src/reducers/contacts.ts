@@ -7,8 +7,9 @@ import {
   DELETE_CONTACTS_DATA,
   FETCH_CONTACT_FOLDERS,
   POST_CONTACT_DATA,
+  PATCH_CONTACT_DATA,
 } from '../actions/types';
-import { addItem } from '../utils';
+import { addItem, editItem } from '../utils';
 
 const defaultState = {
   contacts: [],
@@ -40,6 +41,12 @@ function contactsReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       contacts: addItem(state.contacts, action.payload),
+    };
+
+  case PATCH_CONTACT_DATA:
+    return {
+      ...state,
+      contacts: editItem(state.contacts, action.payload),
     };
 
   default:

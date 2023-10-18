@@ -5,6 +5,9 @@ import { Mail } from '@mui/icons-material';
 import { Avatar, Button, Divider, Grid, Paper, TextField, Typography } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { withTranslation } from 'react-i18next';
+import { patchContact } from '../api/contacts';
+import { useTypeDispatch } from '../store';
+import { patchContactData } from '../actions/contacts';
 
 const styles = (theme: any) => ({
   paper: {
@@ -45,6 +48,7 @@ const styles = (theme: any) => ({
 });
 
 function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: any) {
+  const dispatch = useTypeDispatch();
 
   const tfProps = (label: string, field: string, nested="") => ({
     fullWidth: true,
@@ -53,6 +57,10 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
     label: t(label),
     className: classes.propertyInput,
   });
+
+  const handleSave = async () => {
+    await dispatch(patchContactData(contact));
+  }
   
   return (
     <Paper className={classes.paper}>
@@ -156,6 +164,9 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
           rows={4}
         />
       </Grid>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', margin: 8 }}>
+        <Button variant='contained' onClick={handleSave}>Save</Button>
+      </div>
     </Paper>
   );
 }
