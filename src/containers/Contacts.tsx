@@ -1,63 +1,88 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { useEffect, useState, MouseEvent } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { Button, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, TablePagination } from '@mui/material';
-import { Contact, EmailAddress } from 'microsoft-graph';
-import { deleteContactData, fetchContactsData } from '../actions/contacts';
+import { Button, IconButton, Paper, TablePagination, ListItem, ListItemButton, ListItemText, List, ListItemAvatar, Avatar, Checkbox } from '@mui/material';
+import { Contact, ContactFolder, EmailAddress } from 'microsoft-graph';
+import { fetchContactFoldersData, fetchContactsData } from '../actions/contacts';
 import AddContact from '../components/dialogs/AddContact';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
-import { useNavigate } from 'react-router-dom';
 import IosShareIcon from "@mui/icons-material/IosShare";
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
 import { CSVLink } from 'react-csv';
+import FolderList from '../components/FolderList';
+import ContactForm from '../components/ContactForm';
+import { Contact as ContactType } from 'microsoft-graph';
+import Hover from '../components/Hover';
+import { CheckBoxOutlined } from '@mui/icons-material';
+
 
 const styles: any = {
   nav: {
     display: "flex",
     gap: 20
   },
+  content: {
+    flex: 1,
+    display: 'flex',
+  },
+  paginationContainer: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+  }
 };
 
 function Contacts({ classes }: any) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
-  const { contacts } = useTypeSelector(state => state.contacts);
+  const { contacts, contactFolders } = useTypeSelector(state => state.contacts);
+  const [selectedContactFolder, setSelectedContactFolder] = useState<ContactFolder | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [adding, setAdding] = useState<boolean>(false);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [checkedContacts, setCheckedContacts] = useState<Array<Contact>>([]);
 
+  const handleChange = (field: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    setSelectedContact({
+      ...selectedContact,
+      [field]: e.target.value,
+    })
+  };
 
+  const handleNestedChange = (field: string, nested: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    if(selectedContact) setSelectedContact({
+      ...selectedContact,
+      [field]:  {
+        ...(selectedContact[field as keyof ContactType] as Record<string, unknown>),
+        [nested]: e.target.value,
+      }
+    })
+  };
 
   useEffect(() => {
     dispatch(fetchContactsData());
+    dispatch(fetchContactFoldersData());
   }, []);
 
   const handleAdding = (val: boolean) => () => setAdding(val || false);
 
-  const handleDelete = (contactId: string) => (e: MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    dispatch(deleteContactData(contactId));
-  }
-
   const handleContact = (contact: Contact) => () => {
-    navigate('/contacts/' + contact.id);
+    setSelectedContact(contact);
   }
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - contacts.length) : 0;
 
   const handleChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
@@ -80,6 +105,25 @@ function Contacts({ classes }: any) {
   }
 
   const csvData = formatContactsToCSV(contacts);
+
+  const handleContactFolderClick = (contactFolder: ContactFolder | null) => () => {
+    setSelectedContactFolder(contactFolder);
+  }
+
+  const handleMailCheckbox = (contact: Contact) => (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const copy = [...checkedContacts];
+    if(e.target.checked) {
+      copy.push(contact);
+    } else {
+      copy.splice(copy.findIndex(m => m.id === contact.id), 1);
+    }
+    setCheckedContacts(copy);
+  }
+
+  const handleCheckAll = () => {
+    setCheckedContacts(contacts.length === checkedContacts.length ? [] : contacts);
+  }
 
   return (
     <AuthenticatedView
@@ -132,69 +176,90 @@ function Contacts({ classes }: any) {
         </nav>
       }
     >
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t("Name")}</TableCell>
-              <TableCell>{t("E-Mail Addresses")}</TableCell>
-              <TableCell padding="checkbox" />
-            </TableRow>
-          </TableHead>
-          <TableBody>
+      <div className={classes.content}>
+        <FolderList>
+          <ListItem disablePadding>
+            <ListItemButton
+              onClick={handleContactFolderClick(null)}
+              divider
+              selected={!selectedContactFolder?.id}
+            >
+              <ListItemText primary={t("All contacts")} />
+            </ListItemButton>
+          </ListItem>
+          {contactFolders.map((contactFolder: ContactFolder, idx: number) => 
+            <ListItem disablePadding key={idx}>
+              <ListItemButton
+                onClick={handleContactFolderClick(contactFolder)}
+                divider
+                selected={selectedContactFolder?.id === contactFolder.id}
+              >
+                <ListItemText primary={contactFolder.displayName} />
+              </ListItemButton>
+            </ListItem>)}
+        </FolderList>
+        <Paper sx={{ ml: 1, display: 'flex', flexDirection: 'column' }}>
+          <div>
+            <IconButton sx={{ my: 1, mx: 1.5 }} onClick={handleCheckAll} className={classes.checkAll}>
+              <CheckBoxOutlined color={checkedContacts.length === contacts.length ? "primary" : "secondary"}/>
+            </IconButton>
+          </div>
+          <List>
             {(rowsPerPage > 0
               ? contacts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               : contacts
             ).map((contact: Contact, idx: number) => {
-              return (
-                <TableRow
-                  hover
-                  role="checkbox"
+              const checked = checkedContacts.includes(contact)
+              return <Hover>
+                {(hover: boolean) => hover || checked ? <ListItemButton
                   key={idx}
                   onClick={handleContact(contact)}
-                  sx={{ cursor: "pointer" }}
                 >
-                  <TableCell>{contact.displayName}</TableCell>
-                  <TableCell>
-                    {contact.emailAddresses
-                      ?.map((obj: EmailAddress) => obj.address)
-                      .join(", ")}
-                  </TableCell>
-                  <TableCell padding="checkbox">
-                    <CSVLink
-                      data={formatContactsToCSV([contact])}
-                      filename={'exported-data.csv'}
-                      style={{ marginTop: "7px" }}
-                    >
-                      <IconButton onClick={(e: MouseEvent<HTMLElement>) => e.stopPropagation()}><IosShareIcon /></IconButton>
-                    </CSVLink>
-                  </TableCell>
-                  <TableCell padding="checkbox">
-                    <IconButton onClick={handleDelete(contact.id || "")}>
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              );
+                  <ListItemAvatar>
+                    <Checkbox
+                      sx={{ p: 0.5 }}
+                      checked={checked}
+                      onChange={handleMailCheckbox(contact)}
+                    />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={contact.displayName}
+                    secondary={contact.emailAddresses?.length && contact.emailAddresses[0].address}
+                  />
+                </ListItemButton> : <ListItemButton key={idx} onClick={handleContact(contact)}>
+                  <ListItemAvatar>
+                    <Avatar>
+                      {contact.initials}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={contact.displayName}
+                    secondary={contact.emailAddresses?.length && contact.emailAddresses[0].address}
+                  />
+                </ListItemButton>}
+              </Hover>
             })}
-            {emptyRows > 0 && (
-              <TableRow style={{ height: 53 * emptyRows }}>
-                <TableCell colSpan={6} />
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          style={{ color: 'white',  }}
-          component="div"
-          count={contacts.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
+          </List>
+          <div className={classes.paginationContainer}>
+            <TablePagination
+              rowsPerPageOptions={[25, 50, 100]}
+              style={{ color: 'white' }}
+              component="div"
+              count={contacts.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+          </div>
+        </Paper>
+        {selectedContact &&
+          <ContactForm
+            contact={selectedContact}
+            handleChange={handleChange}
+            handleNestedChange={handleNestedChange}
+          />}
+      </div>
       <AddContact open={adding} onClose={handleAdding(false)} />
     </AuthenticatedView>
   );

@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import React from 'react';
-import { Divider, Grid, Paper, TextField, Typography } from '@mui/material';
+import { Mail } from '@mui/icons-material';
+import { Avatar, Button, Divider, Grid, Paper, TextField, Typography } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { withTranslation } from 'react-i18next';
 
 const styles = (theme: any) => ({
   paper: {
     padding: 16,
+    marginLeft: 8,
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    marginBottom: 24,
   },
   input: {
     margin: theme.spacing(1),
@@ -50,6 +56,19 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
   
   return (
     <Paper className={classes.paper}>
+      <div className={classes.header}>
+        <Avatar sx={{ width: 80, height: 80, mr: 2 }}/>
+        <div>
+          <Typography variant="h5">{contact.displayName}</Typography>
+          <Button
+            onClick={() => null /* TODO: Implement send-mail link */}
+            size="small"
+            startIcon={<Mail />}
+          >
+            Send mail
+          </Button>
+        </div>
+      </div>
       <div className={classes.flexRow}>
         <Typography variant="h6">{t('Name')}</Typography>
       </div>

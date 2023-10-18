@@ -13,6 +13,14 @@ export async function getContacts(): Promise<Contact[]> {
   return response.value;
 }
 
+export async function getContactFolders(): Promise<Contact[]> {
+  const response: PageCollection = await graphClient!
+    .api('/me/contactFolders')
+    .get();
+
+  return response.value;
+}
+
 export async function postContact(contact: Contact): Promise<Contact> {
   return await graphClient!
     .api('/me/contacts')

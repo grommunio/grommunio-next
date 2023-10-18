@@ -5,12 +5,14 @@ import { AnyAction } from 'redux'
 import {
   FETCH_CONTACTS_DATA,
   DELETE_CONTACTS_DATA,
+  FETCH_CONTACT_FOLDERS,
   POST_CONTACT_DATA,
 } from '../actions/types';
 import { addItem } from '../utils';
 
 const defaultState = {
   contacts: [],
+  contactFolders: [],
 };
 
 function contactsReducer(state = defaultState, action: AnyAction) {
@@ -20,6 +22,12 @@ function contactsReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       contacts: action.payload ?? [],
+    };
+
+  case FETCH_CONTACT_FOLDERS:
+    return {
+      ...state,
+      contactFolders: action.payload ?? [],
     };
 
   case DELETE_CONTACTS_DATA:
