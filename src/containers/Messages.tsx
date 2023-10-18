@@ -24,6 +24,7 @@ import usePinnedMessages from '../hooks/usePinnedMessages';
 import { fetchMailFoldersData } from '../actions/folders';
 import FolderHierarchy from '../components/FolderHierarchy';
 import { ContextMenuCoords } from '../types/misc';
+import { useLocation } from 'react-router-dom';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -172,6 +173,7 @@ function Messages({ classes }: MessagesProps) {
   const [contextMenuPosition, setContextMenuPosition] = useState<ContextMenuCoords | null>(null);
   const isContextMenuOpen = Boolean(contextMenuPosition);
   const dispatch = useTypeDispatch();
+  const location = useLocation();
   const [mailListPage, setMailListPage] = useState(1);
 
   const [pinnedMessages, setPinnedMessages] = usePinnedMessages();
@@ -182,6 +184,9 @@ function Messages({ classes }: MessagesProps) {
     dispatch(fetchMessagesData());
     dispatch(fetchMailFoldersData());
     dispatch(fetchMessageCategories());
+    if(location.state) {
+      handleNewMessage({ toRecipients: location.state.email })();
+    }
   }, []);
 
   // Set default folder selection after folders have been fetched

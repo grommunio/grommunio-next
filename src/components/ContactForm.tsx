@@ -5,9 +5,9 @@ import { Mail } from '@mui/icons-material';
 import { Avatar, Button, Divider, Grid, Paper, TextField, Typography } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { withTranslation } from 'react-i18next';
-import { patchContact } from '../api/contacts';
 import { useTypeDispatch } from '../store';
 import { patchContactData } from '../actions/contacts';
+import { useNavigate } from 'react-router-dom';
 
 const styles = (theme: any) => ({
   paper: {
@@ -49,6 +49,7 @@ const styles = (theme: any) => ({
 
 function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: any) {
   const dispatch = useTypeDispatch();
+  const navigate = useNavigate();
 
   const tfProps = (label: string, field: string, nested="") => ({
     fullWidth: true,
@@ -61,6 +62,11 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
   const handleSave = async () => {
     await dispatch(patchContactData(contact));
   }
+
+  const handleNewMessage = () => {
+    navigate('/', {
+      state: { email: contact.emailAddresses?.length && contact.emailAddresses[0].address } });
+  };
   
   return (
     <Paper className={classes.paper}>
@@ -69,7 +75,7 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange }: 
         <div>
           <Typography variant="h5">{contact.displayName}</Typography>
           <Button
-            onClick={() => null /* TODO: Implement send-mail link */}
+            onClick={handleNewMessage}
             size="small"
             startIcon={<Mail />}
           >
