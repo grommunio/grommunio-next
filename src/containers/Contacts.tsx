@@ -6,7 +6,7 @@ import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { Button, IconButton, Paper, TablePagination, ListItem, ListItemButton, ListItemText, List, ListItemAvatar, Avatar, Checkbox } from '@mui/material';
 import { Contact, ContactFolder, EmailAddress } from 'microsoft-graph';
-import { fetchContactFoldersData, fetchContactsData } from '../actions/contacts';
+import { fetchContactFoldersData, fetchContactsData, patchContactData } from '../actions/contacts';
 import AddContact from '../components/dialogs/AddContact';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
@@ -110,7 +110,7 @@ function Contacts({ classes }: any) {
     setSelectedContactFolder(contactFolder);
   }
 
-  const handleMailCheckbox = (contact: Contact) => (e: ChangeEvent<HTMLInputElement>) => {
+  const handleContactCheckbox = (contact: Contact) => (e: ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     const copy = [...checkedContacts];
     if(e.target.checked) {
@@ -124,6 +124,18 @@ function Contacts({ classes }: any) {
   const handleCheckAll = () => {
     setCheckedContacts(contacts.length === checkedContacts.length ? [] : contacts);
   }
+
+  const addEmail = (address: string) => {
+    const mergedContact: Contact = {
+      ...selectedContact,
+      emailAddresses: [
+        ...(selectedContact?.emailAddresses || []),
+        { name: selectedContact?.displayName, address }
+      ],
+    };
+    setSelectedContact(mergedContact);
+    dispatch(patchContactData(mergedContact));
+  };
 
   return (
     <AuthenticatedView
@@ -219,7 +231,7 @@ function Contacts({ classes }: any) {
                     <Checkbox
                       sx={{ p: 0.5 }}
                       checked={checked}
-                      onChange={handleMailCheckbox(contact)}
+                      onChange={handleContactCheckbox(contact)}
                     />
                   </ListItemAvatar>
                   <ListItemText
@@ -257,6 +269,7 @@ function Contacts({ classes }: any) {
           <ContactForm
             contact={selectedContact}
             handleChange={handleChange}
+            addEmail={addEmail}
             handleNestedChange={handleNestedChange}
           />}
       </div>
