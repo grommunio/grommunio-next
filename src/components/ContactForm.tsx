@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { Add, CancelOutlined, Check, Mail, MailOutlined } from '@mui/icons-material';
-import { Avatar, Button, Divider, Grid, IconButton, Paper, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { Avatar, Button, Divider, Grid, IconButton, ListItemButton, Paper, Tab, Tabs, TextField, Typography } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { withTranslation } from 'react-i18next';
 import { useTypeDispatch } from '../store';
@@ -123,19 +123,22 @@ function ContactForm({ classes, t, contact, handleChange, handleNestedChange, ad
         <Divider className={classes.divider}/>
         {tab === 0 && <div className={classes.details}>
           <Typography variant="h6" className={classes.subheader}>Contact info</Typography>
-          {contact.emailAddresses?.map((addr: any, idx: number) => <div className={classes.flexRow} key={idx}>
+          {contact.emailAddresses?.map((addr: any, idx: number) => <ListItemButton
+            className={classes.flexRow}
+            key={idx}
+            onClick={handleNewMessage(idx)}
+          >
             <MailOutlined sx={{ mr: 1 }}/>
             <div className={classes.details}>
               <Typography variant="caption">E-Mail</Typography>
-              <Button
-                onClick={handleNewMessage(idx)}
+              <Typography
                 className={classes.mail}
                 color="primary"
               >
                 {addr.address}
-              </Button>
+              </Typography>
             </div>
-          </div>)}
+          </ListItemButton>)}
           <div className={classes.flexRow} style={{ marginLeft: 32, marginTop: 2 }}>
             {addingEmail === false ? <Button
               onClick={() => setAddingEmail("")}
