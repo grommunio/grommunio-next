@@ -5,9 +5,10 @@ import { AnyAction } from 'redux'
 import {
   DELETE_NOTES_DATA,
   FETCH_NOTES_DATA,
+  PATCH_NOTE_DATA,
   POST_NOTE_DATA,
 } from '../actions/types';
-import { addItem } from '../utils';
+import { addItem, editItem } from '../utils';
 
 const defaultState = {
   notes: [],
@@ -32,6 +33,12 @@ function notesReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       notes: addItem(state.notes, action.payload),
+    }
+
+  case PATCH_NOTE_DATA:
+    return {
+      ...state,
+      notes: editItem(state.notes, action.payload),
     }
 
   default:

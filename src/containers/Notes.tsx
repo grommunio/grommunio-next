@@ -9,9 +9,8 @@ import { Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { Delete } from '@mui/icons-material';
 import { withTranslation } from 'react-i18next';
-import { deleteNoteData, fetchNotesData } from '../actions/notes';
+import { deleteNoteData, fetchNotesData, patchNoteData } from '../actions/notes';
 import AddNote from '../components/dialogs/AddNote';
-import { patchNote } from '../api/notes';
 import AuthenticatedView from '../components/AuthenticatedView';
 import FolderList from '../components/FolderList';
 
@@ -72,7 +71,7 @@ function Notes({ t, classes }: any) {
       },
       subject: editorRef.current ? editorRef.current.getContent({ format: 'text' }) : '',
     }
-    patchNote(mergedNote);
+    dispatch(patchNoteData(mergedNote));
   }
 
 
