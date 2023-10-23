@@ -3,13 +3,13 @@
 
 import { ChangeEvent, MouseEvent, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
-import { Button, Chip, IconButton, Paper, TextField } from '@mui/material';
+import { Button, Chip, IconButton, Menu, MenuItem, Paper, TextField } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Contact, Message, Importance, NullableOption, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-import { ContactMail, Delete } from '@mui/icons-material';
+import { ArrowDownward, ContactMail, Delete } from '@mui/icons-material';
 import GAB from './dialogs/GAB';
 
 const styles: any = (theme: any) => ({
@@ -28,10 +28,15 @@ const styles: any = (theme: any) => ({
     margin: theme.spacing(0, 1),
   },
   input: {
-    margin: theme.spacing(1, 0),
+    margin: "4px 0px",
+  },
+  buttonRow: {
+    display: 'flex',
+    marginBottom: 4,
   },
   flexRow: {
     display: 'flex',
+    alignItems: 'center',
   },
   actions: {
     display: 'flex',
@@ -46,6 +51,12 @@ const styles: any = (theme: any) => ({
   },
   ccButton: {
     minWidth: 40,
+  },
+  arrowButton: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    padding: 4,
+    minWidth: 24
   }
 });
 
@@ -87,6 +98,7 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
     "ccRecipients": [],
     "bccRecipients": [],
   });
+  const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
 
   const recipientsToValidRecipientFormat = (emails: string, contacts: Array<Contact>):  NullableOption<Recipient[]> => {
     let res: Recipient[] = [];
@@ -160,35 +172,54 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
     });
   }
 
+  const handleSendMenu = (open: boolean) => (event: React.MouseEvent<HTMLButtonElement>) => {
+    setSendMenuAnchor(open ? event.currentTarget : null);
+  };
+
   return (
     <div className={classes.content}>
-      <Paper className={classes.actions}>
-        <Button
-          onClick={handleSend(false)}
-          variant='contained'
-          color="primary"
-        >
-          {t("Save")}
-        </Button>
-        <Button
-          className={classes.button}
-          onClick={handleSend(true)}
-          variant='contained'
-          color="primary"
-        >
-          {t("Send")}
-        </Button>
-        <div className={classes.iconButtonRow}>
-          <IconButton title={t('Discard') || ""} onClick={handleDraftClose /* TODO: Prompt confirmation dialog */}>
-            <Delete />
-          </IconButton>
-          <IconButton title={t('High Importance') || ""} onClick={() => setMessageImportance("high")}>
-            <PriorityHighIcon color='error' />
-          </IconButton>
-        </div>
-      </Paper>
       <Paper className={classes.tinyMceContainer}>
+        <div className={classes.buttonRow}>
+          <Button
+            onClick={handleSend(true)}
+            variant='contained'
+            color="primary"
+            style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, }}
+          >
+            {t("Send")}
+          </Button>
+          <Button
+            onClick={handleSendMenu(true)}
+            variant='contained'
+            className={classes.arrowButton}
+          >
+            <ArrowDownward fontSize='small' />
+          </Button>
+          <Menu
+            anchorEl={sendMenuAnchor}
+            open={Boolean(sendMenuAnchor)}
+            onClose={handleSendMenu(false)}
+          >
+            <MenuItem onClick={handleSend(false)}>{t("Save")}</MenuItem>
+            <MenuItem onClick={handleSend(true)}>{t("Send")}</MenuItem>
+          </Menu>
+          <div className={classes.iconButtonRow}>
+            <IconButton title={t('Discard') || ""} onClick={handleDraftClose /* TODO: Prompt confirmation dialog */}>
+              <Delete />
+            </IconButton>
+            <IconButton title={t('High Importance') || ""} onClick={() => setMessageImportance("high")}>
+              <PriorityHighIcon color='error' />
+            </IconButton>
+          </div>
+        </div>
         <div className={classes.flexRow}>
+          <Button
+            variant='outlined'
+            onClick={handleGAB("toRecipients")}
+            sx={{ mr: 2 }}
+          >
+            {t("To")}
+          </Button>
           <TextField
             className={classes.input}
             onChange={e => setToRecipients(e.target.value)}
@@ -196,13 +227,6 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
             fullWidth
             InputProps={{
               startAdornment: <div className={classes.flexRow}>
-                <Button
-                  variant='outlined'
-                  onClick={handleGAB("toRecipients")}
-                  sx={{ mr: 2 }}
-                >
-                  {t("To")}
-                </Button>
                 {selectedContacts.toRecipients.length > 0 && selectedContacts.toRecipients.map((c, key) =>
                   <ContactChip
                     key={key}
@@ -233,6 +257,13 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
           />
         </div>
         {ccVisible && <div className={classes.flexRow}>
+          <Button
+            variant='outlined'
+            onClick={handleGAB("ccRecipients")}
+            sx={{ mr: 2 }}
+          >
+            {t("Cc")}
+          </Button>
           <TextField
             className={classes.input}
             onChange={e => setCcRecipients(e.target.value)}
@@ -240,13 +271,6 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
             fullWidth
             InputProps={{
               startAdornment: <div className={classes.flexRow}>
-                <Button
-                  variant='outlined'
-                  onClick={handleGAB("ccRecipients")}
-                  sx={{ mr: 2 }}
-                >
-                  {t("Cc")}
-                </Button>
                 {selectedContacts.ccRecipients.length > 0 && selectedContacts.ccRecipients.map((c, key) =>
                   <ContactChip
                     key={key}
@@ -259,6 +283,13 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
           />
         </div>}
         {bccVisible && <div className={classes.flexRow}>
+          <Button
+            variant='outlined'
+            onClick={handleGAB("bccRecipients")}
+            sx={{ mr: 2 }}
+          >
+            {t("Bcc")}
+          </Button>
           <TextField
             className={classes.input}
             onChange={e => setBccRecipients(e.target.value)}
@@ -266,13 +297,6 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
             fullWidth
             InputProps={{
               startAdornment: <div className={classes.flexRow}>
-                <Button
-                  variant='outlined'
-                  onClick={handleGAB("bccRecipients")}
-                  sx={{ mr: 2 }}
-                >
-                  {t("Bcc")}
-                </Button>
                 {selectedContacts.bccRecipients.length > 0 && selectedContacts.bccRecipients.map((c, key) =>
                   <ContactChip
                     key={key}
@@ -286,6 +310,7 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
         </div>}
         <TextField
           className={classes.input}
+          style={{ marginBottom: 8 }}
           label={t("Subject")}
           onChange={handleSubject}
           value={subject}

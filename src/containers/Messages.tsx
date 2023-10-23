@@ -91,7 +91,7 @@ const styles: any = (theme: any) => ({
   mailTabsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    marginBottom: 22,
+    marginBottom: 16,
   },
   tab: {
     textTransform: 'none',
@@ -524,6 +524,7 @@ function Messages({ classes }: MessagesProps) {
                   key={key}
                   value={tab}
                   iconPosition='end'
+                  style={{ height: 56 }}
                   icon={key !== 0 ? <IconButton
                     onClick={handleCloseTab(tab)}
                     size="small"
