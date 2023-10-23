@@ -24,6 +24,7 @@ const styles: any = {
     display: 'flex',
     flex: 1,
     justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
   header: {
     display: 'flex',
