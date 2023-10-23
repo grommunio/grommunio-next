@@ -256,20 +256,24 @@ function Messages({ classes }: MessagesProps) {
     setActiveMailTab(tab);
   }
 
-  const handleReplyAll = () => {
+  const handleReply = (all=true) => () => {
     const copy = [...mailTabs];
     const { sender, toRecipients, ccRecipients } = selectedMsg as Message; // Ignore BCC recips
-    const newRecipients = [sender?.emailAddress?.address || ""].concat(
-      (toRecipients || [])
-        .map((recip: Recipient) => recip.emailAddress?.address || "")
-        // Don't send reply to oneself
-        .filter(addr => addr !== ownEmail)
-    ).join(",")
-    const filteredCCRecipsArrayString = (ccRecipients || [])
+    let newRecipients = [sender?.emailAddress?.address || ""]
+    if(all) {
+      newRecipients = newRecipients.concat(
+        (toRecipients || [])
+          .map((recip: Recipient) => recip.emailAddress?.address || "")
+          // Don't send reply to oneself
+          .filter(addr => addr !== ownEmail)
+          .join(",")
+      )
+    }
+    const filteredCCRecipsArrayString = all ? (ccRecipients || [])
       .map((recip: Recipient) => recip.emailAddress?.address || "")
       // Don't send reply to oneself
       .filter(addr => addr !== ownEmail)
-      .join(",")
+      .join(",") : undefined;
     const tab: MailTab = {
       ID: now(),
       label: 'RE: ' + selectedMsg?.subject,
@@ -443,7 +447,7 @@ function Messages({ classes }: MessagesProps) {
         selection={checkedMessages}
         clearCheckedMails={clearCheckedMails}
         folder={selectedFolder}
-        handleReplyAll={handleReplyAll}
+        handleReplyAll={handleReply(true)}
         handleFoldersToggle={handleFoldersToggle}
         handlePin={handlePin(selectedMsg?.id || "")}
       />}
@@ -565,7 +569,7 @@ function Messages({ classes }: MessagesProps) {
           </div>}
           {activeMailTab?.ID === 1 && <MessagePaper
             handleForward={handleForward}
-            handleReplyAll={handleReplyAll}
+            handleReply={handleReply}
             selectedMsg={selectedMsg}
           />}
           {(mailTabs.length > 1 ? mailTabs.slice(1) : []).map((tab, key) =>

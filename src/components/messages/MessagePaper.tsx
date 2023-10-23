@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { Forward, ReplyAll } from "@mui/icons-material";
+import { Forward, Reply, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
@@ -43,10 +43,10 @@ type MessageProps = {
   classes: any;
   selectedMsg: Message | null,
   handleForward: () => void,
-  handleReplyAll: () => void,
+  handleReply: (all: boolean) => () => void,
 }
 
-function MessagePaper({ classes, handleForward, handleReplyAll, selectedMsg }: MessageProps) {
+function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: MessageProps) {
   const { t } = useTranslation();
   const editorRef = useRef({});
   const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
@@ -71,8 +71,13 @@ function MessagePaper({ classes, handleForward, handleReplyAll, selectedMsg }: M
         </div>
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
           <Tooltip title={t("Reply all")} placement="top">
-            <IconButton onClick={handleReplyAll}>
+            <IconButton onClick={handleReply(true)}>
               <ReplyAll color="primary"/>
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Reply")} placement="top">
+            <IconButton onClick={handleReply(false)}>
+              <Reply color="primary"/>
             </IconButton>
           </Tooltip>
           <Tooltip title={t("Forward")} placement="top">
