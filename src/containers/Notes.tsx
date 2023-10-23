@@ -13,6 +13,7 @@ import { deleteNoteData, fetchNotesData, patchNoteData } from '../actions/notes'
 import AddNote from '../components/dialogs/AddNote';
 import AuthenticatedView from '../components/AuthenticatedView';
 import FolderList from '../components/FolderList';
+import { truncateString } from '../utils';
 
 const styles: any = {
   content: {
@@ -98,7 +99,7 @@ function Notes({ t, classes }: any) {
                 selected={selectedNote?.id === note.id}
               >
                 <ListItemText
-                  primary={note.subject}
+                  primary={truncateString(note.subject || "")}
                 />
                 <IconButton size='small'  onClick={handleNoteDelete(note.id || '')}>
                   <Delete color="error" fontSize='small' />

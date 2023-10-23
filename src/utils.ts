@@ -121,3 +121,8 @@ export function hexColorToPresetName(pseudoColor: string) {
   default: return "preset0";
   }
 }
+
+export function truncateString(str: string): string {
+  const truncatedLength = 24;
+  return str.length > truncatedLength ? `${str.substring(0, truncatedLength)}...` : str;
+}
