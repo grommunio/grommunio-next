@@ -86,10 +86,10 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
   const { t, i18n } = useTranslation();
   const editorRef = useRef<any>(null);
   const [toRecipients, setToRecipients] = useState(initialState?.toRecipients || "");
-  const [ccRecipients, setCcRecipients] = useState("");
+  const [ccRecipients, setCcRecipients] = useState(initialState?.ccRecipients || "");
   const [bccRecipients, setBccRecipients] = useState("");
   const [subject, setSubject] = useState(initialState?.subject || "");
-  const [ccVisible, setCcVisible] = useState(false);
+  const [ccVisible, setCcVisible] = useState(Boolean(initialState?.ccRecipients?.length));
   const [bccVisible, setBccVisible] = useState(false);
   const [messageImportance, setMessageImportance] = useState<Importance>("normal");
   const [gabOpen, setGabOpen] = useState<string>("");

@@ -36,7 +36,7 @@ const ActionButton = withStyles(styles)(({ classes, children, color, ...childPro
   );
 });
 
-const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, folder, handleFoldersToggle,
+const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReplyAll, folder, handleFoldersToggle,
   handlePin, clearCheckedMails }) => {
   const mailsSelected = selection.length > 0 || openedMail !== null;
   const handlePlaceholder = (e) => e.stopPropagation();
@@ -138,7 +138,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReply, 
       {t("Move")}
     </ActionButton>
     <ActionButton
-      onClick={handleReply}
+      onClick={handleReplyAll}
       disabled={selection.length > 1 || !openedMail /* TODO: this is still a bit buggy */} 
       startIcon={<ReplyAllOutlined color={mailsSelected ? "primary" : "secondary"}/>}
     >

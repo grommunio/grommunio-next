@@ -7,7 +7,7 @@ import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Button, Grid, IconButton, List, Menu,
   MenuItem, Pagination, Paper, Tab, Tabs, Typography } from '@mui/material';
-import { MailFolder, Message } from 'microsoft-graph';
+import { MailFolder, Message, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
@@ -142,8 +142,6 @@ type MailTab = {
   initialState?: any,
 };
 
-
-
 function objectToCNF(filters: any) {
   return Object.entries(filters)
     .filter(e => e[1])
@@ -166,6 +164,7 @@ function Messages({ classes }: MessagesProps) {
   const [mailFilters, setMailFilters] = useState<any>({});
   const { mails: messages, count: totalMailCount } = useTypeSelector(state => state.messages);
   const { mailFolders } = useTypeSelector(state => state.folders);
+  const { mail: ownEmail } = useTypeSelector(state => state.me);
   const [mailTabs, setMailTabs] = useState<Array<MailTab>>([]);
   const [activeMailTab, setActiveMailTab] = useState<MailTab | null>(null);
   const [foldersVisible, setFoldersVisible] = useState<boolean>(true);
@@ -240,7 +239,7 @@ function Messages({ classes }: MessagesProps) {
     const copy = [...mailTabs];
     const tab: MailTab = {
       ID: now(),
-      label: 'FW: ' + selectedMsg?.subject,
+      label: 'Fwd: ' + selectedMsg?.subject,
       Component: NewMessage,
       initialState: {
         ...(selectedMsg || {}),
@@ -257,15 +256,28 @@ function Messages({ classes }: MessagesProps) {
     setActiveMailTab(tab);
   }
 
-  const handleReply = () => {
+  const handleReplyAll = () => {
     const copy = [...mailTabs];
+    const { sender, toRecipients, ccRecipients } = selectedMsg as Message; // Ignore BCC recips
+    const newRecipients = [sender?.emailAddress?.address || ""].concat(
+      (toRecipients || [])
+        .map((recip: Recipient) => recip.emailAddress?.address || "")
+        // Don't send reply to oneself
+        .filter(addr => addr !== ownEmail)
+    ).join(",")
+    const filteredCCRecipsArrayString = (ccRecipients || [])
+      .map((recip: Recipient) => recip.emailAddress?.address || "")
+      // Don't send reply to oneself
+      .filter(addr => addr !== ownEmail)
+      .join(",")
     const tab: MailTab = {
       ID: now(),
-      label: 'FW: ' + selectedMsg?.subject,
+      label: 'RE: ' + selectedMsg?.subject,
       Component: NewMessage,
       initialState: {
         subject: "RE: " + selectedMsg?.subject,
-        toRecipients: selectedMsg?.toRecipients?.map(recip => recip.emailAddress?.address || "").join(","),
+        toRecipients: newRecipients,
+        ccRecipients: filteredCCRecipsArrayString,
         body: {
           // TODO: Improve reply body (this already works really well)
           content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
@@ -431,7 +443,7 @@ function Messages({ classes }: MessagesProps) {
         selection={checkedMessages}
         clearCheckedMails={clearCheckedMails}
         folder={selectedFolder}
-        handleReply={handleReply}
+        handleReplyAll={handleReplyAll}
         handleFoldersToggle={handleFoldersToggle}
         handlePin={handlePin(selectedMsg?.id || "")}
       />}
@@ -553,7 +565,7 @@ function Messages({ classes }: MessagesProps) {
           </div>}
           {activeMailTab?.ID === 1 && <MessagePaper
             handleForward={handleForward}
-            handleReply={handleReply}
+            handleReplyAll={handleReplyAll}
             selectedMsg={selectedMsg}
           />}
           {(mailTabs.length > 1 ? mailTabs.slice(1) : []).map((tab, key) =>

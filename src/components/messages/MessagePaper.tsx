@@ -43,10 +43,10 @@ type MessageProps = {
   classes: any;
   selectedMsg: Message | null,
   handleForward: () => void,
-  handleReply: () => void,
+  handleReplyAll: () => void,
 }
 
-function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: MessageProps) {
+function MessagePaper({ classes, handleForward, handleReplyAll, selectedMsg }: MessageProps) {
   const { t } = useTranslation();
   const editorRef = useRef({});
   const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
@@ -65,10 +65,13 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           <Typography variant="body1">
             {t("To")}: {selectedMsg.toRecipients?.map(recip => recip.emailAddress?.address).join(", ")}
           </Typography>
+          <Typography variant="body1">
+            {t("Cc")}: {selectedMsg.ccRecipients?.map(recip => recip.emailAddress?.address).join(", ")}
+          </Typography>
         </div>
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
           <Tooltip title={t("Reply all")} placement="top">
-            <IconButton onClick={handleReply}>
+            <IconButton onClick={handleReplyAll}>
               <ReplyAll color="primary"/>
             </IconButton>
           </Tooltip>
