@@ -523,17 +523,17 @@ function Messages({ classes }: MessagesProps) {
                   disableRipple
                   key={key}
                   value={tab}
-                  iconPosition='start'
-                  icon={key !== 0 ? <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/> : undefined}
+                  iconPosition='end'
+                  icon={key !== 0 ? <IconButton
+                    onClick={handleCloseTab(tab)}
+                    size="small"
+                    sx={{ ml: 1 }}
+                  >
+                    <Close fontSize='small'/>
+                  </IconButton> : undefined}
                   label={<div className={classes.tabContent}>
+                    {key !== 0 && <EditOutlined fontSize='inherit' style={{ fontSize: 16, marginRight: 4 }}/>}
                     <Typography>{tab.label || "<No subject>"}</Typography>
-                    {key !== 0 && <IconButton
-                      onClick={handleCloseTab(tab)}
-                      size="small"
-                      sx={{ ml: 1 }}
-                    >
-                      <Close fontSize='small'/>
-                    </IconButton>}
                   </div>}
                   className={classes.tab}
                   
