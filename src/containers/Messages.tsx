@@ -244,6 +244,8 @@ function Messages({ classes }: MessagesProps) {
       Component: NewMessage,
       initialState: {
         ...(selectedMsg || {}),
+        subject: "Fwd: " + selectedMsg?.subject,
+        toRecipients: "",
         body: {
           // TODO: Improve reply body (this already works really well)
           content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
