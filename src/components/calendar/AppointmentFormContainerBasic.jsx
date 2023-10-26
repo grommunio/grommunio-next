@@ -28,10 +28,18 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Close from "@mui/icons-material/Close";
-import { Editor } from '@tinymce/tinymce-react';
-import 'react-quill/dist/quill.snow.css';
-import 'moment-timezone';
-import CircleIcon from '@mui/icons-material/Circle';
+import { Editor } from "@tinymce/tinymce-react";
+import "react-quill/dist/quill.snow.css";
+import "moment-timezone";
+import CircleIcon from "@mui/icons-material/Circle";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemButton from "@mui/material/ListItemButton";
+import Avatar from "@mui/material/Avatar";
+import { fetchContactsData } from "../../actions/contacts";
+import { connect } from "react-redux";
 
 const PREFIX = "Demo";
 const classes = {
@@ -105,11 +113,12 @@ const StyledDiv = styled("div")(({ theme }) => ({
     padding: "10px 5px",
     fontSize: "17px",
     cursor: "pointer",
-    outline: 'none',
+    outline: "none",
     fontWeight: "500",
-    color: theme.palette.mode === "dark"
-      ? "rgba(255,255,255,.35)"
-      : "rgba(0,0,0,.25)",
+    color:
+      theme.palette.mode === "dark"
+        ? "rgba(255,255,255,.35)"
+        : "rgba(0,0,0,.25)",
   },
   [`& .${classes.attachmentDropdown}`]: {
     position: "absolute",
@@ -177,7 +186,6 @@ const AntSwitch = styled(Switch)(({ theme }) => ({
   },
 }));
 
-
 class AppointmentFormContainerBasic extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -192,8 +200,10 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       ButtonSwitch: true,
       showCustomItem: true,
       selectedStartDate: null,
+      gabContacts: [],
+      contactData: [],
+      showDropdown: false,
     };
-
 
     this.getAppointmentData = () => {
       const { appointmentData } = this.props;
@@ -207,7 +217,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     this.changeAppointment = this.changeAppointment.bind(this);
     this.commitAppointment = this.commitAppointment.bind(this);
 
-    this.editorRef = React.createRef();
+    this.inputRef = React.createRef();
   }
 
   changeAppointment({ field, changes }) {
@@ -232,6 +242,28 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       appointmentChanges: {},
     });
   }
+
+  componentDidMount() {
+    const { fetchUserCalenders, app, contacts } = this.props;
+    fetchUserCalenders(app);
+    this.setState({ gabContacts: contacts });
+    this.setState({ contactData: contacts });
+    document.addEventListener('click', this.handleClickOutside);
+    // console.log(">>", contacts)
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('click', this.handleClickOutside);
+  }
+
+  // Handle clicks outside the input field
+  handleClickOutside = (event) => {
+    if (this.inputRef.current && !this.inputRef.current.contains(event.target)) {
+      // Clicked outside the element, so hide it
+      this.setState({ showDropdown: false })
+    }
+  }
+
   render() {
     const {
       visible,
@@ -240,8 +272,17 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       cancelAppointment,
       onHide,
     } = this.props;
-    const { appointmentChanges, anchorEl, selectedOption, selectedTimezone, timezones, ButtonSwitch, selectedStartDate } =
-      this.state;
+    const {
+      appointmentChanges,
+      anchorEl,
+      selectedOption,
+      selectedTimezone,
+      timezones,
+      ButtonSwitch,
+      selectedStartDate,
+      contactData,
+      showDropdown,
+    } = this.state;
 
     const displayAppointmentData = {
       ...appointmentData,
@@ -251,14 +292,34 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     const applyChanges = () =>
       this.commitAppointment(isNewAppointment ? "added" : "changed");
 
-    const textEditorProps = (field) => ({
-      variant: "outlined",
-      onChange: (event) => {
-        const newValue = event.target.value;
+    const handleInputChange = (field, newValue) => {
+      // Check if the field is "Invite attendees"
+      if (field === "Invite attendees") {
         this.changeAppointment({
           field: [field],
           changes: newValue,
         });
+        // Filter GAB contacts based on user input
+        this.setState((prevState) => ({
+          contactData: prevState.gabContacts.filter((contact) =>
+            contact.displayName.toLowerCase().includes(newValue.toLowerCase())
+          ),
+        }));
+
+      } else {
+        // Handle other fields
+        this.changeAppointment({
+          field: [field],
+          changes: newValue,
+        });
+      }
+    };
+
+    const textEditorProps = (field) => ({
+      variant: "outlined",
+      onChange: (event) => {
+        const newValue = event.target.value;
+        handleInputChange(field, newValue);
       },
       value: displayAppointmentData[field] || "",
       placeholder: field[0].toUpperCase() + field.slice(1),
@@ -281,7 +342,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       return moment(currentDate);
     };
 
-    const dateDefaultValue = !ButtonSwitch ? moment() : null
+    const dateDefaultValue = !ButtonSwitch ? moment() : null;
     const pickerEditorProps = (field) => {
       return {
         onChange: (date) => {
@@ -294,12 +355,11 @@ class AppointmentFormContainerBasic extends React.PureComponent {
             currentDate = getDateOrTime(date, field, "startDate");
             currentTime = getDateOrTime(date, field, "startTime");
             this.setState({ selectedStartDate: date });
-
           }
           let newDateTime = moment(
             currentDate.format("YYYYMMDD") + currentTime.format("hhmm"),
             "YYYYMMDDhhmm"
-          ).tz(selectedTimezone)
+          ).tz(selectedTimezone);
 
           this.changeAppointment({
             field: [field],
@@ -312,6 +372,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
         minDate: field === "endDate" ? selectedStartDate : undefined,
       };
     };
+
     const startTimePickerProps = pickerEditorProps("startTime");
     const endTimePickerProps = pickerEditorProps("endTime");
     const startDatePickerProps = pickerEditorProps("startDate");
@@ -326,36 +387,56 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     };
 
     const timezoneHandlechange = (event) => {
-      this.setState({ selectedTimezone: event.target.value })
-    }
+      this.setState({ selectedTimezone: event.target.value });
+    };
 
     const handleSwitch = () => {
       this.setState({ ButtonSwitch: !ButtonSwitch });
-      pickerSize = !pickerSize
+      pickerSize = !pickerSize;
 
       this.changeAppointment({
-        "startDate": "startDate",
+        startDate: "startDate",
         changes: dateDefaultValue,
       });
 
       this.changeAppointment({
-        "endDate": "endDate",
+        endDate: "endDate",
         changes: dateDefaultValue,
       });
+    };
 
-    }
     const handleEditorChange = (content, editor) => {
       this.changeAppointment({
-        field: ['note'],
+        field: ["note"],
         changes: content,
       });
+    };
+
+    function getRandomColor() {
+      // Generate a random color in hexadecimal format
+      const letters = "0123456789ABCDEF";
+      let color = "#";
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
     }
 
-    const toolbar = `undo redo | formatselect | bold italic underline strikethrough link unlink image
+    const toolbar =
+      `undo redo | formatselect | bold italic underline strikethrough link unlink image
      | alignleft aligncenter alignright | 'bullist numlist' | outdent indent |
-       table | removeformat | code ` + 'fontselect fontsizeselect | forecolor backcolor | ' +
-      'link unlink image | table | removeformat | ' + 'subscript superscript | code | searchreplace | ' ;
+       table | removeformat | code ` +
+      "fontselect fontsizeselect | forecolor backcolor | " +
+      "link unlink image | table | removeformat | " +
+      "subscript superscript | code | searchreplace | ";
 
+    const handleContactSelect = (contact) => {
+      this.changeAppointment({
+        field: ["Invite attendees"],
+        changes: contact.emailAddresses?.map((obj) => obj.address).join(", "),
+      });
+      this.setState({ showDropdown: false });
+    };
 
     return (
       <Dialog open={visible} onClose={onHide} maxWidth="md" fullWidth={true}>
@@ -393,7 +474,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                   onClick={handleClick}
                   endIcon={<KeyboardArrowDownIcon />}
                   startIcon={<CircleIcon color="primary" />}
-                  color='primary'
+                  color="primary"
                 >
                   {selectedOption ? selectedOption : "Calender"}
                 </Button>
@@ -418,7 +499,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
               <Close color="action" />
             </IconButton>
           </DialogTitle>
-          <DialogContent style={{ paddingBottom: '20px' }}>
+          <DialogContent style={{ paddingBottom: "20px" }}>
             <div className={classes.content}>
               <div className={classes.flexRow}>
                 <Create className={classes.icon} color="action" />
@@ -432,50 +513,122 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 <TextField
                   {...textEditorProps("Invite attendees")}
                   variant="standard"
+                  onClick={() => this.setState({ showDropdown: true })}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">Optional</InputAdornment>
                     ),
                   }}
+                  ref={this.inputRef}
                 />
+                {showDropdown && (
+                  <List
+                    sx={{
+                      width: "100%",
+                      maxWidth: 300,
+                      bgcolor: "background.paper",
+                      height: "250px", // Set your desired height
+                      boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)", // Add box shadow
+                      overflowY: "scroll", // Enable vertical scroll
+                      position: "absolute", // Set position to absolute
+                      zIndex: 10, // Add the z-index property
+                      top: 169,
+                      left: 90,
+                    }}
+                   
+                  >
+                    <ListItem>
+                      <ListItemText primary="Suggested contacts" />
+                    </ListItem>
+                    {contactData.map((contact) => (
+                      <ListItemButton
+                        key={contact.id}
+                        onClick={() => handleContactSelect(contact)}
+                      >
+                        <ListItemAvatar>
+                          <Avatar
+                            className={classes.avatar}
+                            style={{
+                              backgroundColor: getRandomColor(),
+                            }}
+                          >
+                            {contact.displayName.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={contact.displayName}
+                          secondary={contact.emailAddresses
+                            ?.map((obj) => obj.address)
+                            .join(", ")}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                )}
               </div>
               <div className={classes.flexRow}>
                 <CalendarToday className={classes.icon} color="action" />
                 <LocalizationProvider dateAdapter={AdapterMoment}>
                   <div>
-                    <div
-                      className={classes.flexRow}
-                    >
-                      <DatePicker {...startDatePickerProps} defaultValue={dateDefaultValue} />
+                    <div className={classes.flexRow}>
+                      <DatePicker
+                        {...startDatePickerProps}
+                        defaultValue={dateDefaultValue}
+                      />
                       {ButtonSwitch && <TimePicker {...startTimePickerProps} />}
-                      <span style={{ marginTop: '15px', display: "flex", gap: "15px", fontWeight: "500" }}><AntSwitch inputProps={{ "aria-label": "ant design" }} onClick={handleSwitch} /> <span>All day</span></span>
-                      {ButtonSwitch && <div className={classes.wrapper}>
-                        <label htmlFor="Timezone">
-                          <LanguageIcon color='primary' />
-                        </label>
-                        <select
-                          name="Timezone"
-                          id="Timezone"
-                          className={classes.customSelect}
-                          style={{ width: '160px' }}
-                          value={selectedTimezone}
-                          onChange={timezoneHandlechange}
-                        >
-                          <option value={moment.tz.guess()}>{moment.tz.guess()}</option>
-                          {timezones && timezones.map((timezone, index) => (
-                            <option key={index} value={timezone} style={{ color: "black" }}>
-                              {timezone}
+                      <span
+                        style={{
+                          marginTop: "15px",
+                          display: "flex",
+                          gap: "15px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        <AntSwitch
+                          inputProps={{ "aria-label": "ant design" }}
+                          onClick={handleSwitch}
+                        />
+                        <span>All day</span>
+                      </span>
+                      {ButtonSwitch && (
+                        <div className={classes.wrapper}>
+                          <label htmlFor="Timezone">
+                            <LanguageIcon color="primary" />
+                          </label>
+                          <select
+                            name="Timezone"
+                            id="Timezone"
+                            className={classes.customSelect}
+                            style={{ width: "160px" }}
+                            value={selectedTimezone}
+                            onChange={timezoneHandlechange}
+                          >
+                            <option value={moment.tz.guess()}>
+                              {moment.tz.guess()}
                             </option>
-                          ))}
-                        </select>
-                      </div>}
+                            {timezones &&
+                              timezones.map((timezone, index) => (
+                                <option
+                                  key={index}
+                                  value={timezone}
+                                  style={{ color: "black" }}
+                                >
+                                  {timezone}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                     <div className={classes.flexRow}>
-                      <DatePicker {...endDatePickerProps} defaultValue={dateDefaultValue} />
+                      <DatePicker
+                        {...endDatePickerProps}
+                        defaultValue={dateDefaultValue}
+                      />
                       {ButtonSwitch && <TimePicker {...endTimePickerProps} />}
                       <div className={classes.wrapper}>
                         <label htmlFor="Repeat">
-                          <RepeatIcon color='primary' />
+                          <RepeatIcon color="primary" />
                         </label>
                         <select
                           name="Repeat"
@@ -538,13 +691,15 @@ class AppointmentFormContainerBasic extends React.PureComponent {
                 <Notes className={classes.icon} color="action" />
                 <div>
                   <Editor
-                    tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-                    initialValue={displayAppointmentData['note'] || ""}
+                    tinymceScriptSrc={
+                      process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
+                    }
+                    initialValue={displayAppointmentData["note"] || ""}
                     init={{
                       menubar: false,
                       readonly: true,
                       toolbar,
-                      plugins: ['wordcount'],
+                      plugins: ["wordcount"],
                       width: 760,
                       height: 350, // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
                     }}
@@ -560,5 +715,20 @@ class AppointmentFormContainerBasic extends React.PureComponent {
   }
 }
 
+const mapStateToProps = (state) => {
+  return {
+    contacts: state.contacts.contacts,
+  };
+};
 
-export default AppointmentFormContainerBasic;
+const mapDispatchToProps = (dispatch) => {
+  return {
+    fetchUserCalenders: async (props) =>
+      await dispatch(fetchContactsData(props)),
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(AppointmentFormContainerBasic);
