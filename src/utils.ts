@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import moment from "moment";
+import * as DOMPurify from 'dompurify'; 
 
 export type URLParams = {
   [index: string]: string;
@@ -125,4 +126,8 @@ export function hexColorToPresetName(pseudoColor: string) {
 export function truncateString(str: string): string {
   const truncatedLength = 24;
   return str.length > truncatedLength ? `${str.substring(0, truncatedLength)}...` : str;
+}
+
+export function purify(rawHtml: string): string {
+  return DOMPurify.sanitize(rawHtml, { USE_PROFILES: { html: true } });
 }

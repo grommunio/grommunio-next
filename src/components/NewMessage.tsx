@@ -9,6 +9,7 @@ import { postMessage } from '../api/messages';
 import { Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import GABAutocompleteTextfields from './NewMessageHeader';
+import { purify } from '../utils';
 
 
 const styles: any = () => ({
@@ -42,7 +43,7 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
       ...message,
       body: {
         contentType: 'html',
-        content: editorRef.current ? editorRef.current.getContent() : '',
+        content: editorRef.current ? purify(editorRef.current.getContent()) : '',
       },
     }
     postMessage(finalMessage, send)
