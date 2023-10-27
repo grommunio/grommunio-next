@@ -21,7 +21,7 @@ root.render(
   <Provider store={store}>
     <StyledEngineProvider injectFirst>
       <ToggleColorMode>
-        <BrowserRouter>
+        <BrowserRouter basename='' /* TODO: This will be configurable in the future */>
           <AsyncApp />
         </BrowserRouter>
       </ToggleColorMode>

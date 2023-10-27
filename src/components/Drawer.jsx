@@ -26,23 +26,23 @@ const styles = theme => ({
 });
 
 const tabs = [
-  { label: "Messages", icon: Mail, route: "/" },
-  { label: "Calendar", icon: CalendarMonth, route: "/calendar" },
-  { label: "Contacts", icon: ContactEmergency, route: "/contacts" },
-  { label: "Tasks", icon: Task, route: "/tasks" },
-  { label: "Notes", icon: Note, route: "/notes" },
+  { id: 1, label: "Messages", icon: Mail, route: "/" },
+  { id: 2, label: "Calendar", icon: CalendarMonth, route: "/calendar" },
+  { id: 3, label: "Contacts", icon: ContactEmergency, route: "/contacts" },
+  { id: 4, label: "Tasks", icon: Task, route: "/tasks" },
+  { id: 5, label: "Notes", icon: Note, route: "/notes" },
 ]
 
 function ResponsiveDrawer({ classes }) {
-  const [tab, setTab] = useState(tabs.find(t => t.route === window.location.pathname)?.route || "/");
+  const [tab, setTab] = useState(tabs.find(t => window.location.pathname.endsWith(t.route)) || tabs[0]);
   const navigate = useNavigate();
 
-  const handleTabClicked = (e, newValue) => {
-    navigate(newValue);
+  const handleTabClicked = (_e, newValue) => {
+    navigate(newValue.route);
   }
 
   useEffect(() => {
-    setTab(tabs.find(t => t.route === window.location.pathname)?.route || "/");
+    setTab(tabs.find(t => window.location.pathname.endsWith(t.route)) || tabs[0]);
   }, [window.location.pathname])
 
   return (
@@ -61,11 +61,11 @@ function ResponsiveDrawer({ classes }) {
         value={tab}
         onChange={handleTabClicked}
       >
-        {tabs.map(({ label, icon: Icon, route }) =>
+        {tabs.map((tab) =>
           <Tab
-            value={route}
-            key={label}
-            icon={<Icon fontSize="large"/>}
+            value={tab}
+            key={tab.id}
+            icon={<tab.icon fontSize="large"/>}
           />
         )}
       </Tabs>
