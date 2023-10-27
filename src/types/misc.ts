@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { AlertColor } from "@mui/material";
+import { Contact } from "microsoft-graph";
 
 export type AlertType = {
   id: number,
@@ -20,4 +21,10 @@ export interface Map {
 
 export interface IntMap {
   [key: string]: number | undefined
+}
+
+export type GabSelections = {
+  toRecipients: Array<Contact>;
+  ccRecipients: Array<Contact>;
+  bccRecipients: Array<Contact>;
 }
