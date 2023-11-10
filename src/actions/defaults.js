@@ -22,7 +22,10 @@ export function defaultFetchHandler(endpoint, actionType, ...endpointProps) {
   return async (dispatch) => {
     try {
       const data = await endpoint(...endpointProps);
-      if(actionType) await dispatch({ type: actionType, payload: data });
+      if(actionType) {
+        const skip = endpointProps?.length ? endpointProps[endpointProps.length - 1].skip : undefined;  // params.skip
+        await dispatch({ type: actionType, payload: data, skip });
+      }
       return data;
     } catch (error) {
       await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));

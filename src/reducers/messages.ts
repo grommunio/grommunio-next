@@ -20,12 +20,14 @@ const defaultState = {
 function messagesReducer(state = defaultState, action: AnyAction) {
   switch (action.type) {
 
-  case FETCH_MAILS_DATA:
+  case FETCH_MAILS_DATA: {
+    const newMails = action.payload?.value ?? [];
     return {
       ...state,
       count: action.payload ? action.payload["@odata.count"] || 0 : 0,
-      mails: action.payload?.value ?? [],
+      mails: action.skip > 0 ? [...state.mails, ...newMails] : newMails,
     };
+  }
 
   case DELETE_MESSAGE_DATA:
     return {

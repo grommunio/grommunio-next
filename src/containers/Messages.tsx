@@ -6,7 +6,7 @@ import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
 import { Button, Grid, IconButton, List, Menu,
-  MenuItem, Pagination, Paper, Tab, Tabs, Typography } from '@mui/material';
+  MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
@@ -25,6 +25,7 @@ import { fetchMailFoldersData } from '../actions/folders';
 import FolderHierarchy from '../components/FolderHierarchy';
 import { ContextMenuCoords } from '../types/misc';
 import { useLocation } from 'react-router-dom';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const styles: any = (theme: any) => ({
   content: {
@@ -177,6 +178,8 @@ function Messages({ classes }: MessagesProps) {
 
   const [pinnedMessages, setPinnedMessages] = usePinnedMessages();
 
+  const [handleScroll, handleScrollReset] = useInfiniteScroll(messages, totalMailCount, (params: any) => fetchMessagesData(selectedFolder?.id || "", { ...params }));
+
   // componentDidMount()
   useEffect(() => {
     // TODO: Try implementing a single 'batch' request for these
@@ -216,6 +219,7 @@ function Messages({ classes }: MessagesProps) {
   const handleMailFolderClick = (folder: MailFolder) => () => {
     setSelectedFolder(folder);
     setMailListPage(1);
+    handleScrollReset();
     dispatch(fetchMessagesData(folder?.id, { filter: objectToCNF(mailFilters) || undefined }));
   }
 
@@ -430,14 +434,6 @@ function Messages({ classes }: MessagesProps) {
     setMailTabs(copy);
   }
 
-  const handlePagination = (_: any, value: number) => {
-    dispatch(fetchMessagesData(selectedFolder?.id, {
-      filter: objectToCNF(mailFilters) || undefined,
-      skip: 10 * (value - 1),
-    }));
-    setMailListPage(value);
-  }
-
   return (
     <AuthenticatedView
       header={t("Messages")}
@@ -500,7 +496,7 @@ function Messages({ classes }: MessagesProps) {
             </div>
           </Paper>
           <Paper className={classes.messages}>
-            <List className={classes.mailList}>
+            <List className={classes.mailList} id="scrollDiv" onScroll={(debounce(handleScroll || (() => null), 100))}>
               {sortedMessages.map((message: Message, key: number) =>
                 <MessageListItem
                   key={key}
@@ -516,14 +512,6 @@ function Messages({ classes }: MessagesProps) {
               )}
             </List>
           </Paper>
-          <div className={classes.paginationContainer}>
-            <Pagination
-              onChange={handlePagination}
-              count={Math.ceil(totalMailCount / 10)}
-              page={mailListPage}
-              shape="rounded"
-            />
-          </div>
         </div>
         <div className={classes.mailContainer}>
           <div className={classes.mailTabsContainer}>

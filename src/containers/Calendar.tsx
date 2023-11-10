@@ -88,7 +88,6 @@ function Calendar({ t, classes }: any) {
 
   useEffect(() => {
     dispatch(fetchEventsData({ app }));
-    console.log()
   }, [app.authProvider]);
 
   const handleOptionChange = (event: any) => {
