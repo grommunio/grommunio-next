@@ -2,12 +2,11 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { Forward, Reply, ReplyAll } from "@mui/icons-material";
-import { Avatar, IconButton, Paper, Tooltip, Typography } from "@mui/material";
+import { Avatar, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
-import { Editor } from '@tinymce/tinymce-react';
 import { useTranslation } from "react-i18next";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const styles: any = {
   root: {
@@ -33,7 +32,6 @@ const styles: any = {
   flexRow: {
     display: 'flex',
     flex: 1,
-    alignItems: 'center',
   },
   avatarContainer: {
     marginRight: 16,
@@ -49,7 +47,20 @@ type MessageProps = {
 
 function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: MessageProps) {
   const { t } = useTranslation();
-  const editorRef = useRef({});
+  const theme = useTheme();
+  const iframeRef = useRef(null);
+  const [iframeContent, setIframeContent] = useState<string>("");
+
+  useEffect(() => {
+    const cur = iframeRef.current as HTMLIFrameElement | null;
+    if(cur) {
+      const el = document.createElement('html');
+      el.innerHTML = selectedMsg?.body?.content || "";
+      if(theme.palette.mode == "dark") el.style.color = "white";
+      setIframeContent(el.outerHTML);
+    }
+  }, [selectedMsg, iframeRef?.current, theme.palette.mode]);
+
   const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   return <Paper className={classes.root}>
     <div className={classes.avatarContainer}>
@@ -88,22 +99,15 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           </Tooltip>
         </div>
       </div>}
-      {selectedMsg?.body?.content && <div className={classes.flexRow}>
-        <Editor
-          tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
-          onInit={(evt, editor) => editorRef.current = editor}
-          initialValue={selectedMsg?.body?.content}
-          disabled
-          init={{
-            disabled: true,
-            menubar: false,
-            readonly: true,
-            toolbar: '',
-            plugins: ['wordcount'],
-            width: '100%',
-            height: '100%', // Doesn't work on its own. The .tox-tinymce class has been overwritten as well
-          }}
-        /></div>}
+      <div className={classes.flexRow}>
+        <iframe
+          id="iframe"
+          ref={iframeRef}
+          width="100%"
+          style={{ border: "none" }}
+          srcDoc={iframeContent}
+        />
+      </div>
     </div>
   </Paper>
   ;
