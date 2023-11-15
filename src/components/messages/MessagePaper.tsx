@@ -6,7 +6,8 @@ import { Avatar, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/m
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react"; 
+import { convertHtmlMailToDarkmode } from "../../htmlUtils";
 
 const styles: any = {
   root: {
@@ -54,10 +55,14 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
   useEffect(() => {
     const cur = iframeRef.current as HTMLIFrameElement | null;
     if(cur) {
-      const el = document.createElement('html');
-      el.innerHTML = selectedMsg?.body?.content || "";
-      if(theme.palette.mode == "dark") el.style.color = "white";
-      setIframeContent(el.outerHTML);
+      let htmlMail = document.createElement('html');
+      htmlMail.innerHTML = selectedMsg?.body?.content || "";
+
+      // Convert emails styling to be properly displayed in darkmode
+      if(theme.palette.mode == "dark") {
+        htmlMail = convertHtmlMailToDarkmode(htmlMail);
+      }
+      setIframeContent(htmlMail.outerHTML);
     }
   }, [selectedMsg, iframeRef?.current, theme.palette.mode]);
 
