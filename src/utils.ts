@@ -3,6 +3,7 @@
 
 import moment from "moment";
 import * as DOMPurify from 'dompurify'; 
+import { rgbToHex } from "@mui/material";
 
 export type URLParams = {
   [index: string]: string;
@@ -132,6 +133,14 @@ export function purify(rawHtml: string): string {
   return DOMPurify.sanitize(rawHtml, { USE_PROFILES: { html: true } });
 }
 
+export function convertToDarkModeColor(color: string) {
+  if(!color.startsWith("#")) {
+    color = rgbToHex(color);
+  }
+
+  // TODO: Instead of inverting the color, a proper darkmode equivalent should be calculated
+  return invertColor(color);
+}
 
 export function invertColor(hex: string) {
   if (hex.indexOf('#') === 0) {
