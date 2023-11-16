@@ -102,7 +102,5 @@ export function buildEmailPrintView(mailContent, mail) {
     mywindow.close();
   }
 
-  console.log(doc);
-
   return true;
 }

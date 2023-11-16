@@ -8,6 +8,7 @@ import { Message } from "microsoft-graph";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react"; 
 import { buildEmailPrintView, convertHtmlMailToDarkmode } from "../../htmlUtils";
+import { purify } from "../../utils";
 
 const styles: any = {
   root: {
@@ -61,7 +62,7 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
     const cur = iframeRef.current as HTMLIFrameElement | null;
     if(cur) {
       let htmlMail = document.createElement('html');
-      htmlMail.innerHTML = selectedMsg?.body?.content || "";
+      htmlMail.innerHTML = purify(selectedMsg?.body?.content || "");
 
       // Convert emails styling to be properly displayed in darkmode
       if(theme.palette.mode == "dark" && !showOriginal) {
