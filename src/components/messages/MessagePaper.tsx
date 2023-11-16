@@ -37,6 +37,10 @@ const styles: any = {
   avatarContainer: {
     marginRight: 16,
   },
+  a: {
+    textDecoration: "underline",
+    cursor: 'pointer',
+  },
 }
 
 type MessageProps = {
@@ -51,6 +55,7 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
   const theme = useTheme();
   const iframeRef = useRef(null);
   const [iframeContent, setIframeContent] = useState<string>("");
+  const [showOriginal, setShowOriginal] = useState<boolean>(false);
 
   useEffect(() => {
     const cur = iframeRef.current as HTMLIFrameElement | null;
@@ -59,12 +64,16 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
       htmlMail.innerHTML = selectedMsg?.body?.content || "";
 
       // Convert emails styling to be properly displayed in darkmode
-      if(theme.palette.mode == "dark") {
+      if(theme.palette.mode == "dark" && !showOriginal) {
         htmlMail = convertHtmlMailToDarkmode(htmlMail);
       }
       setIframeContent(htmlMail.outerHTML);
     }
-  }, [selectedMsg, iframeRef?.current, theme.palette.mode]);
+  }, [selectedMsg, iframeRef?.current, theme.palette.mode, showOriginal]);
+
+  useEffect(() => {
+    setShowOriginal(false);
+  }, [selectedMsg]);
 
   const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   return <Paper className={classes.root}>
@@ -103,6 +112,12 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
             </IconButton>
           </Tooltip>
         </div>
+      </div>}
+      {!showOriginal && theme.palette.mode === "dark" && <div>
+        <Typography variant="caption">
+          {t("This content has been modified for better readability. ")}
+          <a onClick={() => setShowOriginal(true)} className={classes.a}>Show original</a>
+        </Typography>
       </div>}
       <div className={classes.flexRow}>
         <iframe
