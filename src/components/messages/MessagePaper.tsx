@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { Forward, Reply, ReplyAll } from "@mui/icons-material";
+import { Forward, Print, Reply, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import { withStyles } from "@mui/styles";
 import { Message } from "microsoft-graph";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react"; 
-import { convertHtmlMailToDarkmode } from "../../htmlUtils";
+import { buildEmailPrintView, convertHtmlMailToDarkmode } from "../../htmlUtils";
 
 const styles: any = {
   root: {
@@ -75,6 +75,10 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
     setShowOriginal(false);
   }, [selectedMsg]);
 
+  const handlePrintMail = () => {
+    buildEmailPrintView(iframeContent, selectedMsg);
+  }
+
   const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   return <Paper className={classes.root}>
     <div className={classes.avatarContainer}>
@@ -82,7 +86,7 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
         <Typography variant='body1'>{names[0][0]}{names[names.length - 1][0]}</Typography>
       </Avatar>
     </div>
-    <div className={classes.tinyMceContainer}>
+    <div className={classes.tinyMceContainer} id="tinyMCEContainer">
       {selectedMsg && <div className={classes.header}>
         <div>
           <Typography variant="body1">
@@ -96,6 +100,11 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           </Typography>
         </div>
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
+          <Tooltip title={t("Print")} placement="top">
+            <IconButton onClick={handlePrintMail}>
+              <Print color="primary" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t("Reply all")} placement="top">
             <IconButton onClick={handleReply(true)}>
               <ReplyAll color="primary"/>
