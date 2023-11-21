@@ -30,35 +30,15 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
-import { BsCalendarPlus } from "react-icons/bs";
 import { connect } from "react-redux";
 import {
   deleteEventData,
   patchEventData,
   postEventData,
   fetchUserCalenders,
-  fetchEventsData,
-  deleteCalendarData,
 } from "../../actions/calendar";
-import {
-  Box,
-  ListItemButton,
-  ListItemText,
-  List,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-} from "@mui/material";
-import { KeyboardArrowDown } from "@mui/icons-material";
 import SmallCalendarDay from "./SmallCalendar";
-import AddandEditCalendar from "./AddCalendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
-import { useTypeDispatch } from "../../store";
-import { useAppContext } from "../../azure/AppContext";
-import DeleteIcon from "@mui/icons-material/Delete";
-import IconButton from "@mui/material/IconButton";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import EditIcon from "@mui/icons-material/Edit";
 import UserCalenders from "./UserCalendar";
 
 const PREFIX = "Demo";

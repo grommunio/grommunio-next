@@ -404,7 +404,7 @@ class AppointmentFormContainerBasic extends React.PureComponent {
       });
     };
 
-    const handleEditorChange = (content, editor) => {
+    const handleEditorChange = (content) => {
       this.changeAppointment({
         field: ["note"],
         changes: content,

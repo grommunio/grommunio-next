@@ -119,7 +119,7 @@ const UserCalenders = ({ data }: UserCalendersPropTypes) => {
                 primaryTypographyProps={{ ml: 2 }}
               />
               <ListItemSecondaryAction>
-                <IconButton onClick={handleMenu(item)}>
+                <IconButton disabled={index === 0} onClick={handleMenu(item)}>
                   <MoreVert fontSize="small"/>
                 </IconButton>
               </ListItemSecondaryAction>

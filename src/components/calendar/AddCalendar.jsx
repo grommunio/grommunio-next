@@ -71,7 +71,7 @@ function AddCalendar(props) {
       <FormControl component="form" className={classes.wrapper} onSubmit={onSubmit}>
         <StyledDiv>
           <DialogTitle style={{ height: "70px" }} className={classes.wrapper}>
-          New calender
+            New calender
           </DialogTitle>
           <DialogContent>
             <TextField
