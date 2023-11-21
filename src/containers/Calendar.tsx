@@ -122,8 +122,8 @@ function Calendar({ t, classes }: any) {
                 id="dropdown"
                 className={classes.dropdown}
                 style={{ border: 'none', color:theme.palette.text.primary}}
-                onChange={handleOptionChange}>
-                  hello
+                onChange={handleOptionChange}
+              >
                 {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <option className={classes.dropdownOption} value={x} key={index}>Day {x}</option>)}
               </select>
             </div>

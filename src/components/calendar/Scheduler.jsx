@@ -51,7 +51,7 @@ import {
 } from "@mui/material";
 import { KeyboardArrowDown } from "@mui/icons-material";
 import SmallCalendarDay from "./SmallCalendar";
-import AddandEditCalendar from "./AddandEditCalendar";
+import AddandEditCalendar from "./AddCalendar";
 import AppointmentFormContainerBasic from "./AppointmentFormContainerBasic";
 import { useTypeDispatch } from "../../store";
 import { useAppContext } from "../../azure/AppContext";
@@ -59,6 +59,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
+import UserCalenders from "./UserCalendar";
 
 const PREFIX = "Demo";
 const classes = {
@@ -315,6 +316,7 @@ class ScheduleCalendar extends React.PureComponent {
                   overlayComponent={this.appointmentForm}
                   visible={editingFormVisible}
                   onVisibilityChange={this.toggleEditingFormVisibility}
+                  appointmentData={this.editingAppointment}
                 />
                 <DragDropProvider />
               </Scheduler>
@@ -373,7 +375,7 @@ const mapStateToProps = (state) => {
     calendar: calendar.calendars,
   };
 };
-deleteCalendarData;
+
 const mapDispatchToProps = (dispatch) => {
   return {
     postEvent: async (params) => await dispatch(postEventData(params)),
@@ -382,169 +384,6 @@ const mapDispatchToProps = (dispatch) => {
     fetchUserCalenders: async (params) =>
       await dispatch(fetchUserCalenders(params)),
   };
-};
-
-const UserCalenders = ({ data }) => {
-  const [open, setOpen] = React.useState(true);
-  const [selectedItem, setSelectedItem] = React.useState(0);
-  const dispatch = useTypeDispatch();
-  const app = useAppContext();
-  const [visible, setVisible] = React.useState(false);
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [switchside, setSwitchside] = React.useState(null);
-  const [calendar, setCalendarId] = React.useState({ id: "", name: "" });
-
-  const open2 = Boolean(anchorEl);
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const onHide = () => {
-    setVisible(false);
-  };
-
-  const handleClickOpen = () => {
-    setVisible(true);
-    setSwitchside(true);
-  };
-
-  const handleClickOpen2 = (id, name) => {
-    setVisible(true);
-    setSwitchside(false);
-    handleClose();
-    setCalendarId({ id, name });
-  };
-
-  const { id, name } = calendar;
-
-  return (
-    <Box sx={{ pb: open ? 2 : 0 }}>
-      <AddandEditCalendar
-        onHide={onHide}
-        visible={visible}
-        switchside={switchside}
-        id={id}
-        name={name}
-      />
-      <ListItemButton alignItems="flex-start" onClick={() => handleClickOpen()}>
-        <BsCalendarPlus />
-        <ListItemText primary="Add calendar" sx={{ my: 0, pl: 2 }} />
-      </ListItemButton>
-      <ListItemButton alignItems="flex-start" onClick={() => setOpen(!open)}>
-        <KeyboardArrowDown
-          sx={{
-            mr: -1,
-            transform: open ? "rotate(0)" : "rotate(-90deg)",
-            transition: "0.2s",
-          }}
-        />
-        <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
-      </ListItemButton>
-      <List>
-        {open &&
-          data?.map((item, index) => (
-            <ListItemButton
-              key={item.id}
-              selected={selectedItem === index}
-              onClick={() => {
-                setSelectedItem(index);
-                dispatch(fetchEventsData({ app, id: item.id }));
-              }}
-              style={{
-                height: 38,
-              }}
-            >
-
-              <ListItemText
-                primary={item.name}
-                primaryTypographyProps={{ ml: 2 }}
-              />
-              {
-                selectedItem === index &&
-                item.isDisabled && (
-                  <span>
-                    <IconButton
-                      aria-label="more"
-                      id="long-button"
-                      aria-controls={open ? "long-menu" : undefined}
-                      aria-expanded={open ? "true" : undefined}
-                      aria-haspopup="true"
-                      onClick={handleClick}
-                      edge="end"
-                      style={{ color: "white" }}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                      MenuListProps={{
-                        "aria-labelledby": "long-button",
-                      }}
-                      anchorEl={anchorEl}
-                      open={open2}
-                      onClose={handleClose}
-                      id="account-menu"
-                      transformOrigin={{
-                        horizontal: "left",
-                        vertical: "bottom",
-                      }}
-                      anchorOrigin={{ horizontal: "left", vertical: "top" }}
-                      PaperProps={{
-                        elevation: 0,
-                        sx: {
-                          overflow: "visible",
-                          filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-                          mt: 1.5,
-                          "& .MuiAvatar-root": {
-                            width: 32,
-                            height: 32,
-                            ml: -0.5,
-                            mr: 1,
-                          },
-                          "&:before": {
-                            content: '""',
-                            display: "block",
-                            position: "absolute",
-                            top: 0,
-                            right: 14,
-                            width: 10,
-                            height: 10,
-                            bgcolor: "background.paper",
-                            transform: "translateY(-50%) rotate(45deg)",
-                            zIndex: 0,
-                          },
-                        },
-                      }}
-                    >
-                      <MenuItem onClick={handleClose}>
-                        <span
-                          onClick={() =>
-                            dispatch(deleteCalendarData(item.id))
-                          }
-                        >
-                          <IconButton>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                          Delete
-                        </span>
-                      </MenuItem>
-                      <MenuItem onClick={() => handleClickOpen2(item.id, item.name)}>
-                        <ListItemIcon>
-                          <EditIcon fontSize="small" />
-                        </ListItemIcon>
-                        Edit
-                      </MenuItem>
-                    </Menu>
-                  </span>
-                )
-              }
-            </ListItemButton>
-          ))}
-      </List>
-    </Box>
-  );
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(ScheduleCalendar);

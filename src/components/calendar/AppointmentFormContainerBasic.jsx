@@ -249,7 +249,6 @@ class AppointmentFormContainerBasic extends React.PureComponent {
     this.setState({ gabContacts: contacts });
     this.setState({ contactData: contacts });
     document.addEventListener('click', this.handleClickOutside);
-    // console.log(">>", contacts)
   }
 
   componentWillUnmount() {
