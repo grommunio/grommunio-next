@@ -2,6 +2,7 @@ import { Scheduler as ReactSchedular } from "@aldabil/react-scheduler";
 import type { ProcessedEvent, SchedulerRef } from "@aldabil/react-scheduler/types";
 import { Event } from "microsoft-graph";
 import { ForwardedRef, forwardRef, useMemo } from "react";
+import AppointmentForm from "./AppointmentForm";
 
 
 type SchedularType = {
@@ -23,7 +24,16 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       events={processedEvents as Array<ProcessedEvent>}
       height={1000}
       view="month"
+      disableViewNavigator
       ref={ref as ForwardedRef<SchedulerRef>}
+      editable={true}
+      customEditor={(scheduler) => <AppointmentForm schedular={scheduler} />}
+      fields={[
+        { name: "webLink", type: "input" },
+        { name: "body", type: "input" },
+        { name: "location", type: "input" },
+        { name: "isAllDay", type: "hidden" },
+      ]}
     />
   </div>;
 });
