@@ -1,13 +1,10 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2022 grommunio GmbH
-import { useEffect, useState, useRef  } from "react";
+import { useEffect, useRef, useState  } from "react";
 import { useAppContext } from "../azure/AppContext";
 import { withStyles } from "@mui/styles";
 import { fetchEventsData } from "../actions/calendar";
 import { useTypeDispatch } from "../store";
-import ScheduleCalendar from "../components/calendar/Scheduler";
 import AuthenticatedView from "../components/AuthenticatedView";
 import { withTranslation } from "react-i18next";
 import {
@@ -17,13 +14,10 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
-import PrintIcon from "@mui/icons-material/Print";
 import IosShareIcon from "@mui/icons-material/IosShare";
 import DateRangeIcon from "@mui/icons-material/DateRange";
-import ReactToPrint from 'react-to-print';
 import ShareCalendar from "../components/calendar/ShareCalendar"
-import ViewDayOutlinedIcon from '@mui/icons-material/ViewDayOutlined';
-import { useTheme } from '@mui/material/styles';
+import SchedularView from "../components/calendar/SchedularView";
 
 const styles = () => ({
   nav: {
@@ -76,23 +70,18 @@ const ActionButton = ({children, color, ...childProps }: any) => {
 
 
 function Calendar({ t, classes }: any) {
-
-  const theme = useTheme();
-  
   const app = useAppContext();
   const dispatch: any = useTypeDispatch();
-  const [calenderView, setCalenderView] = useState("Month");
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
-  const [selectDays, SetselectDays] = useState();
   const [visible, setVisible] = useState(false);
+  const schedulerRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchEventsData({ app }));
   }, [app.authProvider]);
 
-  const handleOptionChange = (event: any) => {
-    SetselectDays(event.target.value);
-    setCalenderView("Week")
+  const handleViewChange = (view: string) => () => {
+    (schedulerRef.current?.["scheduler"] as any).handleState(view, "view");
   };
 
   const handleClickOpen = () => {
@@ -102,8 +91,6 @@ function Calendar({ t, classes }: any) {
   const onHide = () => {
     setVisible(false);
   };
-
-  const componentRef = useRef(null);
 
   return (
     <AuthenticatedView
@@ -116,37 +103,26 @@ function Calendar({ t, classes }: any) {
             >
               <MenuIcon />
             </IconButton>
-            <div className={classes.dropdownParent}>
-              <ViewDayOutlinedIcon />
-              <select
-                id="dropdown"
-                className={classes.dropdown}
-                style={{ border: 'none', color:theme.palette.text.primary}}
-                onChange={handleOptionChange}
-              >
-                {[1, 2, 3, 4, 5, 6, 7].map((x, index) => <option className={classes.dropdownOption} value={x} key={index}>Day {x}</option>)}
-              </select>
-            </div>
             <ActionButton
               key={1}
               startIcon={<DateRangeIcon />}
-              value="workWeek"
-              onClick={handleOptionChange}
+              value="Day"
+              onClick={handleViewChange("day")}
             >
-              Work Week
+              Day
             </ActionButton>
             <ActionButton
               key={2}
               startIcon={<CalendarViewWeekIcon />}
               value='week'
-              onClick={handleOptionChange}
+              onClick={handleViewChange("week")}
             >
               Week
             </ActionButton>
             <ActionButton
               key={3}
               startIcon={<CalendarMonthIcon/>}
-              onClick={() => setCalenderView("Month")}
+              onClick={handleViewChange("month")}
             >
               Month
             </ActionButton>
@@ -159,24 +135,13 @@ function Calendar({ t, classes }: any) {
             >
               Share
             </ActionButton>
-            <ReactToPrint
-              trigger={() => <ActionButton key={5} startIcon={<PrintIcon/>}>
-                Print
-              </ActionButton>}
-              content={() => componentRef.current}
-              documentTitle='new Calendar'
-            />
-
           </div>
         </nav>,
       ]}
     >
-      <ScheduleCalendar
-        app={app}
-        calenderView={calenderView}
+      <SchedularView
         showSideBar={showCalenderSidebar}
-        selectDays={selectDays}
-        componentRef={componentRef}
+        ref={schedulerRef}
       />
       <ShareCalendar onHide={onHide} visible={visible}/>
     </AuthenticatedView>

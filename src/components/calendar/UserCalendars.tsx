@@ -1,23 +1,21 @@
 import { Fragment, KeyboardEvent, MouseEvent, useEffect, useState } from "react";
-import { useTypeDispatch } from "../../store";
+import { useTypeDispatch, useTypeSelector } from "../../store";
 import { useAppContext } from "../../azure/AppContext";
 import { Box, Collapse, IconButton, Input, List, ListItemButton, ListItemSecondaryAction, ListItemText, Menu, MenuItem } from "@mui/material";
-import AddandEditCalendar from "./AddCalendar";
+import AddCalendar from "./AddCalendar";
 import { BsCalendarPlus } from "react-icons/bs";
 import { KeyboardArrowDown, MoreVert, CalendarMonth } from "@mui/icons-material";
 import { Calendar } from "microsoft-graph";
 import { fetchEventsData, patchCalendarData } from "../../actions/calendar";
 
-type UserCalendersPropTypes = {
-  data: any,
-};
 
 type MenuProps = {
   anchor: HTMLElement | null;
   calendar: Calendar;
 }
 
-const UserCalenders = ({ data }: UserCalendersPropTypes) => {
+const UserCalenders = () => {
+  const data = useTypeSelector(state => state.calendar.calendars);
   const [open, setOpen] = useState<boolean>(true);
   const [selectedItem, setSelectedItem] = useState<Calendar | null>(data[0] || null);
   const dispatch = useTypeDispatch();
@@ -76,7 +74,7 @@ const UserCalenders = ({ data }: UserCalendersPropTypes) => {
 
   return (
     <Box sx={{ pb: open ? 2 : 0 }}>
-      <AddandEditCalendar
+      <AddCalendar
         onHide={handleDialog(false)}
         visible={adding}
       />

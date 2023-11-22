@@ -17,6 +17,11 @@ interface IUserCalender {
   isDisabled:boolean;
 }
 
+type CalendarState = {
+  events: Array<Event>; //TODO: Change to correct type
+  calendars: Array<IUserCalender>;
+}
+
 const defaultState = {
   events: [],
   calendars: [],
@@ -31,20 +36,22 @@ const disableCondition = (calendar: IUserCalender) => {
   return !(calendar.name === "Calendar" || calendar.name === "Birthdays");
 };
 
-function formatEvents(rawEvents: Array<Event>) {
-  return rawEvents.map((rawEvent: Event) => ({
+function formatEvents(rawEvents: Array<Event>): Array<Event> {
+  return rawEvents.map((rawEvent: Event, idx: number) => ({
+    ...rawEvent,
     id: rawEvent.id,
+    event_id: idx,
     startDate: calculateEventtimeInTimezone(rawEvent.start?.dateTime || '', rawEvent.start?.timeZone || ''),
     endDate: calculateEventtimeInTimezone(rawEvent.end?.dateTime || '', rawEvent.end?.timeZone || ''),
-    subject: rawEvent.subject,
-    title: rawEvent.subject,
-    location: rawEvent.location?.displayName || '',
+    title: rawEvent.subject || "",
     notes: rawEvent.body?.content || '',
+    admin_id: [], // TODO: Find out what this does
+    disabled: false
   }))
 }
 
 // Modify your reducer to use these types
-function calendarReducer(state = defaultState, action: AnyAction) {
+function calendarReducer(state: CalendarState = defaultState, action: AnyAction): CalendarState {
   switch (action.type) {
 
   case FETCH_EVENTS_DATA + "/fulfilled":
