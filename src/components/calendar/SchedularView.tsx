@@ -29,15 +29,15 @@ const SchedularView = forwardRef(({ showSideBar }: SchedularViewType, ref) => {
   }
 
   return <Paper sx={{ flex: 1 }}>
-    <Grid container spacing={2} height="100%">
+    <Grid container height="100%">
       {showSideBar && (
-        <Grid item xs={3}>
+        <Grid item>
           <DatePicker events={events} />
           <hr />
           <UserCalenders />
-        </Grid>
+        </Grid> 
       )}
-      <Grid item xs={showSideBar ? 9 : 12}>
+      <Grid item flex={1}>
         <div>
           <Scheduler
             events={events}
