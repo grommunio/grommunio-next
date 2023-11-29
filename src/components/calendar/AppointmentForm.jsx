@@ -26,7 +26,7 @@ import { withStyles } from '@mui/styles';
 import { Close, FiberManualRecord } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import moment from "moment";
-import { patchEventData } from "../../actions/calendar";
+import { patchEventData, postEventData } from "../../actions/calendar";
 import { purify } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 
@@ -106,7 +106,6 @@ const AppointmentForm = ({ classes, schedular }) => {
   const [event, setEvent] = useState({});
   const { calendars } = useSelector(state => state.calendar);
   const [selectedCalendar, setSelectedCalendar] = useState("");
-  const [isNewAppointment] = useState(false); // TODO: Find way to properly set this
   const dispatch = useDispatch();
   const app = useAppContext();
 
@@ -116,7 +115,7 @@ const AppointmentForm = ({ classes, schedular }) => {
       id: id.value,
       start: moment(start.value),
       end: moment(end.value),
-      title: subject.value,
+      subject: subject.value,
       location: location.value?.displayName,
       body: body.value?.content,
       isAllDay: Boolean(isAllDay.value),
@@ -129,6 +128,28 @@ const AppointmentForm = ({ classes, schedular }) => {
       setSelectedCalendar(calendars[0]?.id || "");
     }
   }, [calendars]);
+
+  const formatEventForRequest = (event) => {
+    const { start, end, location } = event;
+    return {
+      ...event,
+      start: {
+        timeZone: app.user?.timeZone,
+        dateTime: start.toISOString()
+      },
+      end: {
+        timeZone: app.user?.timeZone,
+        dateTime: end.toISOString()
+      },
+      location: {
+        displayName: location,
+      },
+      body: {
+        contentType: 'html',
+        content: editorRef.current ? purify(editorRef.current.getContent()) : '',
+      }
+    };
+  }
 
   const handleCalendarChange = (e) => {
     setSelectedCalendar(e.target.value);
@@ -162,31 +183,18 @@ const AppointmentForm = ({ classes, schedular }) => {
   }
 
   const handleEdit = () => {
-    const { start, end, location, title } = event;
-    const data = {
-      ...event,
-      start: {
-        timeZone: app.user?.timeZone,
-        dateTime: start.toISOString()
-      },
-      end: {
-        timeZone: app.user?.timeZone,
-        dateTime: end.toISOString()
-      },
-      location: {
-        displayName: location,
-      },
-      subject: title,
-      title: undefined,
-      body: {
-        contentType: 'html',
-        content: editorRef.current ? purify(editorRef.current.getContent()) : '',
-      }
-    }
+    const data = formatEventForRequest(event);
     dispatch(patchEventData(data))
       .then(schedular.close);
   }
 
+  const handleAdd = () => {
+    const data = formatEventForRequest(event);
+    dispatch(postEventData(data))
+      .then(schedular.close);
+  }
+
+  const isNewAppointment = !event.id;
   return <div className={classes.root}>
     <div className={classes.flexRow}>
       <div className={classes.flexRow}>
@@ -204,12 +212,12 @@ const AppointmentForm = ({ classes, schedular }) => {
             variant="contained"
             className={classes.button}
             style={{ marginLeft: "16px" }}
-            onClick={handleEdit}
+            onClick={isNewAppointment ? handleAdd : handleEdit}
           >
             {isNewAppointment ? "Create" : "Save"}
           </Button>
         </div>
-        {!event.id && <TextField
+        {isNewAppointment && <TextField
           color="primary"
           select
           label="Calendar"
@@ -237,10 +245,11 @@ const AppointmentForm = ({ classes, schedular }) => {
         <div className={classes.flexRow}>
           <Create className={classes.icon} color="action" />
           <TextField
-            {...textEditorProps("title")}
+            {...textEditorProps("subject")}
             variant="standard"
-            label="Titel"
+            label="Subject"
             fullWidth
+            autoFocus
           />
         </div>
         <div className={classes.flexRow}>

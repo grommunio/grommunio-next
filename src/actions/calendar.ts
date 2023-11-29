@@ -57,11 +57,7 @@ export const fetchEventsData = createAsyncThunk<Event[], calendarAppContext>(
 );
 
 export function postEventData(event: Event) {
-  return defaultPostHandler(
-    postEvent,
-    POST_EVENT_DATA,
-    ...[formatEvent(event)]
-  );
+  return defaultPostHandler(postEvent, POST_EVENT_DATA, event)
 }
 
 export function patchEventData(event: Event) {

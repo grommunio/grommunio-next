@@ -8,7 +8,8 @@ import {
   POST_CALENDAR_DATA,
   DELETE_CALENDAR_DATA,
   PATCH_CALENDAR_DATA,
-  PATCH_EVENT_DATA
+  PATCH_EVENT_DATA,
+  POST_EVENT_DATA
 } from '../actions/types';
 import { addItem, editItem } from '../utils';
 
@@ -104,6 +105,12 @@ function calendarReducer(state: CalendarState = defaultState, action: AnyAction)
     return {
       ...state,
       events: editItem(state.events, formatEvent(action.payload)),
+    }
+
+  case POST_EVENT_DATA:
+    return {
+      ...state,
+      events: addItem(state.events, formatEvent(action.payload)),
     }
 
   case DELETE_CALENDAR_DATA:
