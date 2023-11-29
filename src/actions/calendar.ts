@@ -56,9 +56,6 @@ export const fetchEventsData = createAsyncThunk<Event[], calendarAppContext>(
   }
 );
 
-type postEventDataParams = {
-  event: Event;
-};
 export function postEventData(event: Event) {
   return defaultPostHandler(
     postEvent,
@@ -67,20 +64,9 @@ export function postEventData(event: Event) {
   );
 }
 
-export const patchEventData = createAsyncThunk<
-  Event | boolean,
-  postEventDataParams
->(PATCH_EVENT_DATA, async ({ event }: postEventDataParams) => {
-  try {
-    const res = await patchEvent(formatEvent(event));
-    return res;
-  } catch (err) {
-    const error = err as Error;
-    console.error(error);
-    return false;
-  }
-  return false;
-});
+export function patchEventData(event: Event) {
+  return defaultPatchHandler(patchEvent, PATCH_EVENT_DATA, false, event)
+}
 
 type deleteEventDataParams = {
   eventId: string;

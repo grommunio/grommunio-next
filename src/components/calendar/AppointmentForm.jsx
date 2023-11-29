@@ -21,12 +21,14 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
-import "moment-timezone";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { withStyles } from '@mui/styles';
 import { Close, FiberManualRecord } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import moment from "moment-timezone";
+import moment from "moment";
+import { patchEventData } from "../../actions/calendar";
+import { purify } from "../../utils";
+import { useAppContext } from "../../azure/AppContext";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -105,14 +107,16 @@ const AppointmentForm = ({ classes, schedular }) => {
   const { calendars } = useSelector(state => state.calendar);
   const [selectedCalendar, setSelectedCalendar] = useState("");
   const [isNewAppointment] = useState(false); // TODO: Find way to properly set this
+  const dispatch = useDispatch();
+  const app = useAppContext();
 
   useEffect(() => {
-    const { event_id, start, end, title, location, body, isAllDay } = schedular.state;
+    const { id, start, end, subject, location, body, isAllDay } = schedular.state;
     setEvent({
-      event_id: event_id,
+      id: id.value,
       start: moment(start.value),
       end: moment(end.value),
-      title: title.value,
+      title: subject.value,
       location: location.value?.displayName,
       body: body.value?.content,
       isAllDay: Boolean(isAllDay.value),
@@ -157,6 +161,32 @@ const AppointmentForm = ({ classes, schedular }) => {
     })
   }
 
+  const handleEdit = () => {
+    const { start, end, location, title } = event;
+    const data = {
+      ...event,
+      start: {
+        timeZone: app.user?.timeZone,
+        dateTime: start.toISOString()
+      },
+      end: {
+        timeZone: app.user?.timeZone,
+        dateTime: end.toISOString()
+      },
+      location: {
+        displayName: location,
+      },
+      subject: title,
+      title: undefined,
+      body: {
+        contentType: 'html',
+        content: editorRef.current ? purify(editorRef.current.getContent()) : '',
+      }
+    }
+    dispatch(patchEventData(data))
+      .then(schedular.close);
+  }
+
   return <div className={classes.root}>
     <div className={classes.flexRow}>
       <div className={classes.flexRow}>
@@ -174,11 +204,12 @@ const AppointmentForm = ({ classes, schedular }) => {
             variant="contained"
             className={classes.button}
             style={{ marginLeft: "16px" }}
+            onClick={handleEdit}
           >
             {isNewAppointment ? "Create" : "Save"}
           </Button>
         </div>
-        <TextField
+        {!event.id && <TextField
           color="primary"
           select
           label="Calendar"
@@ -193,7 +224,7 @@ const AppointmentForm = ({ classes, schedular }) => {
           {calendars.map((cal, key) => 
             <MenuItem value={cal.id} key={key}>{cal.name}</MenuItem>
           )}
-        </TextField>
+        </TextField>}
       </div>
       <div className={classes.flexEnd}>
         <IconButton onClick={schedular.close}>

@@ -27,8 +27,10 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       disableViewNavigator
       ref={ref as ForwardedRef<SchedulerRef>}
       editable={true}
-      customEditor={(scheduler) => <AppointmentForm schedular={scheduler} />}
+      customEditor={(scheduler) => <AppointmentForm schedular={scheduler}/>}
       fields={[
+        { name: "id", type: "hidden" },
+        { name: "subject", type: "input" },
         { name: "webLink", type: "input" },
         { name: "body", type: "input" },
         { name: "location", type: "input" },

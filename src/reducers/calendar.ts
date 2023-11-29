@@ -7,9 +7,10 @@ import {
   FETCH_USER_CALENDER_DATA,
   POST_CALENDAR_DATA,
   DELETE_CALENDAR_DATA,
-  PATCH_CALENDAR_DATA
+  PATCH_CALENDAR_DATA,
+  PATCH_EVENT_DATA
 } from '../actions/types';
-import { addItem } from '../utils';
+import { addItem, editItem } from '../utils';
 
 interface IUserCalender {
   id: string;
@@ -36,18 +37,22 @@ const disableCondition = (calendar: IUserCalender) => {
   return !(calendar.name === "Calendar" || calendar.name === "Birthdays");
 };
 
-function formatEvents(rawEvents: Array<Event>): Array<Event> {
-  return rawEvents.map((rawEvent: Event, idx: number) => ({
+function formatEvent(rawEvent: Event) {
+  return {
     ...rawEvent,
     id: rawEvent.id,
-    event_id: idx,
+    event_id: rawEvent.id,
     startDate: calculateEventtimeInTimezone(rawEvent.start?.dateTime || '', rawEvent.start?.timeZone || ''),
     endDate: calculateEventtimeInTimezone(rawEvent.end?.dateTime || '', rawEvent.end?.timeZone || ''),
     title: rawEvent.subject || "",
     notes: rawEvent.body?.content || '',
     admin_id: [], // TODO: Find out what this does
     disabled: false
-  }))
+  };
+}
+
+function formatEvents(rawEvents: Array<Event>): Array<Event> {
+  return rawEvents.map((rawEvent: Event) => (formatEvent(rawEvent)))
 }
 
 // Modify your reducer to use these types
@@ -94,6 +99,12 @@ function calendarReducer(state: CalendarState = defaultState, action: AnyAction)
     
     return { ...state, calendars: updatedCalendars};
   }
+
+  case PATCH_EVENT_DATA:
+    return {
+      ...state,
+      events: editItem(state.events, formatEvent(action.payload)),
+    }
 
   case DELETE_CALENDAR_DATA:
     return {
