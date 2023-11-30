@@ -3,6 +3,8 @@ import type { ProcessedEvent, SchedulerRef } from "@aldabil/react-scheduler/type
 import { Event } from "microsoft-graph";
 import { ForwardedRef, forwardRef, useMemo } from "react";
 import AppointmentForm from "./AppointmentForm";
+import { useTypeDispatch } from "../../store";
+import { deleteEventData } from "../../actions/calendar";
 
 
 type SchedularType = {
@@ -10,6 +12,7 @@ type SchedularType = {
 }
 
 const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
+  const dispatch = useTypeDispatch();
 
   const processedEvents = useMemo(() => {
     return events.map((event: Event) => ({
@@ -19,10 +22,16 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
     }));
   }, [events]);
 
+  const handleDelete = async (id: string): Promise<string | number | void> => {
+    const success = await dispatch(deleteEventData(id));
+    if (success) return id;
+  }
+
   return <div>
     <ReactSchedular
       events={processedEvents as Array<ProcessedEvent>}
       height={1000}
+      onDelete={handleDelete}
       view="month"
       disableViewNavigator
       ref={ref as ForwardedRef<SchedulerRef>}

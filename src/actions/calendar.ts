@@ -22,7 +22,8 @@ import {
   FETCH_USER_CALENDER_DATA,
   PATCH_CALENDAR_DATA,
   POST_CALENDAR_DATA,
-  DELETE_CALENDAR_DATA
+  DELETE_CALENDAR_DATA,
+  DELETE_EVENT_DATA,
 } from "./types";
 import {
   defaultFetchHandler,
@@ -64,47 +65,8 @@ export function patchEventData(event: Event) {
   return defaultPatchHandler(patchEvent, PATCH_EVENT_DATA, false, event)
 }
 
-type deleteEventDataParams = {
-  eventId: string;
-};
-
-export const deleteEventData = createAsyncThunk<
-  Event | boolean,
-  deleteEventDataParams
->(PATCH_EVENT_DATA, async ({ eventId }: deleteEventDataParams) => {
-  try {
-    const res = await deleteEvent(eventId);
-    return res;
-  } catch (err) {
-    const error = err as Error;
-    console.error(error);
-    return false;
-  }
-  return false;
-});
-
-function formatEvent(rawEvent: any): Event {
-  const { id, subject, location, notes, startDate, endDate } =
-    rawEvent;
-  return {
-    id,
-    subject,
-    body: {
-      contentType: "text",
-      content: notes,
-    },
-    start: {
-      dateTime: startDate,
-      timeZone: "America/Los_Angeles", // TODO: Remove hardcoded timezone
-    },
-    end: {
-      dateTime: endDate,
-      timeZone: "America/Los_Angeles", // TODO: Remove hardcoded timezone
-    },
-    location: {
-      displayName: location,
-    },
-  };
+export function deleteEventData(eventId: string) {
+  return defaultDeleteHandler(deleteEvent, DELETE_EVENT_DATA, eventId)
 }
 
 export function fetchUserCalenders() {

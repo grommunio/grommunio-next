@@ -9,7 +9,8 @@ import {
   DELETE_CALENDAR_DATA,
   PATCH_CALENDAR_DATA,
   PATCH_EVENT_DATA,
-  POST_EVENT_DATA
+  POST_EVENT_DATA,
+  DELETE_EVENT_DATA
 } from '../actions/types';
 import { addItem, editItem } from '../utils';
 
@@ -111,6 +112,12 @@ function calendarReducer(state: CalendarState = defaultState, action: AnyAction)
     return {
       ...state,
       events: addItem(state.events, formatEvent(action.payload)),
+    }
+
+  case DELETE_EVENT_DATA:
+    return {
+      ...state,
+      events: action.payload ? state.events.filter((event: Event) => event.id !== action.payload) : state.events,
     }
 
   case DELETE_CALENDAR_DATA:

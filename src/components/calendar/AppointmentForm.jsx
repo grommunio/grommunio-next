@@ -183,9 +183,14 @@ const AppointmentForm = ({ classes, schedular }) => {
   }
 
   const handleEdit = () => {
+    schedular.loading(true);
     const data = formatEventForRequest(event);
     dispatch(patchEventData(data))
-      .then(schedular.close);
+      .then(() => {
+        schedular.loading(false);
+        schedular.close();
+      })
+      .catch(() => schedular.loading(false));
   }
 
   const handleAdd = () => {
