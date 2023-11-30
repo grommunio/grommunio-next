@@ -19,7 +19,7 @@ const styles: any = () => ({
 });
 
 const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChange,
-  onInputChange, handleContactRemove, renderInput }: any) => {
+  onInputChange, handleContactRemove, renderInput, textfieldProps={} }: any) => {
 
   return <Autocomplete
     value={value || []}
@@ -28,8 +28,8 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
     onInputChange={onInputChange}
     multiple
     getOptionLabel={(option: string | Contact) => (option as Contact).displayName || ""}
-    renderOption={(props: any, option: string | Contact) => (
-      <GABOption contact={option as Contact} {...props}/>
+    renderOption={(props: any, option: Contact) => (
+      <GABOption {...props} key={option.id} contact={option as Contact}/>
     )}
     filterOptions={(options, state) => {
       return options.filter(o =>
@@ -56,6 +56,7 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
       <TextField
         {...params}
         className={classes.input}
+        {...textfieldProps}
       />
     )}
   />;

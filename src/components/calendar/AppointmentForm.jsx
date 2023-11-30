@@ -27,8 +27,10 @@ import { Close, FiberManualRecord } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import moment from "moment";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
-import { purify } from "../../utils";
+import { gabSelectionToRequestFormat, purify } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
+import GABAutocompleteTextfield from "../GABAutocompleteTextfield";
+import { useTypeSelector } from "../../store";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -108,9 +110,11 @@ const AppointmentForm = ({ classes, schedular }) => {
   const [selectedCalendar, setSelectedCalendar] = useState("");
   const dispatch = useDispatch();
   const app = useAppContext();
+  const [selectedAttendees, setSelectedAttendees] = useState([]);
+  const { contacts } = useTypeSelector(state => state.contacts);
 
   useEffect(() => {
-    const { id, start, end, subject, location, body, isAllDay } = schedular.state;
+    const { id, start, end, subject, location, body, isAllDay, attendees } = schedular.state;
     setEvent({
       id: id.value,
       start: moment(start.value),
@@ -121,6 +125,9 @@ const AppointmentForm = ({ classes, schedular }) => {
       isAllDay: Boolean(isAllDay.value),
       // TODO: Implement recurrence
     });
+    if(attendees?.value) setSelectedAttendees(attendees.value.map((attendee) =>
+      contacts.find(contact =>
+        contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address))));
   }, [schedular]);
 
   useEffect(() => {
@@ -133,6 +140,7 @@ const AppointmentForm = ({ classes, schedular }) => {
     const { start, end, location } = event;
     return {
       ...event,
+      attendees: gabSelectionToRequestFormat("", selectedAttendees),
       start: {
         timeZone: app.user?.timeZone,
         dateTime: start.toISOString()
@@ -204,6 +212,16 @@ const AppointmentForm = ({ classes, schedular }) => {
       .then(schedular.close);
   }
 
+  const handleAutocomplete = (e, newVal) => {
+    console.log(selectedAttendees);
+    setSelectedAttendees(newVal);
+  }
+
+  const handleContactRemove = (id) => () =>
+    setSelectedAttendees(
+      selectedAttendees.filter(c => c.id !== id)
+    );
+
   const isNewAppointment = !event.id;
   return <div className={classes.root}>
     <div className={classes.flexRow}>
@@ -265,15 +283,13 @@ const AppointmentForm = ({ classes, schedular }) => {
         </div>
         <div className={classes.flexRow}>
           <PersonAddAltIcon className={classes.icon} color="action" />
-          <TextField
-            label="Invite attendees"
-            variant="standard"
-            //onClick={() => this.setState({ showDropdown: true })}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">Optional</InputAdornment>
-              ),
+          <GABAutocompleteTextfield
+            value={selectedAttendees}
+            onChange={handleAutocomplete}
+            options={contacts}
+            handleContactRemove={handleContactRemove}
+            textfieldProps={{
+              variant: "standard",
             }}
           />
         </div>

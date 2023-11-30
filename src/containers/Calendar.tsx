@@ -18,6 +18,7 @@ import IosShareIcon from "@mui/icons-material/IosShare";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import ShareCalendar from "../components/calendar/ShareCalendar"
 import SchedularView from "../components/calendar/SchedularView";
+import { fetchContactsData } from "../actions/contacts";
 
 const styles = () => ({
   nav: {
@@ -78,6 +79,7 @@ function Calendar({ t, classes }: any) {
 
   useEffect(() => {
     dispatch(fetchEventsData({ app }));
+    dispatch(fetchContactsData());
   }, [app.authProvider]);
 
   const handleViewChange = (view: string) => () => {

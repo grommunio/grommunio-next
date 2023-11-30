@@ -4,6 +4,7 @@
 import moment from "moment";
 import * as DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
+import { Contact, NullableOption, Recipient } from "microsoft-graph";
 
 export type URLParams = {
   [index: string]: string;
@@ -164,4 +165,24 @@ export function invertColor(hex: string) {
 function padZero(str: string, len=2) {
   const zeros = new Array(len).join('0');
   return (zeros + str).slice(-len);
+}
+
+export function gabSelectionToRequestFormat(emails: string, contacts: Array<Contact>):  NullableOption<Recipient[]> {
+  let res: Recipient[] = [];
+  if (emails) {
+    res = res.concat(emails.split(',').map((address: string) => ({
+      emailAddress: {
+        address,
+      },
+    })));
+  }
+  if(contacts.length > 0) {
+    res = res.concat(contacts.filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
+      emailAddress: {
+        // TODO: Which email to select?
+        address: c.emailAddresses![0].address,
+      },
+    })));
+  }
+  return res.length > 0 ? res : null;
 }

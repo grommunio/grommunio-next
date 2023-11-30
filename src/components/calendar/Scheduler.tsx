@@ -44,6 +44,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
         { name: "body", type: "input" },
         { name: "location", type: "input" },
         { name: "isAllDay", type: "hidden" },
+        { name: "attendees", type: "hidden" }
       ]}
     />
   </div>;

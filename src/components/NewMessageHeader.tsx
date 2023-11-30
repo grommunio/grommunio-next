@@ -11,6 +11,7 @@ import { fetchContactsData } from "../actions/contacts";
 import { throttle } from "lodash";
 import GABOption from "./GABOption";
 import GABAutocompleteTextfield from "./GABAutocompleteTextfield";
+import { gabSelectionToRequestFormat } from "../utils";
 
 
 const styles: any = (theme: any) => ({
@@ -54,26 +55,6 @@ type Recipients = {
   toRecipients: string;
   ccRecipients: string;
   bccRecipients: string;
-}
-
-const recipientsToValidRecipientFormat = (emails: string, contacts: Array<Contact>):  NullableOption<Recipient[]> => {
-  let res: Recipient[] = [];
-  if (emails) {
-    res = res.concat(emails.split(',').map((address: string) => ({
-      emailAddress: {
-        address,
-      },
-    })));
-  }
-  if(contacts.length > 0) {
-    res = res.concat(contacts.filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
-      emailAddress: {
-        // TODO: Which email to select?
-        address: c.emailAddresses![0].address,
-      },
-    })));
-  }
-  return res.length > 0 ? res : null;
 }
 
 // TODO: Create proper type
@@ -144,15 +125,15 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
     const extraProps: IExtraProps = {}
 
     if (ccRecipients) {
-      extraProps["ccRecipients"] = recipientsToValidRecipientFormat(ccRecipients, selectedContacts.ccRecipients)
+      extraProps["ccRecipients"] = gabSelectionToRequestFormat(ccRecipients, selectedContacts.ccRecipients)
     }
     if (bccRecipients) {
-      extraProps["bccRecipients"] = recipientsToValidRecipientFormat(bccRecipients, selectedContacts.bccRecipients)
+      extraProps["bccRecipients"] = gabSelectionToRequestFormat(bccRecipients, selectedContacts.bccRecipients)
     }
 
     const message: Message = {
       subject,
-      toRecipients: recipientsToValidRecipientFormat(toRecipients, selectedContacts.toRecipients),
+      toRecipients: gabSelectionToRequestFormat(toRecipients, selectedContacts.toRecipients),
       importance: messageImportance,
       ...extraProps,
     }
