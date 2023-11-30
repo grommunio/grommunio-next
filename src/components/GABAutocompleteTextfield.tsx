@@ -23,7 +23,7 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
 
   return <Autocomplete
     value={value || []}
-    inputValue={inputValue || ''}
+    inputValue={inputValue}
     onChange={onChange}
     onInputChange={onInputChange}
     multiple
