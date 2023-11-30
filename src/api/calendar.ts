@@ -12,7 +12,7 @@ import {
 import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
-import { Event } from "microsoft-graph";
+import { Calendar, Event } from "microsoft-graph";
 import { graphClient } from "./utils";
 
 // <GetUserWeekCalendarSnippet>
@@ -74,11 +74,11 @@ export async function getUserWeekCalendar(
 // </GetUserWeekCalendarSnippet>
 
 // <CreateEventSnippet>
-export async function postEvent(newEvent: Event): Promise<Event> {
+export async function postEvent(newEvent: Event, calendarId: string | undefined): Promise<Event> {
   // POST /me/events
   // JSON representation of the new event is sent in the
   // request body
-  return await graphClient!.api("/me/events").post(newEvent);
+  return await graphClient!.api(calendarId ? `/me/calendars/${calendarId}/events` : "/me/events").post(newEvent);
 }
 
 export async function patchEvent(event: Event): Promise<Event> {

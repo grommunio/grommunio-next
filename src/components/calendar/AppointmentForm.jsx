@@ -195,7 +195,7 @@ const AppointmentForm = ({ classes, schedular }) => {
 
   const handleAdd = () => {
     const data = formatEventForRequest(event);
-    dispatch(postEventData(data))
+    dispatch(postEventData(data, selectedCalendar))
       .then(schedular.close);
   }
 
