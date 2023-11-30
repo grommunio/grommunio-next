@@ -1,6 +1,5 @@
 import { Fragment, KeyboardEvent, MouseEvent, useEffect, useState } from "react";
 import { useTypeDispatch, useTypeSelector } from "../../store";
-import { useAppContext } from "../../azure/AppContext";
 import { Box, Collapse, IconButton, Input, List, ListItemButton, ListItemSecondaryAction, ListItemText, Menu, MenuItem } from "@mui/material";
 import AddCalendar from "./AddCalendar";
 import { BsCalendarPlus } from "react-icons/bs";
@@ -19,7 +18,6 @@ const UserCalenders = () => {
   const [open, setOpen] = useState<boolean>(true);
   const [selectedItem, setSelectedItem] = useState<Calendar | null>(data[0] || null);
   const dispatch = useTypeDispatch();
-  const app = useAppContext();
   const [adding, setAdding] = useState<boolean>(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuProps | null>();
   const [editing, setEditing] = useState<string>("");
@@ -37,9 +35,9 @@ const UserCalenders = () => {
     setEditing(menuAnchor?.calendar.id || "");
   }
 
-  const handleCalendarClick = (item: Calendar) => () => {
-    setSelectedItem(item);
-    if(selectedItem?.id !== item?.id) dispatch(fetchEventsData({ app, id: item.id }));
+  const handleCalendarClick = (calendar: Calendar) => () => {
+    setSelectedItem(calendar);
+    if(selectedItem?.id !== calendar?.id) dispatch(fetchEventsData(calendar));
   }
 
   const handleDialog = (open: boolean) => () => {
@@ -111,7 +109,7 @@ const UserCalenders = () => {
                 height: 38,
               }}
             >
-              <CalendarMonth fontSize="small" />
+              <CalendarMonth fontSize="small" color="inherit" style={{ color: item.color as string }}/>
               <ListItemText
                 primary={item.name}
                 primaryTypographyProps={{ ml: 2 }}

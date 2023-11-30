@@ -39,8 +39,9 @@ const disableCondition = (calendar: IUserCalender) => {
   return !(calendar.name === "Calendar" || calendar.name === "Birthdays");
 };
 
-function formatEvent(rawEvent: Event) {
+function formatEvent(rawEvent: Event, color=undefined) {
   return {
+    color,
     ...rawEvent,
     id: rawEvent.id,
     event_id: rawEvent.id,
@@ -53,26 +54,25 @@ function formatEvent(rawEvent: Event) {
   };
 }
 
-function formatEvents(rawEvents: Array<Event>): Array<Event> {
-  return rawEvents.map((rawEvent: Event) => (formatEvent(rawEvent)))
+function formatEvents(rawEvents: Array<Event>, color=undefined): Array<Event> {
+  return rawEvents.map((rawEvent: Event) => (formatEvent(rawEvent, color)))
 }
 
 // Modify your reducer to use these types
 function calendarReducer(state: CalendarState = defaultState, action: AnyAction): CalendarState {
   switch (action.type) {
 
-  case FETCH_EVENTS_DATA + "/fulfilled":
+  case FETCH_EVENTS_DATA:
     return {
       ...state,
-      events: action.payload ? formatEvents(action.payload) : [],
+      events: action.payload ? formatEvents(action.payload, action.calendar?.color) : [],
     };
 
   case FETCH_USER_CALENDER_DATA:
     return {
       ...state,
       calendars: action.payload ? action.payload.map((calendar: IUserCalender) => ({
-        id: calendar.id,
-        name: calendar.name,
+        ...calendar,
         isDisabled: disableCondition(calendar)})) : [],
     };
 

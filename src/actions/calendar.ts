@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Event } from "microsoft-graph";
-import { findIana } from "windows-iana";
-import { AppContext } from "../azure/AppContext";
+import { Calendar, Event } from "microsoft-graph";
 import {
   deleteEvent,
-  getUserWeekCalendar,
   patchEvent,
   postEvent,
   getUserCalendars,
   patchUserCalendar,
   createUserCalendar,
-  deleteUserCalendar
+  deleteUserCalendar,
+  getEvents
 } from "../api/calendar";
 import {
   FETCH_EVENTS_DATA,
@@ -31,31 +28,21 @@ import {
   defaultPatchHandler,
   defaultDeleteHandler
 } from "./defaults";
+import { pushAlertStack } from "./alerts";
 
-type calendarAppContext = {
-  app: AppContext;
-  id?: string;
-};
-export const fetchEventsData = createAsyncThunk<Event[], calendarAppContext>(
-  FETCH_EVENTS_DATA,
-  async ({ app, id }: calendarAppContext) => {
-    if (app.user) {
-      try {
-        const ianaTimeZones = findIana(app.user?.timeZone!);
-        const events = await getUserWeekCalendar(
-          app.authProvider!,
-          ianaTimeZones[0].valueOf(),
-          id
-        );
-        return events;
-      } catch (err) {
-        const error = err as Error;
-        app.displayError!(error.message);
-      }
+export function fetchEventsData(calendar?: Calendar | undefined) {
+  return async (dispatch: any) => {
+    try {
+      const data = await getEvents(calendar?.id);
+      console.log(calendar);
+      await dispatch({ type: FETCH_EVENTS_DATA, payload: data, calendar: calendar });
+      return data;
+    } catch (error) {
+      await dispatch(pushAlertStack({ message: (error as any)?.message || "", severity: "error" }));
+      return false;
     }
-    return [];
   }
-);
+}
 
 export function postEventData(event: Event, calendar: string | undefined) {
   return defaultPostHandler(postEvent, POST_EVENT_DATA, event, calendar)

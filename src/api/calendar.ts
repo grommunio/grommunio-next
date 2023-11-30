@@ -73,7 +73,14 @@ export async function getUserWeekCalendar(
 }
 // </GetUserWeekCalendarSnippet>
 
-// <CreateEventSnippet>
+export async function getEvents(calendarId?: string | undefined): Promise<Event[]> {
+  const response: PageCollection = await graphClient!
+    .api(calendarId ? `/me/calendars/${calendarId}/events` : "/me/events")
+    .top(100)
+    .get();
+  return response.value;
+}
+
 export async function postEvent(newEvent: Event, calendarId: string | undefined): Promise<Event> {
   // POST /me/events
   // JSON representation of the new event is sent in the

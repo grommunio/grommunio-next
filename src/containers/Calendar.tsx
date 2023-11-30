@@ -78,7 +78,7 @@ function Calendar({ t, classes }: any) {
   const schedulerRef = useRef(null);
 
   useEffect(() => {
-    dispatch(fetchEventsData({ app }));
+    dispatch(fetchEventsData());
     dispatch(fetchContactsData());
   }, [app.authProvider]);
 

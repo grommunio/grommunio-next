@@ -7,21 +7,19 @@ import { Event } from "microsoft-graph";
 import DatePicker from "./DatePicker";
 import Scheduler from "./Scheduler";
 import { deleteCalendarData, fetchEventsData, fetchUserCalenders } from "../../actions/calendar";
-import { useAppContext } from "../../azure/AppContext";
 
 type SchedularViewType = {
   showSideBar: boolean;
 }
 
 const SchedularView = forwardRef(({ showSideBar }: SchedularViewType, ref) => {
-  const app = useAppContext();
   const { events } = useTypeSelector(state => state.calendar);
   const [deleting, setDeleting] = useState<Event | null>(null);
   const dispatch = useTypeDispatch();
   
   useEffect(() => {
     dispatch(fetchUserCalenders());
-    dispatch(fetchEventsData({ app }));
+    dispatch(fetchEventsData());
   }, []);
 
   const handleAppointmentDelete = () => {
