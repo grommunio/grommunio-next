@@ -26,7 +26,7 @@ import { withStyles } from '@mui/styles';
 import { Close, FiberManualRecord } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import moment from "moment";
-import { patchEventData, postEventData } from "../../actions/calendar";
+import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
 import { purify } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 
@@ -199,6 +199,11 @@ const AppointmentForm = ({ classes, schedular }) => {
       .then(schedular.close);
   }
 
+  const handleDelete = () => {
+    dispatch(deleteEventData(event.id))
+      .then(schedular.close);
+  }
+
   const isNewAppointment = !event.id;
   return <div className={classes.root}>
     <div className={classes.flexRow}>
@@ -208,6 +213,7 @@ const AppointmentForm = ({ classes, schedular }) => {
             variant="outlined"
             color="primary"
             className={classes.button}
+            onClick={handleDelete}
           >
             Delete
           </Button>

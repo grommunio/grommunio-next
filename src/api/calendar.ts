@@ -12,7 +12,7 @@ import {
 import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
-import { Calendar, Event } from "microsoft-graph";
+import {  Event } from "microsoft-graph";
 import { graphClient } from "./utils";
 
 // <GetUserWeekCalendarSnippet>
