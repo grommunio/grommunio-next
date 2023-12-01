@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import moment from "moment";
+import moment from 'moment-timezone';
 import * as DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
-import { Contact, NullableOption, Recipient } from "microsoft-graph";
+import { Contact, DateTimeTimeZone, NullableOption, Recipient } from "microsoft-graph";
 
 export type URLParams = {
   [index: string]: string;
@@ -98,6 +98,16 @@ export function parseISODate(isoDateString: string) {
   return moment(isoDateString).format('l'); // TODO: Format date depending on time since received
 }
 
+export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>) {
+  if(!msDatetime) return "";
+  const { dateTime, timeZone } = msDatetime;
+  if(!dateTime) return "";
+  
+  const preShiftTime = moment.tz(dateTime, timeZone || "");
+  const shiftedTime = preShiftTime.tz(getUserTimezone());
+
+  return shiftedTime.format('lll');
+}
 
 export function getMessageCategoryColor(pseudoColor: string) {
   switch(pseudoColor) {
@@ -185,4 +195,9 @@ export function gabSelectionToRequestFormat(emails: string, contacts: Array<Cont
     })));
   }
   return res.length > 0 ? res : null;
+}
+
+// TODO: Implement properly
+export function getUserTimezone() {
+  return moment.tz.guess(true);
 }

@@ -10,7 +10,8 @@ import {
   patchUserCalendar,
   createUserCalendar,
   deleteUserCalendar,
-  getEvents
+  getEvents,
+  acceptEvent
 } from "../api/calendar";
 import {
   FETCH_EVENTS_DATA,
@@ -34,7 +35,6 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
   return async (dispatch: any) => {
     try {
       const data = await getEvents(calendar?.id);
-      console.log(calendar);
       await dispatch({ type: FETCH_EVENTS_DATA, payload: data, calendar: calendar });
       return data;
     } catch (error) {
@@ -89,4 +89,8 @@ export function deleteCalendarData(id: string) {
     DELETE_CALENDAR_DATA,
     id
   );
+}
+
+export function acceptEventMessage(eventId: string) {
+  return defaultPostHandler(acceptEvent, null, eventId)
 }

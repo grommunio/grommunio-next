@@ -213,7 +213,6 @@ const AppointmentForm = ({ classes, schedular }) => {
   }
 
   const handleAutocomplete = (e, newVal) => {
-    console.log(selectedAttendees);
     setSelectedAttendees(newVal);
   }
 

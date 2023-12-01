@@ -121,3 +121,13 @@ export async function createUserCalendar(calendarName: string): Promise<Event> {
 export async function deleteUserCalendar(id?: string): Promise<Event> {
   return await graphClient!.api(`/me/calendars/${id}`).delete();
 }
+
+export async function acceptEvent(eventId: string): Promise<Event> {
+  return await graphClient!.api(`/me/events/${eventId}/accept`).post(null);
+}
+
+export async function getEventFromEventMessage(eventMsgId: string) {
+  return await graphClient!.api(`/me/messages/${eventMsgId}`)
+    .expand("microsoft.graph.eventMessage/Event")
+    .get();
+}

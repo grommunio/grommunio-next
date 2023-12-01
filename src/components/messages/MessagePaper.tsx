@@ -4,11 +4,12 @@
 import { Forward, Print, Reply, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import { withStyles } from "@mui/styles";
-import { Message } from "microsoft-graph";
+import { EventMessage, Message } from "microsoft-graph";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react"; 
 import { buildEmailPrintView, convertHtmlMailToDarkmode } from "../../htmlUtils";
 import { purify } from "../../utils";
+import MeetingInfo from "./MeetingInfo";
 
 const styles: any = {
   root: {
@@ -46,7 +47,7 @@ const styles: any = {
 
 type MessageProps = {
   classes: any;
-  selectedMsg: Message | null,
+  selectedMsg: Message | EventMessage | null,
   handleForward: () => void,
   handleReply: (all: boolean) => () => void,
 }
@@ -123,6 +124,8 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           </Tooltip>
         </div>
       </div>}
+      {(selectedMsg as EventMessage)?.meetingMessageType === "meetingRequest" &&
+        <MeetingInfo message={(selectedMsg as EventMessage)} />}
       {!showOriginal && theme.palette.mode === "dark" && <div>
         <Typography variant="caption">
           {t("This content has been modified for better readability. ")}
