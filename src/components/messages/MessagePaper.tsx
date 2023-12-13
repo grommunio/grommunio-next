@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { buildEmailPrintView, convertHtmlMailToDarkmode } from "../../htmlUtils";
 import { purify } from "../../utils";
 import MeetingInfo from "./MeetingInfo";
+import MeetingCancelled from "./MeetingCancelled";
 
 const styles: any = {
   root: {
@@ -126,6 +127,8 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
       </div>}
       {(selectedMsg as EventMessage)?.meetingMessageType === "meetingRequest" &&
         <MeetingInfo message={(selectedMsg as EventMessage)} />}
+      {(selectedMsg as EventMessage)?.meetingMessageType === "meetingCancelled" &&
+        <MeetingCancelled message={(selectedMsg as EventMessage)} />}
       {selectedMsg && !showOriginal && theme.palette.mode === "dark" && <div>
         <Typography variant="caption">
           {t("This content has been modified for better readability. ")}
