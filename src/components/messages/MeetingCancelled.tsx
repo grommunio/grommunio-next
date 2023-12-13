@@ -48,7 +48,7 @@ const MeetingCancelled = ({ classes, message }: MeetingInfoProps) => {
     const success = await dispatch(deleteEventData(details.event?.id || ""));
 
     if (success) {
-      await dispatch(moveMessageData([message], "deletedItems"))
+      await dispatch(moveMessageData([message], "deletedItems"));
     }
   }
  

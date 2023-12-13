@@ -3,9 +3,9 @@
 
 import Hover from "../Hover";
 import { withStyles } from "@mui/styles";
-import { Avatar, Checkbox, IconButton, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Typography } from "@mui/material";
-import { FlagOutlined, MailOutlineOutlined, PriorityHigh, PushPinOutlined } from "@mui/icons-material";
-import { Message } from "microsoft-graph";
+import { Avatar, Checkbox, IconButton, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme } from "@mui/material";
+import { Event, EventAvailable, EventBusy, FlagOutlined, MailOutlineOutlined, PriorityHigh, PushPinOutlined, QuestionMark } from "@mui/icons-material";
+import { EventMessage, Message } from "microsoft-graph";
 import { parseISODate } from "../../utils";
 import CategoryChip from "./CategoryChip";
 import { useTypeDispatch } from "../../store";
@@ -41,9 +41,17 @@ const styles: any = {
   mailListItemTitle: {
     display: 'flex',
     alignItems: 'center',
-    minHeight: 30,
+    height: 30,
     justifyContent: 'space-between'
   },
+  typeIcon: {
+    marginRight: 4,
+  },
+  iconButtons: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  }
 }
 
 type MessageListItemProps = {
@@ -60,6 +68,7 @@ type MessageListItemProps = {
 
 const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages, message, selectedMsg, handleContextMenu,
   handleMailClick, handleMailCheckbox }: MessageListItemProps) => {
+  const theme = useTheme();
   const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   const checked = checkedMessages.includes(message);
   const dispatch = useTypeDispatch();
@@ -79,6 +88,17 @@ const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages,
 
   const handleSetUnread = () => {
     dispatch(patchMessageData(message, { isRead: false }));
+  }
+
+  const getMessageTypeIcon = () => {
+    switch((message as EventMessage)?.meetingMessageType) {
+    case "meetingRequest": return <Event className={classes.typeIcon} fontSize="small"/>;
+    case "meetingAccepted": return <EventAvailable className={classes.typeIcon} fontSize="small"/>;
+    case "meetingTenativelyAccepted": return <QuestionMark className={classes.typeIcon} fontSize="small"/>;
+    case "meetingDeclined": return <EventBusy className={classes.typeIcon} fontSize="small"/>;
+    case "meetingCancelled": return <EventBusy className={classes.typeIcon} fontSize="small"/>;
+    default: return null;
+    }
   }
   
   return <Hover>
@@ -103,7 +123,7 @@ const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages,
           <div className={classes.mailSender}>
             {message.sender?.emailAddress?.name || message.sender?.emailAddress?.address || "Unknown sender"}
           </div>
-          <div>
+          <div className={classes.iconButtons}>
             <IconButton
               style={{ visibility: hover ? "visible" : "hidden" }}
               onClick={handleSetUnread}
@@ -120,21 +140,25 @@ const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages,
             >
               <FlagOutlined fontSize='small' color={message.flag?.flagStatus === "flagged" ? "error" : "inherit"}/>
             </IconButton>
-            <IconButton
-              style={{ visibility: hover || isPinned ? "visible" : "hidden" }}
+            {!hover && getMessageTypeIcon()}
+            {(hover || isPinned) && <IconButton
               onClick={handlePin(message?.id || "")}
               size='small'
               title="Pin this message"
             >
               <PushPinOutlined fontSize='small' color={isPinned ? "error" : "inherit"}/>
-            </IconButton>
+            </IconButton>}
             {message.importance === "high" && <PriorityHigh color="error" fontSize='small' />}
           </div> 
         </>}
         secondary={<>
           <div className={classes.mailSubjectContainer}>
             <div className={classes.mailSubject}>
-              <Typography style={{ fontWeight: message.isRead ? "normal" : "bold"}} variant='body2' color={message.isRead ? "white" : "primary"}>
+              <Typography
+                style={{ fontWeight: message.isRead ? "normal" : "bold"}}
+                variant='body2'
+                color={message.isRead ? theme.palette.text.primary : "primary"}
+              >
               &gt; {message.subject}
               </Typography>
             </div>
