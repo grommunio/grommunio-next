@@ -11,7 +11,7 @@ import {
   createUserCalendar,
   deleteUserCalendar,
   getEvents,
-  acceptEvent
+  respondToEvent
 } from "../api/calendar";
 import {
   FETCH_EVENTS_DATA,
@@ -30,6 +30,7 @@ import {
   defaultDeleteHandler
 } from "./defaults";
 import { pushAlertStack } from "./alerts";
+import { EventReponseType } from "../types/calendar";
 
 export function fetchEventsData(calendar?: Calendar | undefined) {
   return async (dispatch: any) => {
@@ -91,6 +92,6 @@ export function deleteCalendarData(id: string) {
   );
 }
 
-export function acceptEventMessage(eventId: string) {
-  return defaultPostHandler(acceptEvent, null, eventId)
+export function respondToEventMessage(eventId: string, response: EventReponseType) {
+  return defaultDeleteHandler(respondToEvent, null, eventId, response)
 }

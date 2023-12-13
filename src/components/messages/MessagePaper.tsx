@@ -126,7 +126,7 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
       </div>}
       {(selectedMsg as EventMessage)?.meetingMessageType === "meetingRequest" &&
         <MeetingInfo message={(selectedMsg as EventMessage)} />}
-      {!showOriginal && theme.palette.mode === "dark" && <div>
+      {selectedMsg && !showOriginal && theme.palette.mode === "dark" && <div>
         <Typography variant="caption">
           {t("This content has been modified for better readability. ")}
           <a onClick={() => setShowOriginal(true)} className={classes.a}>Show original</a>

@@ -14,6 +14,7 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
 import {  Event } from "microsoft-graph";
 import { graphClient } from "./utils";
+import { EventReponseType } from "../types/calendar";
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(
@@ -122,8 +123,8 @@ export async function deleteUserCalendar(id?: string): Promise<Event> {
   return await graphClient!.api(`/me/calendars/${id}`).delete();
 }
 
-export async function acceptEvent(eventId: string): Promise<Event> {
-  return await graphClient!.api(`/me/events/${eventId}/accept`).post(null);
+export async function respondToEvent(eventId: string, response: EventReponseType): Promise<Event> {
+  return await graphClient!.api(`/me/events/${eventId}/${response}`).post(null);
 }
 
 export async function getEventFromEventMessage(eventMsgId: string) {

@@ -198,7 +198,13 @@ function Messages({ classes }: MessagesProps) {
 
   // Update selected message when message object in store changes
   useEffect(() => {
-    if(selectedMsg?.id) setSelectedMsg(messages.find((m: Message) => m.id === selectedMsg.id));
+    if(selectedMsg?.id) {
+      const storeMessage = messages.find((m: Message) => m.id === selectedMsg.id);
+      if(storeMessage) setSelectedMsg(storeMessage);
+      else if (mailTabs.length > 0 && mailTabs[0].ID === 1) {
+        handleDraftClose(0)();
+      }
+    }
   }, [messages]);
 
   const debouncedSearch = debounce(async (search: string, folderid?: string) => {

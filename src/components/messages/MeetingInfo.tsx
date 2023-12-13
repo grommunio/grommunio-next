@@ -1,12 +1,16 @@
 import { AccessTime, CalendarToday, Check, Close, QuestionMark, Reply } from "@mui/icons-material";
 import { Button, TextField, Typography } from "@mui/material";
 import { withStyles } from "@mui/styles";
-import { EventMessage } from "microsoft-graph"
+import { EventMessage, Message } from "microsoft-graph"
 import { toReadableTimeInTimezone } from "../../utils";
 import { useTranslation } from "react-i18next";
 import { useTypeDispatch } from "../../store";
-import { acceptEventMessage } from "../../actions/calendar";
+import { respondToEventMessage } from "../../actions/calendar";
 import { getEventFromEventMessage } from "../../api/calendar";
+import { EventReponseType } from "../../types/calendar";
+import { moveMessageData } from "../../actions/messages";
+import { ChangeEvent, useState } from "react";
+import { postMessage } from "../../api/messages";
 
 const styles = (theme: any): any => ({
   root: {
@@ -45,12 +49,33 @@ type MeetingInfoProps = {
 const MeetingInfo = ({ classes, message }: MeetingInfoProps) => {
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
+  const [responseMessageContent, setResponseMessageContent] = useState("");
 
-  const handleYes = async () => {
+  const handleReponse = (responseType: EventReponseType) => async () => {
     const details: EventMessage = await getEventFromEventMessage(message.id || "");
-    dispatch(acceptEventMessage(details.event?.id || ""));
+    const success = await dispatch(respondToEventMessage(details.event?.id || "", responseType));
+
+    // Send mail response to invitation sender
+    const responseMessage: Message = {
+      body: {
+        content: responseMessageContent || ("Event " + responseType), // TODO: This response can be improved
+      },
+      toRecipients: [
+        { emailAddress: message.sender?.emailAddress }
+      ],
+      subject: "Event " + responseType, // TODO: This subject can be improved
+    };
+    await postMessage(responseMessage, true);
+    
+    // Move mail to trash after successfull deletion
+    if (success) {
+      await dispatch(moveMessageData([message], "deletedItems"))
+    }
   }
 
+  const handleInput = (e: ChangeEvent<HTMLInputElement>) => {
+    setResponseMessageContent(e.target.value);
+  }
  
   return <div className={classes.root}>
     <div className={classes.info}>
@@ -75,6 +100,8 @@ const MeetingInfo = ({ classes, message }: MeetingInfoProps) => {
           variant="standard"
           multiline
           minRows={2}
+          value={responseMessageContent}
+          onChange={handleInput}
         />
         <div className={classes.flexRow}>
           <Button
@@ -82,7 +109,7 @@ const MeetingInfo = ({ classes, message }: MeetingInfoProps) => {
             variant="outlined"
             startIcon={<Check color="success" />}
             color="inherit"
-            onClick={handleYes}
+            onClick={handleReponse(EventReponseType.accept)}
           >
             Yes
           </Button>
@@ -91,7 +118,7 @@ const MeetingInfo = ({ classes, message }: MeetingInfoProps) => {
             variant="outlined"
             startIcon={<QuestionMark color="info" />}
             color="inherit"
-            //onClick={handleCow}
+            onClick={handleReponse(EventReponseType.tentatively)}
           >
             Perhaps
           </Button>
@@ -100,6 +127,7 @@ const MeetingInfo = ({ classes, message }: MeetingInfoProps) => {
             variant="outlined"
             startIcon={<Close color="error" />}
             color="inherit"
+            onClick={handleReponse(EventReponseType.decline)}
           >
             No
           </Button>
