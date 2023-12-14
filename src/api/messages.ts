@@ -6,13 +6,14 @@ import { CategoryColor, Message } from "microsoft-graph";
 import { buildQuery } from "../utils";
 import { graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
+import { SCROLL_ITEMS } from "../constants";
 
 export async function getUserMessages(folderid = 'inbox', params={}): Promise<PageCollection> {
   const url = buildQuery(`/me/mailFolders/${folderid}/messages`, params);
 
   const response: PageCollection = await graphClient!
     .api(url)
-    .top(10) // TODO: This limit will probably increased in the future, but is currently set for testing purposes
+    .top(SCROLL_ITEMS) // TODO: This limit will probably increased in the future, but is currently set for testing purposes
     .count()
     .get();
 

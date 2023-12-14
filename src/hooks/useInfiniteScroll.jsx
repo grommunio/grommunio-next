@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { SCROLL_ITEMS } from '../constants';
 
 export default function useInfiniteScroll(data, count, fetchData) {
   const [offset, setOffset] = useState(0);
@@ -20,9 +21,9 @@ export default function useInfiniteScroll(data, count, fetchData) {
     ) {
       if (!loading) { 
         setLoading(true);
-        setOffset(offset + 10 /* TODO: This needs to become a variable asap */);
+        setOffset(offset + SCROLL_ITEMS);
         dispatch(fetchData({
-          skip: offset + 10
+          skip: offset + SCROLL_ITEMS
         }))
           .then(() => setLoading(false))
           .catch(() => setLoading(false));

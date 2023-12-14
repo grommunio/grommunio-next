@@ -4,6 +4,7 @@
 import { Map, IntMap } from "./types/misc";
 
 export const DRAWER_WIDTH = 260;
+export const SCROLL_ITEMS = 25;
 
 export const FOLDER_COMMONNAME_DICT_MAPPING: Map = {
   "Posteingang": "inbox",
