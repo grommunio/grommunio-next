@@ -19,6 +19,7 @@ import DateRangeIcon from "@mui/icons-material/DateRange";
 import ShareCalendar from "../components/calendar/ShareCalendar"
 import SchedularView from "../components/calendar/SchedularView";
 import { fetchContactsData } from "../actions/contacts";
+import { List } from "@mui/icons-material";
 
 const styles = () => ({
   nav: {
@@ -75,6 +76,7 @@ function Calendar({ t, classes }: any) {
   const dispatch: any = useTypeDispatch();
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
   const [visible, setVisible] = useState(false);
+  const [listViewActive, setListViewActive] = useState(false);
   const schedulerRef = useRef(null);
 
   useEffect(() => {
@@ -84,7 +86,12 @@ function Calendar({ t, classes }: any) {
 
   const handleViewChange = (view: string) => () => {
     (schedulerRef.current?.["scheduler"] as any).handleState(view, "view");
+    setListViewActive(false);
   };
+
+  const handleListView = () => {
+    setListViewActive(true);
+  }
 
   const handleClickOpen = () => {
     setVisible(true);
@@ -128,6 +135,13 @@ function Calendar({ t, classes }: any) {
             >
               Month
             </ActionButton>
+            <ActionButton
+              key={4}
+              startIcon={<List/>}
+              onClick={handleListView}
+            >
+              List
+            </ActionButton>
           </div>
           <div className="left-items">
             <ActionButton
@@ -144,6 +158,7 @@ function Calendar({ t, classes }: any) {
       <SchedularView
         showSideBar={showCalenderSidebar}
         ref={schedulerRef}
+        listViewActive={listViewActive}
       />
       <ShareCalendar onHide={onHide} visible={visible}/>
     </AuthenticatedView>

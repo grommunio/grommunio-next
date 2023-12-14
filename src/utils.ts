@@ -98,7 +98,7 @@ export function parseISODate(isoDateString: string) {
   return moment(isoDateString).format('l'); // TODO: Format date depending on time since received
 }
 
-export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>) {
+export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>, dateFormat="lll") {
   if(!msDatetime) return "";
   const { dateTime, timeZone } = msDatetime;
   if(!dateTime) return "";
@@ -106,7 +106,19 @@ export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTim
   const preShiftTime = moment.tz(dateTime, timeZone || "");
   const shiftedTime = preShiftTime.tz(getUserTimezone());
 
-  return shiftedTime.format('lll');
+  return shiftedTime.format(dateFormat);
+}
+
+export function getReadableDuration(start: string, end: string) {
+  if (!start || !end) return "";
+  const duration = moment.duration(moment(end).diff(moment(start)));
+  const minutes = duration.asMinutes();
+  if(minutes < 60) {
+    return minutes + " minutes";
+  } else if (minutes < 1440) {
+    return duration.asHours() + " hours";
+  }
+  return duration.asDays().toPrecision(1) + " days";
 }
 
 export function getMessageCategoryColor(pseudoColor: string) {

@@ -17,6 +17,7 @@
     "@mui/material": "^5.10.16",
     "@mui/styles": "^5.10.16",
     "@mui/types": "^7.2.2",
+    "@mui/x-data-grid": "^6.18.5",
     "@mui/x-date-pickers": "^6.5.0",
     "@reduxjs/toolkit": "^1.9.1",
     "@testing-library/jest-dom": "^5.14.1",

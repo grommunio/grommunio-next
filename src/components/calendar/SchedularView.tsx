@@ -7,12 +7,14 @@ import { Event } from "microsoft-graph";
 import DatePicker from "./DatePicker";
 import Scheduler from "./Scheduler";
 import { deleteCalendarData, fetchEventsData, fetchUserCalenders } from "../../actions/calendar";
+import ListView from "./ListView";
 
 type SchedularViewType = {
   showSideBar: boolean;
+  listViewActive: boolean;
 }
 
-const SchedularView = forwardRef(({ showSideBar }: SchedularViewType, ref) => {
+const SchedularView = forwardRef(({ showSideBar, listViewActive }: SchedularViewType, ref) => {
   const { events } = useTypeSelector(state => state.calendar);
   const [deleting, setDeleting] = useState<Event | null>(null);
   const dispatch = useTypeDispatch();
@@ -36,12 +38,14 @@ const SchedularView = forwardRef(({ showSideBar }: SchedularViewType, ref) => {
         </Grid> 
       )}
       <Grid item flex={1}>
-        <div>
-          <Scheduler
-            events={events}
-            ref={ref}
-          />
-        </div>
+        {listViewActive ?
+          <ListView events={events}/> :
+          <div>
+            <Scheduler
+              events={events}
+              ref={ref}
+            />
+          </div>}
       </Grid>
     </Grid>
     <ConfirmAppointmentDelete
