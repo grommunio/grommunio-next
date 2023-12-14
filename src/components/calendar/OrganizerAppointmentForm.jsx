@@ -103,7 +103,7 @@ const styles = {
   }
 }
 
-const AppointmentForm = ({ classes, schedular }) => {
+const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   const editorRef = useRef(null);
   const [event, setEvent] = useState({});
   const { calendars } = useSelector(state => state.calendar);
@@ -114,7 +114,7 @@ const AppointmentForm = ({ classes, schedular }) => {
   const { contacts } = useTypeSelector(state => state.contacts);
 
   useEffect(() => {
-    const { id, start, end, subject, location, body, isAllDay, attendees } = schedular.state;
+    const { id, start, end, subject, location, body, isAllDay, attendees } = scheduler.state;
     setEvent({
       id: id.value,
       start: moment(start.value),
@@ -128,7 +128,7 @@ const AppointmentForm = ({ classes, schedular }) => {
     if(attendees?.value) setSelectedAttendees(attendees.value.map((attendee) =>
       contacts.find(contact =>
         contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address))));
-  }, [schedular]);
+  }, [scheduler]);
 
   useEffect(() => {
     if(!selectedCalendar) {
@@ -191,25 +191,25 @@ const AppointmentForm = ({ classes, schedular }) => {
   }
 
   const handleEdit = () => {
-    schedular.loading(true);
+    scheduler.loading(true);
     const data = formatEventForRequest(event);
     dispatch(patchEventData(data))
       .then(() => {
-        schedular.loading(false);
-        schedular.close();
+        scheduler.loading(false);
+        scheduler.close();
       })
-      .catch(() => schedular.loading(false));
+      .catch(() => scheduler.loading(false));
   }
 
   const handleAdd = () => {
     const data = formatEventForRequest(event);
     dispatch(postEventData(data, selectedCalendar))
-      .then(schedular.close);
+      .then(scheduler.close);
   }
 
   const handleDelete = () => {
     dispatch(deleteEventData(event.id))
-      .then(schedular.close);
+      .then(scheduler.close);
   }
 
   const handleAutocomplete = (e, newVal) => {
@@ -263,7 +263,7 @@ const AppointmentForm = ({ classes, schedular }) => {
         </TextField>}
       </div>
       <div className={classes.flexEnd}>
-        <IconButton onClick={schedular.close}>
+        <IconButton onClick={scheduler.close}>
           <Close />
         </IconButton>
       </div>
@@ -381,4 +381,4 @@ const AppointmentForm = ({ classes, schedular }) => {
   </div>
 }
 
-export default withStyles(styles)(AppointmentForm);
+export default withStyles(styles)(OrganizerAppointmentForm);

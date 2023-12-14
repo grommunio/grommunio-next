@@ -40,9 +40,9 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
     }}
     freeSolo
     fullWidth
-    renderTags={(value: readonly (string | Contact)[], getTagProps) => 
-      value.map((option: (string | Contact), index: number) => {
-        const { id, displayName } = (option as Contact);
+    renderTags={(tag: readonly (string | Contact)[], getTagProps) => 
+      tag.map((option: (string | Contact), index: number) => {
+        const { id, displayName } = ((option || {}) as Contact);
         return <ContactChip
           {...getTagProps({ index })}
           label={displayName}

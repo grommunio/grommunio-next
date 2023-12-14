@@ -122,3 +122,7 @@ pre code {
 .tox-promotion, .tox-statusbar__branding {
   display: none !important;
 }
+
+.MuiDialog-paper {
+  flex: 1;
+}
