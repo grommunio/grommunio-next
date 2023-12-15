@@ -140,7 +140,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
     const { start, end, location } = event;
     return {
       ...event,
-      attendees: gabSelectionToRequestFormat("", selectedAttendees),
+      attendees: gabSelectionToRequestFormat("", selectedAttendees) || [], // TODO: Implement non-contact mails
       start: {
         timeZone: app.user?.timeZone,
         dateTime: start.toISOString()
@@ -149,9 +149,9 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
         timeZone: app.user?.timeZone,
         dateTime: end.toISOString()
       },
-      location: {
+      location: location ? {
         displayName: location,
-      },
+      } : undefined,
       body: {
         contentType: 'html',
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
@@ -242,7 +242,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
             style={{ marginLeft: "16px" }}
             onClick={isNewAppointment ? handleAdd : handleEdit}
           >
-            {isNewAppointment ? "Create" : "Save"}
+            {selectedAttendees.length === 0 ? (isNewAppointment ? "Create" : "Save") : "Send"}
           </Button>
         </div>
         {isNewAppointment && <TextField
