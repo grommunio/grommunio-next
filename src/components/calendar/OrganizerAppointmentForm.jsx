@@ -289,6 +289,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
             handleContactRemove={handleContactRemove}
             textfieldProps={{
               variant: "standard",
+              label: "Attendees"
             }}
           />
         </div>
@@ -329,6 +330,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
             {...textEditorProps("location")}
             variant="standard"
             fullWidth
+            label="Location"
             InputProps={{
               endAdornment: (
                 <Tooltip
@@ -360,21 +362,19 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
         </div>
         <div className={classes.body}>
           <Notes className={classes.icon} color="action" />
-          <div>
-            <Editor
-              tinymceScriptSrc={
-                process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
-              }
-              initialValue={event.body || ""}
-              init={{
-                menubar: false,
-                readonly: true,
-                toolbar,
-                plugins: ["wordcount"],
-              }}
-              onInit={(evt, editor) => editorRef.current = editor}
-            />
-          </div>
+          <Editor
+            tinymceScriptSrc={
+              process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
+            }
+            initialValue={event.body || ""}
+            init={{
+              menubar: false,
+              readonly: true,
+              toolbar,
+              plugins: ["wordcount"],
+            }}
+            onInit={(evt, editor) => editorRef.current = editor}
+          />
         </div>
       </div>
     </DialogContent>
