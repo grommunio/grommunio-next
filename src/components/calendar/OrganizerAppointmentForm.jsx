@@ -126,9 +126,14 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
       isAllDay: Boolean(isAllDay.value),
       // TODO: Implement recurrence
     });
-    if(attendees?.value) setSelectedAttendees(attendees.value.map((attendee) =>
-      contacts.find(contact =>
-        contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address))));
+    if(attendees?.value) {
+      const contactAttendees = attendees.value.reduce((prev, attendee) => {
+        const contact = contacts.find(contact =>
+          contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address));
+        return contact ? [...prev, contact] : prev;
+      }, []);
+      setSelectedAttendees(contactAttendees);
+    }
   }, [scheduler]);
 
   useEffect(() => {
