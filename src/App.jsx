@@ -14,7 +14,7 @@ import makeLoadableComponent from './lazy';
 import TopBar from './components/TopBar';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch } from './store';
-import { changeSettings } from './actions/settings';
+import { changeSettings, fetchMailboxSettingsData } from './actions/settings';
 import { CssBaseline } from '@mui/material';
 import background from "!file-loader!./res/background_light.svg";
 import backgroundDark from "!file-loader!./res/background_dark.svg";
@@ -86,13 +86,20 @@ function App(props) {
   const { i18n } = useTranslation();
   const dispatch = useTypeDispatch();
 
+  const fetchSettings = async () => {
+    return await dispatch(fetchMailboxSettingsData());
+  }
+
   useEffect(() => {
-    const lang = localStorage.getItem("lang");
+    // Fetch mailbox settings
+    const settings = fetchSettings();
+
+    const lang = settings?.language?.locale || localStorage.getItem("lang");
     if (lang) {
       i18n.changeLanguage(lang);
       dispatch(changeSettings("language", lang));
     }
-  }, [])
+  }, []);
 
   const routesProps = {
     authenticated,

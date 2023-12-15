@@ -3,10 +3,17 @@
 import { AnyAction } from 'redux'
 import {
   CHANGE_SETTINGS,
+  FETCH_MAILBOX_SETTINGS,
 } from '../actions/types';
 
 const defaultState = {
   language: 'en-US',
+  mailboxSettings: {
+    language: {
+      locale: "en-US",
+      displayName: "en_US: English",
+    },
+  },
 };
 
 function settingsReducer(state = defaultState, action: AnyAction) {
@@ -16,6 +23,14 @@ function settingsReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       [action.field]: action.value,
+    };
+
+  case FETCH_MAILBOX_SETTINGS:
+    return {
+      ...state,
+      mailboxSettings: {
+        ...action.payload,
+      }
     };
 
   default:

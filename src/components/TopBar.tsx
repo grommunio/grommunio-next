@@ -8,10 +8,11 @@ import { AccountCircle, Settings, Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
 import { useTranslation } from 'react-i18next';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { changeSettings } from '../actions/settings';
+import { changeSettings, patchMailboxSettingsData } from '../actions/settings';
 import SettingsDrawer from './SettingsDrawer';
 import { useAppContext } from '../azure/AppContext';
 import GrommunioLight from './logos/GrommunioLight';
+import { LocaleInfo } from 'microsoft-graph';
 
 const styles = {
   appbar: {
@@ -59,7 +60,7 @@ function TopBar(props: any) {
   const app = useAppContext();
   const dispatch = useTypeDispatch();
   const { me, settings } = useTypeSelector(state => state);
-  const { language } = settings;
+  const { language } = settings.mailboxSettings;
   const [ languagesAnchor, setLanguagesAnchor ] = useState<null | HTMLElement>(null);
   const [ menuAnchor, setMenuAnchor ] = useState<null | HTMLElement>(null);
   const [ settingsOpen, setSettingsOpen ] = useState<boolean>(false);
@@ -68,11 +69,18 @@ function TopBar(props: any) {
 
   const handleMenu = (open: boolean) => (e: MouseEvent<HTMLElement>) => setMenuAnchor(open ? e.currentTarget : null);
 
-  const handleLangChange = (lang: string) => () => {
-    i18n.changeLanguage(lang);
-    dispatch(changeSettings('language', lang));
-    window.localStorage.setItem('lang', lang);
-    setLanguagesAnchor(null)
+  const handleLangChange = (localeInfo: LocaleInfo) => () => {
+    i18n.changeLanguage(localeInfo.locale || "en-US");
+    dispatch(changeSettings('language', localeInfo.locale));
+    window.localStorage.setItem('lang', localeInfo.locale || "en-US"); // Deprecated
+
+    dispatch(patchMailboxSettingsData({
+      language: {
+        locale: localeInfo.locale,
+      }
+    }));
+
+    setLanguagesAnchor(null);
   }
 
   const handleSettings = () => setSettingsOpen(!settingsOpen);
@@ -116,10 +124,10 @@ function TopBar(props: any) {
           >
             {getLangs().map(({key, value}) =>
               <MenuItem
-                selected={language === key}
+                selected={language.locale === key}
                 value={key}
                 key={key}
-                onClick={handleLangChange(key)}
+                onClick={handleLangChange({ locale: key, displayName: value })}
               >
                 {value}
               </MenuItem>  
