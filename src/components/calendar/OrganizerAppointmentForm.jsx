@@ -112,6 +112,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   const app = useAppContext();
   const [selectedAttendees, setSelectedAttendees] = useState([]);
   const { contacts } = useTypeSelector(state => state.contacts);
+  const [dirty, setDirty]= useState(false);
 
   useEffect(() => {
     const { id, start, end, subject, location, body, isAllDay, attendees } = scheduler.state;
@@ -168,6 +169,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
       ...event,
       [field]: value,
     });
+    if(!dirty) setDirty(true);
   };
 
   const handleSwitch = field => (e) => {
@@ -175,6 +177,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
       ...event,
       [field]: e.target.checked,
     });
+    if(!dirty) setDirty(true);
   };
 
   const textEditorProps = (field) => ({
@@ -187,7 +190,8 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
     setEvent({
       ...event,
       [field]: newVal,
-    })
+    });
+    if(!dirty) setDirty(true);
   }
 
   const handleEdit = () => {
@@ -214,6 +218,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
 
   const handleAutocomplete = (e, newVal) => {
     setSelectedAttendees(newVal);
+    if(!dirty) setDirty(true);
   }
 
   const handleContactRemove = (id) => () =>
@@ -241,6 +246,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
             className={classes.button}
             style={{ marginLeft: "16px" }}
             onClick={isNewAppointment ? handleAdd : handleEdit}
+            disabled={!dirty}
           >
             {selectedAttendees.length === 0 ? (isNewAppointment ? "Create" : "Save") : "Send"}
           </Button>
