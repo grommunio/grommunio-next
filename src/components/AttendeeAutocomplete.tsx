@@ -3,11 +3,12 @@ import GABOption from "./GABOption";
 import { Contact } from "microsoft-graph";
 import { ContactMail } from "@mui/icons-material";
 import { withStyles } from "@mui/styles";
+import { useState } from "react";
 
 const ContactChip = (props: any) => (
   <Chip
     sx={{ mr: 0.5 }}
-    icon={<ContactMail fontSize='small'/>}
+    icon={props.id ? <ContactMail fontSize='small'/> : null}
     {...props}
   />
 );
@@ -18,8 +19,20 @@ const styles: any = () => ({
   },
 });
 
-const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChange,
-  onInputChange, handleContactRemove, renderInput, textfieldProps={} }: any) => {
+const AttendeeAutocomplete = ({ classes, options, value, onChange,
+  handleContactRemove, renderInput, textfieldProps={} }: any) => {
+  
+  const [inputValue, setInputValue] = useState<string>("");
+
+  const onInputChange = (e_: any, input: string) => {
+    if(input.endsWith(",")) {
+      const mail = input.slice(0, input.length - 1);
+      onChange(null, [...value, { displayName: mail, emailAddresses: [{ address: mail }]}]);
+      setInputValue("");
+    } else {
+      setInputValue(input);
+    }
+  }
 
   return <Autocomplete
     value={value || []}
@@ -45,8 +58,9 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
         const { id, displayName } = ((option || {}) as Contact);
         return <ContactChip
           {...getTagProps({ index })}
+          id={id}
           label={displayName}
-          onDelete={handleContactRemove(id || "")}
+          onDelete={handleContactRemove(index)}
         />
       })
     }
@@ -62,4 +76,4 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
   />;
 }
 
-export default withStyles(styles)(GABAutocompleteTextfield);
+export default withStyles(styles)(AttendeeAutocomplete);

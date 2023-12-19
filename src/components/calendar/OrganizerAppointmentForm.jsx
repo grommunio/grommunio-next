@@ -29,8 +29,8 @@ import moment from "moment";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
-import GABAutocompleteTextfield from "../GABAutocompleteTextfield";
 import { useTypeSelector } from "../../store";
+import AttendeeAutocomplete from "../AttendeeAutocomplete";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -127,11 +127,17 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
       // TODO: Implement recurrence
     });
     if(attendees?.value) {
-      const contactAttendees = attendees.value.reduce((prev, attendee) => {
+      /*const contactAttendees = attendees.value.reduce((prev, attendee) => {
         const contact = contacts.find(contact =>
           contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address));
         return contact ? [...prev, contact] : prev;
-      }, []);
+      }, []);*/
+
+      const contactAttendees = attendees.value.map((attendee) => {
+        const contact = contacts.find(contact =>
+          contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address));
+        return contact || { displayName: attendee.emailAddress.address };
+      });
       setSelectedAttendees(contactAttendees);
     }
   }, [scheduler]);
@@ -226,10 +232,11 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
     if(!dirty) setDirty(true);
   }
 
-  const handleContactRemove = (id) => () =>
-    setSelectedAttendees(
-      selectedAttendees.filter(c => c.id !== id)
-    );
+  const handleContactRemove = (index) => () => {
+    const copy = [...selectedAttendees];
+    copy.splice(index, 1);
+    setSelectedAttendees(copy);
+  }
 
   const isNewAppointment = !event.id;
   return <div className={classes.root}>
@@ -293,7 +300,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
         </div>
         <div className={classes.flexRow}>
           <PersonAddAltIcon className={classes.icon} color="action" />
-          <GABAutocompleteTextfield
+          <AttendeeAutocomplete
             value={selectedAttendees}
             onChange={handleAutocomplete}
             options={contacts}
