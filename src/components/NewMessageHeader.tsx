@@ -9,9 +9,8 @@ import { Contact, Importance, Message, NullableOption, Recipient } from "microso
 import { GabSelections } from "../types/misc";
 import { fetchContactsData } from "../actions/contacts";
 import { throttle } from "lodash";
-import GABOption from "./GABOption";
-import GABAutocompleteTextfield from "./GABAutocompleteTextfield";
 import { gabSelectionToRequestFormat } from "../utils";
+import AttendeeAutocomplete from "./AttendeeAutocomplete";
 
 
 const styles: any = (theme: any) => ({
@@ -51,12 +50,6 @@ const styles: any = (theme: any) => ({
   }
 });
 
-type Recipients = {
-  toRecipients: string;
-  ccRecipients: string;
-  bccRecipients: string;
-}
-
 // TODO: Create proper type
 const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTabLabelChange,
   submit, handleDraftClose }: any) => {
@@ -70,6 +63,7 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
     ccRecipients: [],
     bccRecipients: [],
   });
+  const { toRecipients, ccRecipients, bccRecipients } = selectedContacts;
 
   const [subject, setSubject] = useState(initialState?.subject || "");
   const [messageImportance, setMessageImportance] = useState<Importance>("normal");
@@ -79,24 +73,11 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
     dispatch(fetchContactsData());
   }, [])
 
-  const [recipients, setRecipients] = useState<Recipients>({
-    toRecipients: "",
-    ccRecipients: "",
-    bccRecipients: "",
-  })
-
   const handleGAB = (recipType: string) => () => {
     setGabOpen(recipType)
   }
 
-  const handleRecipients = (type: string) => (_e: any, value: string) => {
-    setRecipients({
-      ...recipients,
-      [type]: value,
-    });
-  }
-
-  const handleAutocomplete = (type: string) => (e: any, newVal: Array<(string | Contact)>) => {
+  const handleAutocomplete = (type: string) => (_e: any, newVal: Array<(string | Contact)>) => {
     setSelectedContacts(currentState => ({
       ...currentState,
       [type]: newVal
@@ -110,11 +91,14 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
     });
   }
 
-  const handleContactRemove = (id: string, recipType: string) => () =>
+  const handleContactRemove = (type: keyof GabSelections) =>(index: number) => () => {
+    const copy = [...selectedContacts[type]];
+    copy.splice(index, 1);
     setSelectedContacts({
       ...selectedContacts,
-      [recipType]: selectedContacts[recipType as keyof GabSelections].filter(c => c.id !== id)
+      [type]: copy,
     });
+  }
 
   interface IExtraProps {
     ccRecipients?: NullableOption<Recipient[]>;
@@ -124,16 +108,16 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
   const handleSend = (send: boolean) => () => {
     const extraProps: IExtraProps = {}
 
-    if (ccRecipients) {
-      extraProps["ccRecipients"] = gabSelectionToRequestFormat(ccRecipients, selectedContacts.ccRecipients)
+    if (ccRecipients.length > 0) {
+      extraProps["ccRecipients"] = gabSelectionToRequestFormat(ccRecipients)
     }
-    if (bccRecipients) {
-      extraProps["bccRecipients"] = gabSelectionToRequestFormat(bccRecipients, selectedContacts.bccRecipients)
+    if (bccRecipients.length > 0) {
+      extraProps["bccRecipients"] = gabSelectionToRequestFormat(bccRecipients)
     }
 
     const message: Message = {
       subject,
-      toRecipients: gabSelectionToRequestFormat(toRecipients, selectedContacts.toRecipients),
+      toRecipients: gabSelectionToRequestFormat(toRecipients),
       importance: messageImportance,
       ...extraProps,
     }
@@ -154,7 +138,6 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
     setSendMenuAnchor(open ? event.currentTarget : null);
   };
 
-  const { toRecipients, ccRecipients, bccRecipients } = recipients;
   return <>
     <div className={classes.buttonRow}>
       <Button
@@ -197,17 +180,16 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
       >
         {t("To")}
       </Button>
-      <GABAutocompleteTextfield
-        value={selectedContacts.toRecipients}
-        inputValue={toRecipients}
+      <AttendeeAutocomplete
+        value={toRecipients}
         onChange={handleAutocomplete('toRecipients')}
-        onInputChange={handleRecipients("toRecipients")}
         options={contacts}
-        handleContactRemove={handleContactRemove}
+        handleContactRemove={handleContactRemove('toRecipients')}
         renderInput={(params: any) => (
           <TextField
             {...params}
             className={classes.input}
+            autoFocus
             InputProps={{
               ...params.InputProps,
               endAdornment: <div className={classes.flexRow}>
@@ -241,16 +223,11 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
       >
         {t("Cc")}
       </Button>
-      <GABAutocompleteTextfield
-        value={selectedContacts.ccRecipients}
-        inputValue={ccRecipients}
+      <AttendeeAutocomplete
+        value={ccRecipients}
         onChange={handleAutocomplete('ccRecipients')}
-        onInputChange={handleRecipients("ccRecipients")}
-        renderOption={(props: any, option: string | Contact) => (
-          <GABOption childProps={props} contact={option as Contact} />
-        )}
         options={contacts}
-        handleContactRemove={handleContactRemove}
+        handleContactRemove={handleContactRemove("ccRecipients")}
       />
     </div>}
     {bccVisible && <div className={classes.flexRow}>
@@ -261,16 +238,11 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
       >
         {t("Cc")}
       </Button>
-      <GABAutocompleteTextfield
-        value={selectedContacts.bccRecipients}
-        inputValue={bccRecipients}
+      <AttendeeAutocomplete
+        value={bccRecipients}
         onChange={handleAutocomplete('bccRecipients')}
-        onInputChange={handleRecipients("bccRecipients")}
-        renderOption={(props: any, option: string | Contact) => (
-          <GABOption childProps={props} contact={option as Contact} />
-        )}
         options={contacts}
-        handleContactRemove={handleContactRemove}
+        handleContactRemove={handleContactRemove("bccRecipients")}
       />
     </div>}
     <GAB

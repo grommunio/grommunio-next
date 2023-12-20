@@ -24,13 +24,20 @@ const AttendeeAutocomplete = ({ classes, options, value, onChange,
   
   const [inputValue, setInputValue] = useState<string>("");
 
-  const onInputChange = (e_: any, input: string) => {
+  const onInputChange = (_e: any, input: string) => {
     if(input.endsWith(",")) {
       const mail = input.slice(0, input.length - 1);
       onChange(null, [...value, { displayName: mail, emailAddresses: [{ address: mail }]}]);
       setInputValue("");
     } else {
       setInputValue(input);
+    }
+  }
+
+  const handleBlur = () => {
+    if(inputValue) {
+      onChange(null, [...value, { displayName: inputValue, emailAddresses: [{ address: inputValue }]}]);
+      setInputValue("");
     }
   }
 
@@ -66,6 +73,7 @@ const AttendeeAutocomplete = ({ classes, options, value, onChange,
     }
     options={options}
     disableClearable
+    onBlur={handleBlur}
     renderInput={renderInput ? renderInput : (params) => (
       <TextField
         {...params}

@@ -189,24 +189,14 @@ function padZero(str: string, len=2) {
   return (zeros + str).slice(-len);
 }
 
-export function gabSelectionToRequestFormat(emails: string, contacts: Array<Contact>):  NullableOption<Recipient[]> {
-  let res: Recipient[] = [];
-  if (emails) {
-    res = res.concat(emails.split(',').map((address: string) => ({
-      emailAddress: {
-        address,
-      },
-    })));
-  }
-  if(contacts.length > 0) {
-    res = res.concat(contacts.filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
-      emailAddress: {
-        // TODO: Which email to select?
-        address: c.emailAddresses![0].address,
-      },
-    })));
-  }
-  return res.length > 0 ? res : null;
+export function gabSelectionToRequestFormat(contacts: Array<Contact>):  NullableOption<Recipient[]> {
+  const res: Recipient[] = contacts.filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
+    emailAddress: {
+      // TODO: Which email to select?
+      address: c.emailAddresses![0].address,
+    },
+  }));
+  return res;
 }
 
 // TODO: Implement properly
