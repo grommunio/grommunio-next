@@ -138,6 +138,10 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
     setSendMenuAnchor(open ? event.currentTarget : null);
   };
 
+  const handleMessageImportance = () => {
+    setMessageImportance(state => state === "normal" ? "high" : "normal");
+  }
+
   return <>
     <div className={classes.buttonRow}>
       <Button
@@ -167,9 +171,14 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
         <IconButton title={t('Discard') || ""} onClick={handleDraftClose /* TODO: Prompt confirmation dialog */}>
           <Delete />
         </IconButton>
-        <IconButton title={t('High Importance') || ""} onClick={() => setMessageImportance("high")}>
+        <Button
+          style={{ minWidth: 0, padding: messageImportance === "high" ? 7 : 8 }}
+          title={t('High Importance') || ""}
+          onClick={handleMessageImportance}
+          variant={messageImportance === "high" ? "outlined" : "text"}
+        >
           <PriorityHigh color='error' />
-        </IconButton>
+        </Button>
       </div>
     </div>
     <div className={classes.flexRow}>
