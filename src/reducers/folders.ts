@@ -3,6 +3,7 @@
 import { AnyAction } from 'redux'
 import {
   FETCH_MAIL_FOLDERS_DATA,
+  NEW_MESSAGE_RECEIVED,
   POST_MAIL_FOLDER,
 } from '../actions/types';
 import { addItem } from '../utils';
@@ -67,6 +68,18 @@ function foldersReducer(state = defaultState, action: AnyAction) {
       mailFolders: action.parentFolderId ? 
         addTreeItem(structuredClone(state.mailFolders), action.payload, action.parentFolderId) :
         addItem(state.mailFolders, action.payload),
+    };
+
+  case NEW_MESSAGE_RECEIVED:
+    return {
+      ...state,
+      mailFolders: [
+        {
+          ...state.mailFolders[0],
+          unreadItemCount: state.mailFolders[0].unreadItemCount + action.payload.value.length,
+        },
+        ...state.mailFolders.slice(1),
+      ]
     }
 
   default:

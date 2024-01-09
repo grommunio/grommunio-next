@@ -27,6 +27,7 @@ import { ContextMenuCoords } from '../types/misc';
 import { useLocation } from 'react-router-dom';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
+
 const styles: any = (theme: any) => ({
   content: {
     flex: 1,
@@ -180,8 +181,6 @@ function Messages({ classes }: MessagesProps) {
 
   const [handleScroll, handleScrollReset] = useInfiniteScroll(messages, totalMailCount, (params: any) => fetchMessagesData(selectedFolder?.id || "", { ...params }));
 
-  let fetchInterval: any = null;
-
   // componentDidMount()
   useEffect(() => {
     // TODO: Try implementing a single 'batch' request for these
@@ -191,14 +190,18 @@ function Messages({ classes }: MessagesProps) {
     if(location.state) {
       handleNewMessage({ toRecipients: location.state.email })();
     }
+  }, []);
 
+  let fetchInterval: any = null;
+  useEffect(() => {
     fetchInterval = setInterval(() => {
-      dispatch(fetchNewMessages());
+      // If inbox is selected, poll new mails
+      if(selectedFolder?.displayName === mailFolders[0]?.displayName) dispatch(fetchNewMessages());
     }, 5000);
     return () => {
       clearInterval(fetchInterval);
     }
-  }, []);
+  }, [selectedFolder])
 
   // Set default folder selection after folders have been fetched
   useEffect(() => {
@@ -448,6 +451,12 @@ function Messages({ classes }: MessagesProps) {
     }
     setMailTabs(copy);
   }
+
+  // Update webapp title when unread count changes
+  useEffect(() => {
+    const unreadCount = mailFolders?.[0]?.unreadItemCount;
+    document.title = unreadCount ? "grommunio Next (" + unreadCount + ")" : "grommunio Next";
+  }, [messages.length]);
 
   return (
     <AuthenticatedView
