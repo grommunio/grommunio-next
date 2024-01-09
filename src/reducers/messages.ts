@@ -7,6 +7,7 @@ import {
   PATCH_MESSAGE_DATA,
   FETCH_MESSAGE_CATEGORIES,
   POST_MESSAGE_CATEGORY,
+  NEW_MESSAGE_RECEIVED,
 } from '../actions/types';
 import { Message } from 'microsoft-graph';
 import { addItem } from '../utils';
@@ -33,6 +34,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       mails: state.mails.filter((mail: Message) => !action.payload.includes(mail.id)),
+      count: state.count - 1,
     };
   
   case PATCH_MESSAGE_DATA:
@@ -52,7 +54,20 @@ function messagesReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       categories: addItem(state.categories, action.payload),
-    }  
+    };
+
+  case NEW_MESSAGE_RECEIVED: {
+    const mails = [...state.mails];
+    // Can't use Array<Message> here, because .unshift is crying otherwise
+    const newMails: Array<never> = (action.payload?.value || []);
+    mails.unshift(...newMails);
+    return {
+      ...state,
+      mails,
+      count: action.payload["@odata.count"] || mails.length,
+    };
+  }
+    
 
   default:
     return state;

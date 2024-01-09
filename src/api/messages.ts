@@ -82,3 +82,15 @@ export async function postMailCategory(category: MessageCategory): Promise<Messa
 
   return response;
 }
+
+export async function newMessages(folderid = 'inbox', count=1): Promise<PageCollection> {
+  const url = buildQuery(`/me/mailFolders/${folderid}/messages`);
+
+  const response: PageCollection = await graphClient!
+    .api(url)
+    .top(count) // Only item count is relevant in this query, if 0, count won't be part of the response
+    .count()
+    .get();
+
+  return response;
+}

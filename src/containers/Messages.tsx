@@ -4,7 +4,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
-import { fetchMessageCategories, fetchMessagesData, patchMessageData } from '../actions/messages';
+import { fetchMessageCategories, fetchMessagesData, fetchNewMessages, patchMessageData } from '../actions/messages';
 import { Button, Grid, IconButton, List, Menu,
   MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
 import { MailFolder, Message, Recipient } from 'microsoft-graph';
@@ -180,6 +180,8 @@ function Messages({ classes }: MessagesProps) {
 
   const [handleScroll, handleScrollReset] = useInfiniteScroll(messages, totalMailCount, (params: any) => fetchMessagesData(selectedFolder?.id || "", { ...params }));
 
+  let fetchInterval: any = null;
+
   // componentDidMount()
   useEffect(() => {
     // TODO: Try implementing a single 'batch' request for these
@@ -188,6 +190,13 @@ function Messages({ classes }: MessagesProps) {
     dispatch(fetchMessageCategories());
     if(location.state) {
       handleNewMessage({ toRecipients: location.state.email })();
+    }
+
+    fetchInterval = setInterval(() => {
+      dispatch(fetchNewMessages());
+    }, 5000);
+    return () => {
+      clearInterval(fetchInterval);
     }
   }, []);
 
