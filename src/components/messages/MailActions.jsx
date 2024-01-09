@@ -61,7 +61,7 @@ const MailActions = ({ t, openedMail, selection, handleNewMessage, handleReplyAl
 
   const handleReadToggle = () => {
     (selection.length > 0 ? selection : [openedMail]).forEach(message => {
-      dispatch(patchMessageData( message, { isRead: !message.isRead }));
+      dispatch(patchMessageData( message, { isRead: !message.isRead }, folder));
     });
   }
 

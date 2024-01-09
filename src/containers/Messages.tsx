@@ -7,7 +7,7 @@ import { useTypeDispatch, useTypeSelector } from '../store';
 import { fetchMessageCategories, fetchMessagesData, fetchNewMessages, patchMessageData } from '../actions/messages';
 import { Button, Grid, IconButton, List, Menu,
   MenuItem, Paper, Tab, Tabs, Typography } from '@mui/material';
-import { MailFolder, Message, Recipient } from 'microsoft-graph';
+import { Message, Recipient } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import SearchTextfield from '../components/SearchTextfield';
@@ -26,6 +26,7 @@ import FolderHierarchy from '../components/FolderHierarchy';
 import { ContextMenuCoords } from '../types/misc';
 import { useLocation } from 'react-router-dom';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
+import { ExtendedMailFolder } from '../types/messages';
 
 
 const styles: any = (theme: any) => ({
@@ -159,7 +160,7 @@ const filterOptions = [
 
 function Messages({ classes }: MessagesProps) {
   const { t } = useTranslation();
-  const [selectedFolder, setSelectedFolder] = useState<MailFolder | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<ExtendedMailFolder | null>(null);
   const [selectedMsg, setSelectedMsg] = useState<Message | null>(null);
   const [checkedMessages, setCheckedMessages] = useState<Array<Message>>([]);
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
@@ -196,7 +197,7 @@ function Messages({ classes }: MessagesProps) {
   useEffect(() => {
     fetchInterval = setInterval(() => {
       // If inbox is selected, poll new mails
-      if(selectedFolder?.displayName === mailFolders[0]?.displayName) dispatch(fetchNewMessages());
+      if(selectedFolder?.wellKnownName === "inbox") dispatch(fetchNewMessages());
     }, 5000);
     return () => {
       clearInterval(fetchInterval);
@@ -234,7 +235,7 @@ function Messages({ classes }: MessagesProps) {
     debouncedSearch(`"${value}"`, selectedFolder?.id);
   };
 
-  const handleMailFolderClick = (folder: MailFolder) => () => {
+  const handleMailFolderClick = (folder: ExtendedMailFolder) => () => {
     setSelectedFolder(folder);
     setMailListPage(1);
     handleScrollReset();
@@ -254,7 +255,7 @@ function Messages({ classes }: MessagesProps) {
     setMailTabs(copy);
     setActiveMailTab(tab);
     // Set isRead
-    if(!msg.isRead) dispatch(patchMessageData(msg, { isRead: true }));
+    if(!msg.isRead) dispatch(patchMessageData(msg, { isRead: true }, selectedFolder || undefined));
   }
 
   const handleForward = () => {
@@ -532,6 +533,7 @@ function Messages({ classes }: MessagesProps) {
                   handleContextMenu={handleContextMenu}
                   pinnedMessages={pinnedMessages}
                   handlePin={handlePin}
+                  folder={selectedFolder}
                 />
               )}
             </List>

@@ -4,6 +4,7 @@ import { AnyAction } from 'redux'
 import {
   FETCH_MAIL_FOLDERS_DATA,
   NEW_MESSAGE_RECEIVED,
+  PATCH_BADGE_COUNT,
   POST_MAIL_FOLDER,
 } from '../actions/types';
 import { addItem } from '../utils';
@@ -48,6 +49,23 @@ function addLeaf(folders:  Array<ExtendedMailFolder>, newFolder: ExtendedMailFol
   return false;
 }
 
+// This can be optimized. TODO: When less tired, optimize.
+function recursiveTreePatch(folder: ExtendedMailFolder, isRead: boolean, folders: Array<ExtendedMailFolder>): Array<ExtendedMailFolder> {
+  return (folders || []).map(f => {
+    if (f.id === folder.id) {
+      return {
+        ...f,
+        unreadItemCount: Math.max((f.unreadItemCount || 0) + (isRead ? -1 : 1), 0),
+      }
+    } else {
+      return {
+        ...f,
+        childFolders: recursiveTreePatch(folder, isRead, f.childFolders as Array<ExtendedMailFolder>)
+      }
+    }
+  });
+}
+
 function addTreeItem(folders:  Array<ExtendedMailFolder>, newFolder: ExtendedMailFolder, parentFolderId: string) {
   addLeaf(folders, newFolder, parentFolderId);
   return folders;
@@ -81,6 +99,14 @@ function foldersReducer(state = defaultState, action: AnyAction) {
         ...state.mailFolders.slice(1),
       ]
     }
+
+  case PATCH_BADGE_COUNT: {
+    return {
+      ...state,
+      mailFolders: recursiveTreePatch(action.folder, action.isRead, state.mailFolders)
+    }
+    
+  }
 
   default:
     return state;

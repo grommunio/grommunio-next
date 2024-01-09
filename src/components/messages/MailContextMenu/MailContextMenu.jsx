@@ -46,7 +46,7 @@ const MailContextMenu = ({ t, isOpen, onClose, anchorPosition, openedMail, folde
 
   const handleMarkAsUnread = () => {
     [openedMail].forEach(message => {
-      dispatch(patchMessageData(message, { isRead: false }));
+      dispatch(patchMessageData(message, { isRead: false }, folder));
     });
   }
 

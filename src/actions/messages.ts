@@ -1,21 +1,35 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { Message } from "microsoft-graph";
+import { MailFolder, Message } from "microsoft-graph";
 import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessage, newMessages, patchMessage, postMailCategory } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
 import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY,
-  NEW_MESSAGE_RECEIVED } from "./types";
+  NEW_MESSAGE_RECEIVED, PATCH_BADGE_COUNT } from "./types";
 import { MessageCategory } from "../types/messages";
-import { defaultFetchHandler, defaultMultiMailHandler, defaultPatchHandler, defaultPostHandler } from "./defaults";
+import { defaultFetchHandler, defaultMultiMailHandler, defaultPostHandler } from "./defaults";
+import { pushAlertStack } from "./alerts";
 
 
 export function fetchMessagesData(folderid = 'inbox', params={}) {
   return defaultFetchHandler(getUserMessages, FETCH_MAILS_DATA, folderid, params)
 }
 
-export function patchMessageData(message: Message, specificProps?: any) {
-  return defaultPatchHandler(patchMessage, PATCH_MESSAGE_DATA, true, message, specificProps)
+export function patchMessageData(message: Message, specificProps?: any, mailFolder?: MailFolder) {
+  return async (dispatch: any) => {
+    try {
+      // Update badge count
+      if(mailFolder && specificProps.isRead !== undefined) {
+        dispatch({ type: PATCH_BADGE_COUNT, folder: mailFolder, isRead: specificProps.isRead });
+      }
+      const resp = await patchMessage(message, specificProps);
+      await dispatch({ type: PATCH_MESSAGE_DATA, payload: resp });
+      return resp;
+    } catch(error: any) {
+      await dispatch(pushAlertStack({ message: error?.message || "", severity: "error" }));
+      return false;
+    }
+  };
 }
 
 export function deleteMessageData(messages: Array<Message>, force?: boolean) {

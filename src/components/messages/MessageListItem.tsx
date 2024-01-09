@@ -5,7 +5,7 @@ import Hover from "../Hover";
 import { withStyles } from "@mui/styles";
 import { Avatar, Checkbox, IconButton, ListItemAvatar, ListItemButton, ListItemIcon, ListItemText, Typography, useTheme } from "@mui/material";
 import { Event, EventAvailable, EventBusy, FlagOutlined, MailOutlineOutlined, PriorityHigh, PushPinOutlined, QuestionMark } from "@mui/icons-material";
-import { EventMessage, Message } from "microsoft-graph";
+import { EventMessage, MailFolder, Message } from "microsoft-graph";
 import { parseISODate } from "../../utils";
 import CategoryChip from "./CategoryChip";
 import { useTypeDispatch } from "../../store";
@@ -59,6 +59,7 @@ type MessageListItemProps = {
   message: Message;
   checkedMessages: Array<Message>;
   selectedMsg: Message | null;
+  folder: MailFolder | null;
   handlePin: (messageId: string) => (b: React.MouseEvent<HTMLElement>) => void;
   pinnedMessages: Array<string>;
   handleContextMenu: (a: Message) => (b: React.MouseEvent<HTMLElement>) => void;
@@ -67,7 +68,7 @@ type MessageListItemProps = {
 }
 
 const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages, message, selectedMsg, handleContextMenu,
-  handleMailClick, handleMailCheckbox }: MessageListItemProps) => {
+  handleMailClick, handleMailCheckbox, folder }: MessageListItemProps) => {
   const theme = useTheme();
   const names = message.sender?.emailAddress?.name?.split(" ") || [" ", " "];
   const checked = checkedMessages.includes(message);
@@ -87,7 +88,7 @@ const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages,
   };
 
   const handleSetUnread = () => {
-    dispatch(patchMessageData(message, { isRead: false }));
+    dispatch(patchMessageData(message, { isRead: false }, folder || undefined));
   }
 
   const getMessageTypeIcon = () => {

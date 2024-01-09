@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
-import { CategoryColor, Message } from "microsoft-graph";
+import { CategoryColor, MailFolder, Message } from "microsoft-graph";
 import { buildQuery } from "../utils";
 import { graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
@@ -27,13 +27,13 @@ export async function postMessage(message: Message, send: boolean): Promise<Mess
     .post(send ? { message } : message);
 }
 
-export async function patchMessage(message: Message, specificProps: any): Promise<Message | undefined> {
+export async function patchMessage(message: Message, specificProps: any, mailFolder?: MailFolder): Promise<Message | undefined> {
   
   const response = await graphClient!
     .api('/me/messages/'+ message.id)
     .patch(specificProps || message);
 
-  return response;
+  return { ...response, mailFolder };
 }
 
 export async function deleteMessage(id: string, force=false): Promise<string | undefined> {
