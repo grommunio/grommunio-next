@@ -8,6 +8,13 @@ import {
   MenuItem,
   FormControlLabel,
   IconButton,
+  Grid,
+  List,
+  Typography,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -23,7 +30,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { useDispatch, useSelector } from "react-redux";
 import { withStyles } from '@mui/styles';
-import { Close, FiberManualRecord } from "@mui/icons-material";
+import { Close, EventAvailable, EventBusy, FiberManualRecord, Mic, PendingOutlined, QuestionMark } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import moment from "moment";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
@@ -103,6 +110,19 @@ const styles = {
   }
 }
 
+function getResponseStatusIcon(status) {
+  const response = status.response;
+  switch(response) {
+  case "accepted":
+    return <Tooltip title="Accepted"><EventAvailable /></Tooltip>;
+  case "tentativelyAccepted":
+    return <Tooltip title="Tentatively accepted"><QuestionMark /></Tooltip>;
+  case "declined":
+    return <Tooltip title="Declined"><EventBusy /></Tooltip>;
+  default: return <Tooltip title="Pending"><PendingOutlined /></Tooltip>;
+  }
+}
+
 const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   const editorRef = useRef(null);
   const [event, setEvent] = useState({});
@@ -115,7 +135,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   const [dirty, setDirty]= useState(false);
 
   useEffect(() => {
-    const { id, start, end, subject, location, body, isAllDay, attendees } = scheduler.state;
+    const { id, start, end, subject, location, body, isAllDay, attendees, organizer } = scheduler.state;
     setEvent({
       id: id.value,
       start: moment(start.value),
@@ -124,6 +144,8 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
       location: location.value?.displayName,
       body: body.value?.content,
       isAllDay: Boolean(isAllDay.value),
+      attendees: attendees?.value,
+      organizer: organizer?.value,
       // TODO: Implement recurrence
     });
     if(attendees?.value) {
@@ -249,7 +271,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
             className={classes.button}
             onClick={handleDelete}
           >
-            Delete
+              Delete
           </Button>
         </div>}
         <div>
@@ -286,116 +308,161 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
         </IconButton>
       </div>
     </div>
-    <DialogContent style={{ paddingBottom: "20px" }}>
-      <div className={classes.content}>
-        <div className={classes.flexRow}>
-          <Create className={classes.icon} color="action" />
-          <TextField
-            {...textEditorProps("subject")}
-            variant="standard"
-            label="Subject"
-            fullWidth
-            autoFocus
-          />
-        </div>
-        <div className={classes.flexRow}>
-          <PersonAddAltIcon className={classes.icon} color="action" />
-          <AttendeeAutocomplete
-            value={selectedAttendees}
-            onChange={handleAutocomplete}
-            options={contacts}
-            handleContactRemove={handleContactRemove}
-            textfieldProps={{
-              variant: "standard",
-              label: "Attendees"
-            }}
-          />
-        </div>
-        <div className={classes.datesContainer}>
-          <CalendarToday className={classes.icon} color="action" />
-          <div>
-            <LocalizationProvider dateAdapter={AdapterMoment}>
-              <div className={classes.flexRow}>
-                <DatePicker value={event.start || ""} onChange={handleDateChange("start")}/>
-                {!event.isAllDay && <TimePicker
-                  value={event.start || ""}
-                  onChange={handleDateChange("start")}
-                />}
-                <FormControlLabel
-                  control={<Switch
-                    value={event.isAllDay}
-                    checked={event.isAllDay || false}
-                    onChange={handleSwitch("isAllDay")}
+    <Grid container>
+      <DialogContent style={{ paddingBottom: "20px" }}>
+        <div className={classes.content}>
+          <div className={classes.flexRow}>
+            <Create className={classes.icon} color="action" />
+            <TextField
+              {...textEditorProps("subject")}
+              variant="standard"
+              label="Subject"
+              fullWidth
+              autoFocus
+            />
+          </div>
+          <div className={classes.flexRow}>
+            <PersonAddAltIcon className={classes.icon} color="action" />
+            <AttendeeAutocomplete
+              value={selectedAttendees}
+              onChange={handleAutocomplete}
+              options={contacts}
+              handleContactRemove={handleContactRemove}
+              textfieldProps={{
+                variant: "standard",
+                label: "Attendees"
+              }}
+            />
+          </div>
+          <div className={classes.datesContainer}>
+            <CalendarToday className={classes.icon} color="action" />
+            <div>
+              <LocalizationProvider dateAdapter={AdapterMoment}>
+                <div className={classes.flexRow}>
+                  <DatePicker value={event.start || ""} onChange={handleDateChange("start")}/>
+                  {!event.isAllDay && <TimePicker
+                    value={event.start || ""}
+                    onChange={handleDateChange("start")}
                   />}
-                  style={{ marginLeft: 8 }}
-                  label="All day"
-                />
-              </div>
-              <div className={classes.flexRow}>
-                <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
-                {!event.isAllDay && <TimePicker
-                  value={event.end || ""}
-                  onChange={handleDateChange("end")}
-                />}
+                  <FormControlLabel
+                    control={<Switch
+                      value={event.isAllDay}
+                      checked={event.isAllDay || false}
+                      onChange={handleSwitch("isAllDay")}
+                    />}
+                    style={{ marginLeft: 8 }}
+                    label="All day"
+                  />
+                </div>
+                <div className={classes.flexRow}>
+                  <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
+                  {!event.isAllDay && <TimePicker
+                    value={event.end || ""}
+                    onChange={handleDateChange("end")}
+                  />}
 
-              </div>
-            </LocalizationProvider>
+                </div>
+              </LocalizationProvider>
+            </div>
+          </div>
+          <div className={classes.flexRow}>
+            <LocationOn className={classes.icon} color="action" />
+            <TextField
+              {...textEditorProps("location")}
+              variant="standard"
+              fullWidth
+              label="Location"
+              InputProps={{
+                endAdornment: (
+                  <Tooltip
+                    title="This will be turn on automatically once you add an attende"
+                    arrow
+                    placement="top"
+                  >
+                    <InputAdornment
+                      position="end"
+                      style={{ display: "flex", gap: "10px" }}
+                    >
+                      <AntSwitch
+                        inputProps={{ "aria-label": "ant design" }}
+                      />
+                      <i
+                        data-icon-name="IcFluentOfficeSkypeColor"
+                        aria-hidden="true"
+                      >
+                        <Skypeicon />
+                      </i>
+                      <p className="ms-Label wj3t5 root-473">
+                        Skype meeting
+                      </p>
+                    </InputAdornment>
+                  </Tooltip>
+                ),
+              }}
+            />
+          </div>
+          <div className={classes.body}>
+            <Notes className={classes.icon} color="action" />
+            <Editor
+              tinymceScriptSrc={
+                process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
+              }
+              initialValue={event.body || ""}
+              init={{
+                menubar: false,
+                readonly: true,
+                toolbar,
+                plugins: ["wordcount"],
+              }}
+              onInit={(evt, editor) => editorRef.current = editor}
+            />
           </div>
         </div>
-        <div className={classes.flexRow}>
-          <LocationOn className={classes.icon} color="action" />
-          <TextField
-            {...textEditorProps("location")}
-            variant="standard"
-            fullWidth
-            label="Location"
-            InputProps={{
-              endAdornment: (
-                <Tooltip
-                  title="This will be turn on automatically once you add an attende"
-                  arrow
-                  placement="top"
-                >
-                  <InputAdornment
-                    position="end"
-                    style={{ display: "flex", gap: "10px" }}
-                  >
-                    <AntSwitch
-                      inputProps={{ "aria-label": "ant design" }}
-                    />
-                    <i
-                      data-icon-name="IcFluentOfficeSkypeColor"
-                      aria-hidden="true"
-                    >
-                      <Skypeicon />
-                    </i>
-                    <p className="ms-Label wj3t5 root-473">
-                      Skype meeting
-                    </p>
-                  </InputAdornment>
-                </Tooltip>
-              ),
-            }}
-          />
-        </div>
-        <div className={classes.body}>
-          <Notes className={classes.icon} color="action" />
-          <Editor
-            tinymceScriptSrc={
-              process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
-            }
-            initialValue={event.body || ""}
-            init={{
-              menubar: false,
-              readonly: true,
-              toolbar,
-              plugins: ["wordcount"],
-            }}
-            onInit={(evt, editor) => editorRef.current = editor}
-          />
-        </div>
-      </div>
-    </DialogContent>
+      </DialogContent>
+      {event.attendees?.length > 0 && <div className={classes.attendees}>
+        <Typography variant="h6">Tracking</Typography>
+        <List
+          dense
+          subheader={
+            <ListSubheader disableGutters>
+              Organizer
+            </ListSubheader>
+          }
+        >
+          <ListItem disablePadding>
+            <ListItemIcon style={{ minWidth: 40 }}>
+              <Mic />
+            </ListItemIcon>
+            <ListItemText
+              primary={event.organizer.emailAddress.name}
+              secondary={""}
+            />
+          </ListItem>
+        </List>
+        <List
+          subheader={
+            <ListSubheader disableGutters>
+              Attendees
+            </ListSubheader>
+          }
+          dense
+        >
+          {event.attendees.map(({ emailAddress, status, type }, key) => <ListItem
+            disablePadding
+            key={key}
+            divider
+          >
+            <ListItemIcon style={{ minWidth: 40 }}>
+              {getResponseStatusIcon(status)}
+            </ListItemIcon>
+            <ListItemText
+              primary={emailAddress.name || emailAddress.address}
+              secondary={type}
+            />
+          </ListItem>)}
+        </List>
+      </div>}
+    </Grid>
   </div>
 }
 
