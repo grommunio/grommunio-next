@@ -190,7 +190,7 @@ function padZero(str: string, len=2) {
 }
 
 export function gabSelectionToRequestFormat(contacts: Array<Contact>):  NullableOption<Recipient[]> {
-  const res: Recipient[] = contacts.filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
+  const res: Recipient[] = (contacts || []).filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
     emailAddress: {
       // TODO: Which email to select?
       address: c.emailAddresses![0].address,

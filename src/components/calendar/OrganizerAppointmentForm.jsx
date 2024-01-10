@@ -152,7 +152,7 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
     const { start, end, location } = event;
     return {
       ...event,
-      attendees: gabSelectionToRequestFormat("", selectedAttendees) || [], // TODO: Implement non-contact mails
+      attendees: gabSelectionToRequestFormat(selectedAttendees) || [], // TODO: Implement non-contact mails
       start: {
         timeZone: app.user?.timeZone,
         dateTime: start.toISOString()
