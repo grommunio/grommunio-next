@@ -32,9 +32,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { withStyles } from '@mui/styles';
 import { Close, EventAvailable, EventBusy, FiberManualRecord, Mic, PendingOutlined, QuestionMark } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import moment from "moment";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
-import { gabSelectionToRequestFormat, purify } from "../../utils";
+import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeSelector } from "../../store";
 import AttendeeAutocomplete from "../AttendeeAutocomplete";
@@ -135,11 +134,11 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   const [dirty, setDirty]= useState(false);
 
   useEffect(() => {
-    const { id, start, end, subject, location, body, isAllDay, attendees, organizer } = scheduler.state;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer } = scheduler.state;
     setEvent({
       id: id.value,
-      start: moment(start.value),
-      end: moment(end.value),
+      start: utcTimeToUserTimezone(startDate.value),
+      end: utcTimeToUserTimezone(endDate.value),
       subject: subject.value,
       location: location.value?.displayName,
       body: body.value?.content,
@@ -360,7 +359,6 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
                     value={event.end || ""}
                     onChange={handleDateChange("end")}
                   />}
-
                 </div>
               </LocalizationProvider>
             </div>

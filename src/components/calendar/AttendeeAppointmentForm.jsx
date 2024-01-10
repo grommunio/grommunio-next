@@ -16,7 +16,6 @@ import Create from "@mui/icons-material/Create";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
 import { AccessTime, AccountCircle, Close } from "@mui/icons-material";
-import moment from "moment";
 import { purify, toReadableTimeInTimezone } from "../../utils";
 import { convertHtmlMailToDarkmode } from "../../htmlUtils";
 
@@ -62,11 +61,11 @@ const AttendeeAppointmentForm = ({ classes, scheduler }) => {
   const [iframeContent, setIframeContent] = useState("");
 
   useEffect(() => {
-    const { id, start, end, subject, location, body, isAllDay, attendees } = scheduler.state;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees } = scheduler.state;
     setEvent({
       id: id.value,
-      start: moment(start.value),
-      end: moment(end.value),
+      start: startDate.value,
+      end: endDate.value,
       subject: subject.value,
       location: location.value?.displayName,
       isAllDay: Boolean(isAllDay.value),

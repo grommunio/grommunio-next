@@ -5,6 +5,7 @@ import { ForwardedRef, forwardRef, useMemo } from "react";
 import { useTypeDispatch } from "../../store";
 import { deleteEventData } from "../../actions/calendar";
 import EventDetails from "./dialogs/EventDetails";
+//import EventPopper from "./EventPopper";
 
 
 type SchedularType = {
@@ -37,10 +38,13 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       ref={ref as ForwardedRef<SchedulerRef>}
       editable={true}
       customEditor={(scheduler) => <EventDetails scheduler={scheduler}/>}
+      //customViewer={(event, onClose) => <EventPopper event={event as Event} onClose={onClose}/>}
       dialogMaxWidth="lg"
       fields={[
         { name: "id", type: "hidden" },
         { name: "subject", type: "input" },
+        { name: "startDate", type: "hidden" },
+        { name: "endDate", type: "hidden" },
         { name: "webLink", type: "input" },
         { name: "body", type: "input" },
         { name: "location", type: "input" },

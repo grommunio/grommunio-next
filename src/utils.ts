@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import moment from 'moment-timezone';
+import moment, { Moment } from 'moment-timezone';
 import * as DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
 import { Contact, DateTimeTimeZone, NullableOption, Recipient } from "microsoft-graph";
@@ -98,14 +98,20 @@ export function parseISODate(isoDateString: string) {
   return moment(isoDateString).format('l'); // TODO: Format date depending on time since received
 }
 
-export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>, dateFormat="lll") {
-  if(!msDatetime) return "";
+export function utcTimeToUserTimezone(msDatetime?: NullableOption<DateTimeTimeZone>): Moment | null {
+  if(!msDatetime) return null;
   const { dateTime, timeZone } = msDatetime;
-  if(!dateTime) return "";
+  if(!dateTime) return null;
   
   const preShiftTime = moment.tz(dateTime, timeZone || "");
   const shiftedTime = preShiftTime.tz(getUserTimezone());
 
+  return shiftedTime;
+}
+
+export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>, dateFormat="lll") {
+  const shiftedTime = utcTimeToUserTimezone(msDatetime);
+  if(!shiftedTime) return "";
   return shiftedTime.format(dateFormat);
 }
 

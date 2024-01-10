@@ -13,6 +13,7 @@ import {
   DELETE_EVENT_DATA
 } from '../actions/types';
 import { addItem, editItem } from '../utils';
+import { ExtendedEvent } from '../types/calendar';
 
 interface IUserCalender {
   id: string;
@@ -30,31 +31,26 @@ const defaultState = {
   calendars: [],
 };
 
-//TODO: Properly implement this function
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function calculateEventtimeInTimezone(event: string, tz: string) {
-  return event;
-}
 const disableCondition = (calendar: IUserCalender) => {
   return !(calendar.name === "Calendar" || calendar.name === "Birthdays");
 };
 
-function formatEvent(rawEvent: Event, color=undefined) {
+function formatEvent(rawEvent: Event, color=undefined): ExtendedEvent {
   return {
     color,
     ...rawEvent,
+    // `start` and `end` are overwritten by schedular component
+    startDate: rawEvent.start,
+    endDate: rawEvent.end,
+    // Add schedular properties
     id: rawEvent.id,
     event_id: rawEvent.id,
-    startDate: calculateEventtimeInTimezone(rawEvent.start?.dateTime || '', rawEvent.start?.timeZone || ''),
-    endDate: calculateEventtimeInTimezone(rawEvent.end?.dateTime || '', rawEvent.end?.timeZone || ''),
     title: rawEvent.subject || "",
     notes: rawEvent.body?.content || '',
-    admin_id: [], // TODO: Find out what this does
-    disabled: false
   };
 }
 
-function formatEvents(rawEvents: Array<Event>, color=undefined): Array<Event> {
+function formatEvents(rawEvents: Array<Event>, color=undefined): Array<ExtendedEvent> {
   return rawEvents.map((rawEvent: Event) => (formatEvent(rawEvent, color)))
 }
 
