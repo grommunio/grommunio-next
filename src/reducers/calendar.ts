@@ -22,7 +22,7 @@ interface IUserCalender {
 }
 
 type CalendarState = {
-  events: Array<Event>; //TODO: Change to correct type
+  events: Array<ExtendedEvent>;
   calendars: Array<IUserCalender>;
 }
 

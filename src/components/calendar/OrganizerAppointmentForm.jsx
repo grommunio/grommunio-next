@@ -15,6 +15,7 @@ import {
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  Dialog,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -122,7 +123,7 @@ function getResponseStatusIcon(status) {
   }
 }
 
-const OrganizerAppointmentForm = ({ classes, scheduler }) => {
+const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   const editorRef = useRef(null);
   const [event, setEvent] = useState({});
   const { calendars } = useSelector(state => state.calendar);
@@ -134,34 +135,34 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   const [dirty, setDirty]= useState(false);
 
   useEffect(() => {
-    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer } = scheduler.state;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer } = storeEvent;
     setEvent({
-      id: id.value,
-      start: utcTimeToUserTimezone(startDate.value),
-      end: utcTimeToUserTimezone(endDate.value),
-      subject: subject.value,
-      location: location.value?.displayName,
-      body: body.value?.content,
-      isAllDay: Boolean(isAllDay.value),
-      attendees: attendees?.value,
-      organizer: organizer?.value,
+      id: id,
+      start: utcTimeToUserTimezone(startDate),
+      end: utcTimeToUserTimezone(endDate),
+      subject: subject,
+      location: location?.displayName,
+      body: body?.content,
+      isAllDay: Boolean(isAllDay),
+      attendees: attendees,
+      organizer: organizer,
       // TODO: Implement recurrence
     });
-    if(attendees?.value) {
+    if(attendees) {
       /*const contactAttendees = attendees.value.reduce((prev, attendee) => {
         const contact = contacts.find(contact =>
           contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address));
         return contact ? [...prev, contact] : prev;
       }, []);*/
 
-      const contactAttendees = attendees.value.map((attendee) => {
+      const contactAttendees = attendees.map((attendee) => {
         const contact = contacts.find(contact =>
           contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address));
         return contact || { displayName: attendee.emailAddress.address };
       });
       setSelectedAttendees(contactAttendees);
     }
-  }, [scheduler]);
+  }, [storeEvent]);
 
   useEffect(() => {
     if(!selectedCalendar) {
@@ -227,25 +228,18 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   }
 
   const handleEdit = () => {
-    scheduler.loading(true);
     const data = formatEventForRequest(event);
     dispatch(patchEventData(data))
-      .then(() => {
-        scheduler.loading(false);
-        scheduler.close();
-      })
-      .catch(() => scheduler.loading(false));
+      .catch(() => /*TODO: Error handling */ null);
   }
 
   const handleAdd = () => {
     const data = formatEventForRequest(event);
-    dispatch(postEventData(data, selectedCalendar))
-      .then(scheduler.close);
+    dispatch(postEventData(data, selectedCalendar));
   }
 
   const handleDelete = () => {
-    dispatch(deleteEventData(event.id))
-      .then(scheduler.close);
+    dispatch(deleteEventData(event.id));
   }
 
   const handleAutocomplete = (e, newVal) => {
@@ -260,208 +254,210 @@ const OrganizerAppointmentForm = ({ classes, scheduler }) => {
   }
 
   const isNewAppointment = !event.id;
-  return <div className={classes.root}>
-    <div className={classes.flexRow}>
+  return <Dialog open={true} maxWidth="lg" onClose={onClose}>
+    <div className={classes.root}>
       <div className={classes.flexRow}>
-        {!isNewAppointment && <div>
-          <Button
-            variant="outlined"
-            color="primary"
-            className={classes.button}
-            onClick={handleDelete}
-          >
+        <div className={classes.flexRow}>
+          {!isNewAppointment && <div>
+            <Button
+              variant="outlined"
+              color="primary"
+              className={classes.button}
+              onClick={handleDelete}
+            >
               Delete
-          </Button>
-        </div>}
-        <div>
-          <Button
-            variant="contained"
-            className={classes.button}
-            style={{ marginLeft: "16px" }}
-            onClick={isNewAppointment ? handleAdd : handleEdit}
-            disabled={!dirty}
+            </Button>
+          </div>}
+          <div>
+            <Button
+              variant="contained"
+              className={classes.button}
+              style={{ marginLeft: "16px" }}
+              onClick={isNewAppointment ? handleAdd : handleEdit}
+              disabled={!dirty}
+            >
+              {selectedAttendees.length === 0 ? (isNewAppointment ? "Create" : "Save") : "Send"}
+            </Button>
+          </div>
+          {isNewAppointment && <TextField
+            color="primary"
+            select
+            label="Calendar"
+            onChange={handleCalendarChange}
+            value={selectedCalendar}
+            variant="standard"
+            style={{ marginLeft: "16px", minWidth: 120 }}
+            InputProps={{
+              startAdornment: <FiberManualRecord fontSize="small" style={{ marginRight: 8 }}/>
+            }}
           >
-            {selectedAttendees.length === 0 ? (isNewAppointment ? "Create" : "Save") : "Send"}
-          </Button>
+            {calendars.map((cal, key) => 
+              <MenuItem value={cal.id} key={key}>{cal.name}</MenuItem>
+            )}
+          </TextField>}
         </div>
-        {isNewAppointment && <TextField
-          color="primary"
-          select
-          label="Calendar"
-          onChange={handleCalendarChange}
-          value={selectedCalendar}
-          variant="standard"
-          style={{ marginLeft: "16px", minWidth: 120 }}
-          InputProps={{
-            startAdornment: <FiberManualRecord fontSize="small" style={{ marginRight: 8 }}/>
-          }}
-        >
-          {calendars.map((cal, key) => 
-            <MenuItem value={cal.id} key={key}>{cal.name}</MenuItem>
-          )}
-        </TextField>}
+        <div className={classes.flexEnd}>
+          <IconButton onClick={onClose}>
+            <Close />
+          </IconButton>
+        </div>
       </div>
-      <div className={classes.flexEnd}>
-        <IconButton onClick={scheduler.close}>
-          <Close />
-        </IconButton>
-      </div>
-    </div>
-    <Grid container>
-      <DialogContent style={{ paddingBottom: "20px" }}>
-        <div className={classes.content}>
-          <div className={classes.flexRow}>
-            <Create className={classes.icon} color="action" />
-            <TextField
-              {...textEditorProps("subject")}
-              variant="standard"
-              label="Subject"
-              fullWidth
-              autoFocus
-            />
-          </div>
-          <div className={classes.flexRow}>
-            <PersonAddAltIcon className={classes.icon} color="action" />
-            <AttendeeAutocomplete
-              value={selectedAttendees}
-              onChange={handleAutocomplete}
-              options={contacts}
-              handleContactRemove={handleContactRemove}
-              textfieldProps={{
-                variant: "standard",
-                label: "Attendees"
-              }}
-            />
-          </div>
-          <div className={classes.datesContainer}>
-            <CalendarToday className={classes.icon} color="action" />
-            <div>
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-                <div className={classes.flexRow}>
-                  <DatePicker value={event.start || ""} onChange={handleDateChange("start")}/>
-                  {!event.isAllDay && <TimePicker
-                    value={event.start || ""}
-                    onChange={handleDateChange("start")}
-                  />}
-                  <FormControlLabel
-                    control={<Switch
-                      value={event.isAllDay}
-                      checked={event.isAllDay || false}
-                      onChange={handleSwitch("isAllDay")}
+      <Grid container>
+        <DialogContent style={{ paddingBottom: "20px" }}>
+          <div className={classes.content}>
+            <div className={classes.flexRow}>
+              <Create className={classes.icon} color="action" />
+              <TextField
+                {...textEditorProps("subject")}
+                variant="standard"
+                label="Subject"
+                fullWidth
+                autoFocus
+              />
+            </div>
+            <div className={classes.flexRow}>
+              <PersonAddAltIcon className={classes.icon} color="action" />
+              <AttendeeAutocomplete
+                value={selectedAttendees}
+                onChange={handleAutocomplete}
+                options={contacts}
+                handleContactRemove={handleContactRemove}
+                textfieldProps={{
+                  variant: "standard",
+                  label: "Attendees"
+                }}
+              />
+            </div>
+            <div className={classes.datesContainer}>
+              <CalendarToday className={classes.icon} color="action" />
+              <div>
+                <LocalizationProvider dateAdapter={AdapterMoment}>
+                  <div className={classes.flexRow}>
+                    <DatePicker value={event.start || ""} onChange={handleDateChange("start")}/>
+                    {!event.isAllDay && <TimePicker
+                      value={event.start || ""}
+                      onChange={handleDateChange("start")}
                     />}
-                    style={{ marginLeft: 8 }}
-                    label="All day"
-                  />
-                </div>
-                <div className={classes.flexRow}>
-                  <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
-                  {!event.isAllDay && <TimePicker
-                    value={event.end || ""}
-                    onChange={handleDateChange("end")}
-                  />}
-                </div>
-              </LocalizationProvider>
+                    <FormControlLabel
+                      control={<Switch
+                        value={event.isAllDay}
+                        checked={event.isAllDay || false}
+                        onChange={handleSwitch("isAllDay")}
+                      />}
+                      style={{ marginLeft: 8 }}
+                      label="All day"
+                    />
+                  </div>
+                  <div className={classes.flexRow}>
+                    <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
+                    {!event.isAllDay && <TimePicker
+                      value={event.end || ""}
+                      onChange={handleDateChange("end")}
+                    />}
+                  </div>
+                </LocalizationProvider>
+              </div>
+            </div>
+            <div className={classes.flexRow}>
+              <LocationOn className={classes.icon} color="action" />
+              <TextField
+                {...textEditorProps("location")}
+                variant="standard"
+                fullWidth
+                label="Location"
+                InputProps={{
+                  endAdornment: (
+                    <Tooltip
+                      title="This will be turn on automatically once you add an attende"
+                      arrow
+                      placement="top"
+                    >
+                      <InputAdornment
+                        position="end"
+                        style={{ display: "flex", gap: "10px" }}
+                      >
+                        <AntSwitch
+                          inputProps={{ "aria-label": "ant design" }}
+                        />
+                        <i
+                          data-icon-name="IcFluentOfficeSkypeColor"
+                          aria-hidden="true"
+                        >
+                          <Skypeicon />
+                        </i>
+                        <p className="ms-Label wj3t5 root-473">
+                        Skype meeting
+                        </p>
+                      </InputAdornment>
+                    </Tooltip>
+                  ),
+                }}
+              />
+            </div>
+            <div className={classes.body}>
+              <Notes className={classes.icon} color="action" />
+              <Editor
+                tinymceScriptSrc={
+                  process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
+                }
+                initialValue={event.body || ""}
+                init={{
+                  menubar: false,
+                  readonly: true,
+                  toolbar,
+                  plugins: ["wordcount"],
+                }}
+                onInit={(evt, editor) => editorRef.current = editor}
+              />
             </div>
           </div>
-          <div className={classes.flexRow}>
-            <LocationOn className={classes.icon} color="action" />
-            <TextField
-              {...textEditorProps("location")}
-              variant="standard"
-              fullWidth
-              label="Location"
-              InputProps={{
-                endAdornment: (
-                  <Tooltip
-                    title="This will be turn on automatically once you add an attende"
-                    arrow
-                    placement="top"
-                  >
-                    <InputAdornment
-                      position="end"
-                      style={{ display: "flex", gap: "10px" }}
-                    >
-                      <AntSwitch
-                        inputProps={{ "aria-label": "ant design" }}
-                      />
-                      <i
-                        data-icon-name="IcFluentOfficeSkypeColor"
-                        aria-hidden="true"
-                      >
-                        <Skypeicon />
-                      </i>
-                      <p className="ms-Label wj3t5 root-473">
-                        Skype meeting
-                      </p>
-                    </InputAdornment>
-                  </Tooltip>
-                ),
-              }}
-            />
-          </div>
-          <div className={classes.body}>
-            <Notes className={classes.icon} color="action" />
-            <Editor
-              tinymceScriptSrc={
-                process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
-              }
-              initialValue={event.body || ""}
-              init={{
-                menubar: false,
-                readonly: true,
-                toolbar,
-                plugins: ["wordcount"],
-              }}
-              onInit={(evt, editor) => editorRef.current = editor}
-            />
-          </div>
-        </div>
-      </DialogContent>
-      {event.attendees?.length > 0 && <div className={classes.attendees}>
-        <Typography variant="h6">Tracking</Typography>
-        <List
-          dense
-          subheader={
-            <ListSubheader disableGutters>
+        </DialogContent>
+        {event.attendees?.length > 0 && <div className={classes.attendees}>
+          <Typography variant="h6">Tracking</Typography>
+          <List
+            dense
+            subheader={
+              <ListSubheader disableGutters>
               Organizer
-            </ListSubheader>
-          }
-        >
-          <ListItem disablePadding>
-            <ListItemIcon style={{ minWidth: 40 }}>
-              <Mic />
-            </ListItemIcon>
-            <ListItemText
-              primary={event.organizer.emailAddress.name}
-              secondary={""}
-            />
-          </ListItem>
-        </List>
-        <List
-          subheader={
-            <ListSubheader disableGutters>
-              Attendees
-            </ListSubheader>
-          }
-          dense
-        >
-          {event.attendees.map(({ emailAddress, status, type }, key) => <ListItem
-            disablePadding
-            key={key}
-            divider
+              </ListSubheader>
+            }
           >
-            <ListItemIcon style={{ minWidth: 40 }}>
-              {getResponseStatusIcon(status)}
-            </ListItemIcon>
-            <ListItemText
-              primary={emailAddress.name || emailAddress.address}
-              secondary={type}
-            />
-          </ListItem>)}
-        </List>
-      </div>}
-    </Grid>
-  </div>
+            <ListItem disablePadding>
+              <ListItemIcon style={{ minWidth: 40 }}>
+                <Mic />
+              </ListItemIcon>
+              <ListItemText
+                primary={event.organizer.emailAddress.name}
+                secondary={""}
+              />
+            </ListItem>
+          </List>
+          <List
+            subheader={
+              <ListSubheader disableGutters>
+              Attendees
+              </ListSubheader>
+            }
+            dense
+          >
+            {event.attendees.map(({ emailAddress, status, type }, key) => <ListItem
+              disablePadding
+              key={key}
+              divider
+            >
+              <ListItemIcon style={{ minWidth: 40 }}>
+                {getResponseStatusIcon(status)}
+              </ListItemIcon>
+              <ListItemText
+                primary={emailAddress.name || emailAddress.address}
+                secondary={type}
+              />
+            </ListItem>)}
+          </List>
+        </div>}
+      </Grid>
+    </div>
+  </Dialog>
 }
 
 export default withStyles(styles)(OrganizerAppointmentForm);

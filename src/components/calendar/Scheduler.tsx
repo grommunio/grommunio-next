@@ -1,19 +1,21 @@
 import { Scheduler as ReactSchedular } from "@aldabil/react-scheduler";
 import type { ProcessedEvent, SchedulerRef } from "@aldabil/react-scheduler/types";
 import { Event } from "microsoft-graph";
-import { ForwardedRef, forwardRef, useMemo } from "react";
+import { ForwardedRef, forwardRef, useMemo, useState } from "react";
 import { useTypeDispatch } from "../../store";
 import { deleteEventData } from "../../actions/calendar";
 import EventDetails from "./dialogs/EventDetails";
-//import EventPopper from "./EventPopper";
+import EventPopper from "./EventPopper";
+import { ExtendedEvent } from "../../types/calendar";
 
 
 type SchedularType = {
-  events: Array<Event>;
+  events: Array<ExtendedEvent>;
 }
 
 const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
   const dispatch = useTypeDispatch();
+  const [dialogOpen, setDialogOpen] = useState<ExtendedEvent | null>(null);
 
   const processedEvents = useMemo(() => {
     return events.map((event: Event) => ({
@@ -28,6 +30,8 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
     if (success) return id;
   }
 
+  const handleDialog = (event: ExtendedEvent | null) => () => setDialogOpen(event);
+
   return <div>
     <ReactSchedular
       events={processedEvents as Array<ProcessedEvent>}
@@ -37,9 +41,11 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       disableViewNavigator
       ref={ref as ForwardedRef<SchedulerRef>}
       editable={true}
-      customEditor={(scheduler) => <EventDetails scheduler={scheduler}/>}
-      //customViewer={(event, onClose) => <EventPopper event={event as Event} onClose={onClose}/>}
-      dialogMaxWidth="lg"
+      customViewer={(event, onClose) => <EventPopper
+        event={event as unknown as ExtendedEvent}
+        onClose={onClose}
+        handleDialog={handleDialog}
+      />}
       fields={[
         { name: "id", type: "hidden" },
         { name: "subject", type: "input" },
@@ -54,6 +60,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
         { name: "organizer", type: "hidden" }
       ]}
     />
+    {dialogOpen && <EventDetails event={dialogOpen} onClose={handleDialog(null)}/>}
   </div>;
 });
 

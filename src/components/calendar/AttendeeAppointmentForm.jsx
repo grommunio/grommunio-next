@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Dialog,
   DialogContent,
   Grid,
   IconButton,
@@ -54,29 +55,29 @@ const styles = theme => ({
   }
 });
 
-const AttendeeAppointmentForm = ({ classes, scheduler }) => {
+const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   const [event, setEvent] = useState({});
   const iframeRef = useRef(null);
   const theme = useTheme();
   const [iframeContent, setIframeContent] = useState("");
 
   useEffect(() => {
-    const { id, startDate, endDate, subject, location, body, isAllDay, attendees } = scheduler.state;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees } = storeEvent;
     setEvent({
       id: id.value,
-      start: startDate.value,
-      end: endDate.value,
-      subject: subject.value,
-      location: location.value?.displayName,
-      isAllDay: Boolean(isAllDay.value),
-      attendees: attendees.value,
+      start: startDate,
+      end: endDate,
+      subject: subject,
+      location: location.displayName,
+      isAllDay: Boolean(isAllDay),
+      attendees: attendees,
     });
 
     // Content
     const cur = iframeRef.current;
     if(cur) {
       let htmlMail = document.createElement('html');
-      htmlMail.innerHTML = purify(body.value?.content || "");
+      htmlMail.innerHTML = purify(body.content || "");
 
       // Convert emails styling to be properly displayed in darkmode
       if(theme.palette.mode == "dark") {
@@ -84,14 +85,14 @@ const AttendeeAppointmentForm = ({ classes, scheduler }) => {
       }
       setIframeContent(htmlMail.outerHTML);
     }
-  }, [scheduler]);
+  }, [storeEvent]);
 
   const { start, end, subject, location, attendees } = event;
-  return <div className={classes.root}>
+  return <Dialog className={classes.root} open maxWidth="lg" onClose={onClose}>
     <DialogContent className={classes.content}>
       <div className={classes.flexRow}>
         <div className={classes.flexEnd}>
-          <IconButton onClick={scheduler.close}>
+          <IconButton onClick={/* TODO */ null}>
             <Close />
           </IconButton>
         </div>
@@ -148,7 +149,7 @@ const AttendeeAppointmentForm = ({ classes, scheduler }) => {
         </div>}
       </Grid>
     </DialogContent>
-  </div>
+  </Dialog>
 }
 
 export default withStyles(styles)(AttendeeAppointmentForm);
