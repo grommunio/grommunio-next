@@ -1,3 +1,4 @@
+import { Dialog } from "@mui/material";
 import { ExtendedEvent } from "../../../types/calendar";
 import AttendeeAppointmentForm from "../AttendeeAppointmentForm";
 import OrganizerAppointmentForm from "../OrganizerAppointmentForm";
@@ -9,8 +10,10 @@ type EventDetailsT = {
 
 const EventDetails = ({ event, onClose }: EventDetailsT) => {
   const { isOrganizer, id } = event;
-  return isOrganizer || !id ? <OrganizerAppointmentForm event={event} onClose={onClose}/>
-    : <AttendeeAppointmentForm event={event} onClose={onClose}/>
+  return <Dialog open maxWidth="lg" onClose={onClose}>
+    {isOrganizer || !id ? <OrganizerAppointmentForm event={event} onClose={onClose}/>
+      : <AttendeeAppointmentForm event={event} onClose={onClose}/>}
+  </Dialog>
 }
 
 export default EventDetails;

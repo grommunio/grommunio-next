@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Dialog,
   DialogContent,
   Grid,
   IconButton,
@@ -88,68 +87,66 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   }, [storeEvent]);
 
   const { start, end, subject, location, attendees } = event;
-  return <Dialog className={classes.root} open maxWidth="lg" onClose={onClose}>
-    <DialogContent className={classes.content}>
-      <div className={classes.flexRow}>
-        <div className={classes.flexEnd}>
-          <IconButton onClick={/* TODO */ null}>
-            <Close />
-          </IconButton>
-        </div>
+  return <DialogContent className={classes.content}>
+    <div className={classes.flexRow}>
+      <div className={classes.flexEnd}>
+        <IconButton onClick={onClose}>
+          <Close />
+        </IconButton>
       </div>
-      <Grid container>
-        <div className={classes.iframeContainer}>
-          <Typography variant="h5">Event details</Typography>
-          <div className={classes.content}>
-            <div className={classes.flexRow}>
-              <Create className={classes.icon} color="action" />
-              <Typography variant="h6">{subject}</Typography>
-            </div>
-            <div className={classes.flexRow}>
-              <AccessTime className={classes.icon}/>
-              <Typography>
-                {toReadableTimeInTimezone(start)} - {toReadableTimeInTimezone(end)}
-              </Typography>
-            </div>
-            {location && <div className={classes.flexRow}>
-              <LocationOn className={classes.icon} color="action" />
-              <Typography>{location}</Typography>
-            </div>}
-            <div className={classes.body}>
-              <Notes className={classes.icon} color="action" />
-              <div className={classes.iframeContainer}>
-                <iframe
-                  id="iframe"
-                  ref={iframeRef}
-                  width="100%"
-                  style={{ border: "none" }}
-                  srcDoc={iframeContent}
-                />
-              </div>
+    </div>
+    <Grid container>
+      <div className={classes.iframeContainer}>
+        <Typography variant="h5">Event details</Typography>
+        <div className={classes.content}>
+          <div className={classes.flexRow}>
+            <Create className={classes.icon} color="action" />
+            <Typography variant="h6">{subject}</Typography>
+          </div>
+          <div className={classes.flexRow}>
+            <AccessTime className={classes.icon}/>
+            <Typography>
+              {toReadableTimeInTimezone(start)} - {toReadableTimeInTimezone(end)}
+            </Typography>
+          </div>
+          {location && <div className={classes.flexRow}>
+            <LocationOn className={classes.icon} color="action" />
+            <Typography>{location}</Typography>
+          </div>}
+          <div className={classes.body}>
+            <Notes className={classes.icon} color="action" />
+            <div className={classes.iframeContainer}>
+              <iframe
+                id="iframe"
+                ref={iframeRef}
+                width="100%"
+                style={{ border: "none" }}
+                srcDoc={iframeContent}
+              />
             </div>
           </div>
         </div>
-        {/* TODO: Implement proper scrolling div */}
-        {attendees && <div className={classes.attendees}>
-          <Typography variant="h5">Attendees</Typography>
-          <List>
-            {attendees.map(({ emailAddress }, key) => <ListItem
-              disablePadding
-              key={key}
-            >
-              <ListItemIcon>
-                <AccountCircle/>
-              </ListItemIcon>
-              <ListItemText
-                primary={emailAddress.name}
-                secondary={emailAddress.address}
-              />
-            </ListItem>)}
-          </List>
-        </div>}
-      </Grid>
-    </DialogContent>
-  </Dialog>
+      </div>
+      {/* TODO: Implement proper scrolling div */}
+      {attendees && <div className={classes.attendees}>
+        <Typography variant="h5">Attendees</Typography>
+        <List>
+          {attendees.map(({ emailAddress }, key) => <ListItem
+            disablePadding
+            key={key}
+          >
+            <ListItemIcon>
+              <AccountCircle/>
+            </ListItemIcon>
+            <ListItemText
+              primary={emailAddress.name}
+              secondary={emailAddress.address}
+            />
+          </ListItem>)}
+        </List>
+      </div>}
+    </Grid>
+  </DialogContent>
 }
 
 export default withStyles(styles)(AttendeeAppointmentForm);

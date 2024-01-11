@@ -7,6 +7,7 @@ import { deleteEventData } from "../../actions/calendar";
 import EventDetails from "./dialogs/EventDetails";
 import EventPopper from "./EventPopper";
 import { ExtendedEvent } from "../../types/calendar";
+import AddEvent from "./dialogs/AddEvent";
 
 
 type SchedularType = {
@@ -46,6 +47,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
         onClose={onClose}
         handleDialog={handleDialog}
       />}
+      customEditor={(scheduler) => <AddEvent scheduler={scheduler}/>}
       fields={[
         { name: "id", type: "hidden" },
         { name: "subject", type: "input" },
