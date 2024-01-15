@@ -210,14 +210,6 @@ export function getUserTimezone() {
   return moment.tz.guess(true);
 }
 
-export function getWeekdayIndex(weekday="") {
-  return {
-    "monday": 1,
-    "tuesday": 2,
-    "wednesday": 3,
-    "thursday": 4,
-    "friday": 5,
-    "saturday": 6,
-    "sunday": 7,
-  }[weekday] || 1;
+export function capitalizeFirstLetter(input: string) {
+  return input.charAt(0).toUpperCase() + input.slice(1);
 }
