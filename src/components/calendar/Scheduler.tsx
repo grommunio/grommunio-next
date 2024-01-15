@@ -9,6 +9,7 @@ import EventPopper from "./EventPopper";
 import { ExtendedEvent } from "../../types/calendar";
 import AddEvent from "./dialogs/AddEvent";
 import moment from "moment";
+import { utcTimeToUserTimezone } from "../../utils";
 
 
 type SchedularType = {
@@ -30,11 +31,11 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
         // TODO: Currently only implemented for weekly events. This will be a ton of work to get to work completely.
         const recurringEndDate = moment(range?.endDate);
         if(pattern?.type === "weekly") {
-          let currentStartDate = moment(cur.startDate?.dateTime);
-          let currentEndDate = moment(cur.endDate?.dateTime);
+          let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
+          let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
           // Get date of event day of current week
           // TODO: Consider weekday of recurring event: const currentWeekdayIndex = getWeekdayIndex(pattern.daysOfWeek?.[0]) // TODO: Support multiple days
-          while(currentStartDate.isBefore(recurringEndDate) && !currentStartDate.isSame(recurringEndDate)) {
+          while(currentStartDate?.isBefore(recurringEndDate) && !currentStartDate.isSame(recurringEndDate)) {
 
             // Go to next week
             currentStartDate = currentStartDate.add(pattern.interval, "week");
