@@ -20,6 +20,10 @@ export function calculateRecurringEvents(cur: ExtendedEvent, outputArray: Array<
       calculateAbsoluteMonthlyRecurrence(cur, outputArray);
       break;
     }
+    case "absoluteYearly": {
+      calculateAbsoluteYearlyRecurrence(cur, outputArray);
+      break;
+    }
     default:
       break;
     }
@@ -36,7 +40,7 @@ function calculateWeeklyRecurrence(cur: ExtendedEvent, outputArray: Array<Extend
   let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
   // Get date of event day of current week
   // TODO: Consider weekday of recurring event: const currentWeekdayIndex = getWeekdayIndex(pattern.daysOfWeek?.[0]) // TODO: Support multiple days
-  while(currentStartDate?.isBefore(recurringEndDate) && !currentStartDate.isSame(recurringEndDate)) {
+  while(!currentStartDate?.isAfter(recurringEndDate)) {
 
     pattern?.daysOfWeek?.forEach(weekday => {
       const dayOfCurrentWeek = moment(currentStartDate).day(capitalizeFirstLetter(weekday));
@@ -80,7 +84,7 @@ function calculateDailyRecurrence(cur: ExtendedEvent, outputArray: Array<Extende
   const recurringEndDate = moment(range?.endDate);
   let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
   let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
-  while(currentStartDate?.isBefore(recurringEndDate) && !currentStartDate.isSame(recurringEndDate)) {
+  while(!currentStartDate?.isAfter(recurringEndDate)) {
 
     // Go to next day
     currentStartDate = currentStartDate.add(pattern?.interval || 1, "days");
@@ -117,10 +121,47 @@ function calculateAbsoluteMonthlyRecurrence(cur: ExtendedEvent, outputArray: Arr
   const recurringEndDate = moment(range?.endDate);
   let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
   let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
-  while(currentStartDate?.isBefore(recurringEndDate) && !currentStartDate.isSame(recurringEndDate)) {
+  while(!currentStartDate?.isAfter(recurringEndDate)) {
     // Go to next month
     currentStartDate = currentStartDate.add(pattern?.interval || 1, "months");
     currentEndDate = currentEndDate.add(pattern?.interval || 1, "months");
+
+    const isoStart = currentStartDate.toISOString();
+    const isoEnd = currentEndDate.toISOString();
+    // Add this date to events
+    outputArray.push({
+      ...cur,
+      startDate: {
+        ...cur.startDate,
+        dateTime: isoStart,
+      },
+      endDate: {
+        ...cur.startDate,
+        dateTime: isoEnd,
+      },
+      start: {
+        ...cur.startDate,
+        dateTime: isoStart,
+      },
+      end: {
+        ...cur.startDate,
+        dateTime: isoEnd,
+      }
+    });
+  }
+}
+
+
+function calculateAbsoluteYearlyRecurrence(cur: ExtendedEvent, outputArray: Array<ExtendedEvent>) {
+  const { pattern, range } = cur.recurrence || {};
+  const recurringEndDate = moment(range?.endDate);
+  let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
+  let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
+  while(!currentStartDate?.isAfter(recurringEndDate)) {
+    // Go to next month
+    console.log("once");
+    currentStartDate = currentStartDate.add(pattern?.interval || 1, "years");
+    currentEndDate = currentEndDate.add(pattern?.interval || 1, "years");
 
     const isoStart = currentStartDate.toISOString();
     const isoEnd = currentEndDate.toISOString();
