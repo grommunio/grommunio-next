@@ -8,8 +8,7 @@ import EventDetails from "./dialogs/EventDetails";
 import EventPopper from "./EventPopper";
 import { ExtendedEvent } from "../../types/calendar";
 import AddEvent from "./dialogs/AddEvent";
-import moment from "moment";
-import { utcTimeToUserTimezone } from "../../utils";
+import { calculateRecurringEvents } from "./eventUtils";
 
 
 type SchedularType = {
@@ -23,47 +22,10 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
   const processedEvents = useMemo(() => {
     const eventsWithRecurrences = events.reduce((acc: Array<ExtendedEvent>, cur: ExtendedEvent) => {
       const newArray = acc.concat(cur);
-      const rec = cur.recurrence;
-      const recurringDates = [];
-      if(cur.recurrence) {
-        const { pattern, range } = rec || {};
-        // Calculate recurring event dates
-        // TODO: Currently only implemented for weekly events. This will be a ton of work to get to work completely.
-        const recurringEndDate = moment(range?.endDate);
-        if(pattern?.type === "weekly") {
-          let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
-          let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
-          // Get date of event day of current week
-          // TODO: Consider weekday of recurring event: const currentWeekdayIndex = getWeekdayIndex(pattern.daysOfWeek?.[0]) // TODO: Support multiple days
-          while(currentStartDate?.isBefore(recurringEndDate) && !currentStartDate.isSame(recurringEndDate)) {
-
-            // Go to next week
-            currentStartDate = currentStartDate.add(pattern.interval, "week");
-            currentEndDate = currentEndDate.add(pattern.interval, "week");
-
-            // Add this date to events
-            recurringDates.push({
-              ...cur,
-              startDate: {
-                ...cur.startDate,
-                dateTime: currentStartDate.toISOString(),
-              },
-              endDate: {
-                ...cur.startDate,
-                dateTime: currentEndDate.toISOString(),
-              },
-              start: {
-                ...cur.startDate,
-                dateTime: currentStartDate.toISOString(),
-              },
-              end: {
-                ...cur.startDate,
-                dateTime: currentEndDate.toISOString(),
-              }
-            });
-          }
-        }
-      }
+      const recurringDates: Array<ExtendedEvent> = [];
+      
+      // RECURRENCE
+      calculateRecurringEvents(cur, recurringDates);
 
       return [...newArray, ...recurringDates];
     }, []);
