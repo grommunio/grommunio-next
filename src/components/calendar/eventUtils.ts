@@ -13,15 +13,19 @@ export function calculateRecurringEvents(cur: ExtendedEvent, outputArray: Array<
       break;
     }
     case "daily": {
-      absoluteRecurrence("days", cur, outputArray);
+      calculateAbsoluteRecurrence("days", cur, outputArray);
       break;
     }
     case "absoluteMonthly": {
-      absoluteRecurrence("months", cur, outputArray);
+      calculateAbsoluteRecurrence("months", cur, outputArray);
       break;
     }
     case "absoluteYearly": {
-      absoluteRecurrence("years", cur, outputArray);
+      calculateAbsoluteRecurrence("years", cur, outputArray);
+      break;
+    }
+    case "relativeMonthly": {
+      calculateRelativeMonthlyRecurrence(cur, outputArray);
       break;
     }
     default:
@@ -79,14 +83,14 @@ function calculateWeeklyRecurrence(cur: ExtendedEvent, outputArray: Array<Extend
 }
 
 
-function absoluteRecurrence(type: any, cur: ExtendedEvent, outputArray: Array<ExtendedEvent>) {
+function calculateAbsoluteRecurrence(type: any, cur: ExtendedEvent, outputArray: Array<ExtendedEvent>) {
   const { pattern, range } = cur.recurrence || {};
   const recurringEndDate = moment(range?.endDate);
   let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
   let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
   while(!currentStartDate?.isAfter(recurringEndDate)) {
 
-    // Go to next day
+    // Go to next interval
     currentStartDate = currentStartDate.add(pattern?.interval || 1, type);
     currentEndDate = currentEndDate.add(pattern?.interval || 1, type);
 
@@ -113,4 +117,82 @@ function absoluteRecurrence(type: any, cur: ExtendedEvent, outputArray: Array<Ex
       }
     });
   }
+}
+
+
+function calculateRelativeMonthlyRecurrence(cur: ExtendedEvent, outputArray: Array<ExtendedEvent>) {
+  const { pattern, range } = cur.recurrence || {};
+  const recurringEndDate = moment(range?.endDate);
+  let currentStartDate = utcTimeToUserTimezone(cur.startDate) || moment();
+  let currentEndDate = utcTimeToUserTimezone(cur.endDate) || moment();
+
+  const eventDuration = currentEndDate.diff(currentStartDate, "minutes");
+
+  while(!currentStartDate?.isAfter(recurringEndDate)) {
+    // Go to next interval
+    currentStartDate = currentStartDate.add(pattern?.interval || 1, "months");
+    currentEndDate = currentEndDate.add(pattern?.interval || 1, "months");
+
+    const firstDayOfCurrentMonth = currentStartDate.date(1);
+    const firstWeekdayOfMonth = currentStartDate.format("dddd").toLowerCase();
+    // const weekNumberOfFirstDay = firstDayOfCurrentMonth.week();
+
+    const expectedWeekday = pattern?.daysOfWeek?.[0] || "monday" // TODO: Support multiple
+
+    const dayDifferenceBetweenFirstAndDesiredWeekday = weekdayDifference(firstWeekdayOfMonth, expectedWeekday);
+
+    let expectedDay = firstDayOfCurrentMonth.add(dayDifferenceBetweenFirstAndDesiredWeekday, "days");
+    switch (pattern?.index) {
+    case "first": {
+      break;
+    }
+    case "second": {
+      expectedDay = expectedDay.add(1, "week");
+      break;
+    }
+    case "third": {
+      expectedDay = expectedDay.add(2, "week");
+      break;
+    }
+    default:
+      break;
+    }
+
+    const isoStart = expectedDay.toISOString();
+    const isoEnd = expectedDay.add(eventDuration, "minutes").toISOString();
+    // Add this date to events
+    outputArray.push({
+      ...cur,
+      startDate: {
+        ...cur.startDate,
+        dateTime: isoStart,
+      },
+      endDate: {
+        ...cur.startDate,
+        dateTime: isoEnd,
+      },
+      start: {
+        ...cur.startDate,
+        dateTime: isoStart,
+      },
+      end: {
+        ...cur.startDate,
+        dateTime: isoEnd,
+      }
+    });
+  }
+}
+
+
+function weekdayDifference(a: string, b: string) {
+  const days: any = {
+    "sunday": 0,
+    "monday": 1,
+    "tuesday": 2, 
+    "wednesday": 3,
+    "thursday": 4,
+    "friday": 5,
+    "saturday": 6,
+  };
+  return days[b] - days[b];
 }
