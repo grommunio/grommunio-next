@@ -40,7 +40,7 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
       for(const e of data) {
         if(e.recurrence) {
           const occurences = await getRecurringEventInstances(e, calendar?.id);
-          data.push(...occurences.slice(1));
+          data.push(...occurences.filter(o => o.start?.dateTime !== e.start?.dateTime));
         }
       }
       await dispatch({ type: FETCH_EVENTS_DATA, payload: data, calendar: calendar });
