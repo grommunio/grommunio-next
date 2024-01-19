@@ -11,7 +11,8 @@ import {
   createUserCalendar,
   deleteUserCalendar,
   getEvents,
-  respondToEvent
+  respondToEvent,
+  getRecurringEventInstances
 } from "../api/calendar";
 import {
   FETCH_EVENTS_DATA,
@@ -36,6 +37,12 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
   return async (dispatch: any) => {
     try {
       const data = await getEvents(calendar?.id);
+      for(const e of data) {
+        if(e.recurrence) {
+          const occurences = await getRecurringEventInstances(e, calendar?.id);
+          data.push(...occurences.slice(1));
+        }
+      }
       await dispatch({ type: FETCH_EVENTS_DATA, payload: data, calendar: calendar });
       return data;
     } catch (error) {

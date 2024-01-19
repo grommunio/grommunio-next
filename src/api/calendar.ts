@@ -82,6 +82,14 @@ export async function getEvents(calendarId?: string | undefined): Promise<Event[
   return response.value;
 }
 
+export async function getRecurringEventInstances(event: Event, calendarId?: string | undefined): Promise<Event[]> {
+  const response: PageCollection = await graphClient!
+    .api((calendarId ? `/me/calendars/${calendarId}/events` : "/me/events") + "/" + event.id + "/instances?" +
+     `startDateTime=${event.start?.dateTime}&endDateTime=2025-11-08T20:00:00.0000000`) // TODO: Find way to calculate reasonable enddate
+    .get();
+  return response.value;
+}
+
 export async function postEvent(newEvent: Event, calendarId: string | undefined): Promise<Event> {
   // POST /me/events
   // JSON representation of the new event is sent in the

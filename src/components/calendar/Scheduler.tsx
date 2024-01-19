@@ -8,7 +8,6 @@ import EventDetails from "./dialogs/EventDetails";
 import EventPopper from "./EventPopper";
 import { ExtendedEvent } from "../../types/calendar";
 import AddEvent from "./dialogs/AddEvent";
-import { calculateRecurringEvents } from "./eventUtils";
 
 
 type SchedularType = {
@@ -20,17 +19,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
   const [dialogOpen, setDialogOpen] = useState<ExtendedEvent | null>(null);
 
   const processedEvents = useMemo(() => {
-    const eventsWithRecurrences = events.reduce((acc: Array<ExtendedEvent>, cur: ExtendedEvent) => {
-      const newArray = acc.concat(cur);
-      const recurringDates: Array<ExtendedEvent> = [];
-      
-      // RECURRENCE
-      calculateRecurringEvents(cur, recurringDates);
-
-      return [...newArray, ...recurringDates];
-    }, []);
-
-    return eventsWithRecurrences.map((event: Event) => ({
+    return events.map((event: Event) => ({
       ...event,
       start: new Date(event.start?.dateTime || ""),
       end: new Date(event.end?.dateTime || ""),
