@@ -40,6 +40,29 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       height={1000}
       onDelete={handleDelete}
       view="month"
+      week={{ 
+        weekDays: [0, 1, 2, 3, 4, 5, 6], 
+        weekStartOn: 0, 
+        startHour: 0, 
+        endHour: 24,
+        step: 60,
+        navigation: true,
+        disableGoToDay: false
+      }}
+      day={{
+        startHour: 0, 
+        endHour: 24, 
+        step: 60,
+        navigation: true
+      }}
+      month={{
+        weekDays: [0, 1, 2, 3, 4, 5, 6], 
+        weekStartOn: 0, 
+        startHour: 0, 
+        endHour: 24,
+        navigation: true,
+        disableGoToDay: false
+      }}
       disableViewNavigator
       ref={ref as ForwardedRef<SchedulerRef>}
       editable={true}
