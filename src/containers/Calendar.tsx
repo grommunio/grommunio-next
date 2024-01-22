@@ -55,14 +55,21 @@ const styles = () => ({
     cursor: 'pointer',
     padding: '0px 10px',
     borderRadius: '5px'
+  },
+  outlinedButton: {
+    paddingRight: 7,
+    paddingLeft: 7,
   }
 });
 
-const ActionButton = ({children, color, ...childProps }: any) => {
+const ActionButton = ({children, color, classes, ...childProps }: any) => {
   return (
     <Button
       color={color || "inherit"}
       style={color ? undefined : { color: "secondary" }}
+      classes={{
+        outlined: classes.outlinedButton,
+      }}
       {...childProps}
     >
       {children}
@@ -76,7 +83,7 @@ function Calendar({ t, classes }: any) {
   const dispatch: any = useTypeDispatch();
   const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
   const [visible, setVisible] = useState(false);
-  const [listViewActive, setListViewActive] = useState(false);
+  const [view, setView] = useState("month");
   const schedulerRef = useRef(null);
 
   useEffect(() => {
@@ -86,11 +93,11 @@ function Calendar({ t, classes }: any) {
 
   const handleViewChange = (view: string) => () => {
     (schedulerRef.current?.["scheduler"] as any).handleState(view, "view");
-    setListViewActive(false);
+    setView(view);
   };
 
   const handleListView = () => {
-    setListViewActive(true);
+    setView("list");
   }
 
   const handleClickOpen = () => {
@@ -117,6 +124,8 @@ function Calendar({ t, classes }: any) {
               startIcon={<DateRangeIcon />}
               value="Day"
               onClick={handleViewChange("day")}
+              variant={view === "day" ? "outlined" : "text"}
+              classes={classes}
             >
               Day
             </ActionButton>
@@ -125,6 +134,8 @@ function Calendar({ t, classes }: any) {
               startIcon={<CalendarViewWeekIcon />}
               value='week'
               onClick={handleViewChange("week")}
+              variant={view === "week" ? "outlined" : "text"}
+              classes={classes}
             >
               Week
             </ActionButton>
@@ -132,6 +143,8 @@ function Calendar({ t, classes }: any) {
               key={3}
               startIcon={<CalendarMonthIcon/>}
               onClick={handleViewChange("month")}
+              variant={view === "month" ? "outlined" : "text"}
+              classes={classes}
             >
               Month
             </ActionButton>
@@ -139,6 +152,8 @@ function Calendar({ t, classes }: any) {
               key={4}
               startIcon={<List/>}
               onClick={handleListView}
+              variant={view === "list" ? "outlined" : "text"}
+              classes={classes}
             >
               List
             </ActionButton>
@@ -148,6 +163,7 @@ function Calendar({ t, classes }: any) {
               key={4}
               startIcon={<IosShareIcon/>}
               onClick={handleClickOpen}
+              classes={classes}
             >
               Share
             </ActionButton>
@@ -158,7 +174,7 @@ function Calendar({ t, classes }: any) {
       <SchedularView
         showSideBar={showCalenderSidebar}
         ref={schedulerRef}
-        listViewActive={listViewActive}
+        listViewActive={view === "list"}
       />
       <ShareCalendar onHide={onHide} visible={visible}/>
     </AuthenticatedView>
