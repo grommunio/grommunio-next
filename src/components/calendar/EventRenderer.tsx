@@ -38,8 +38,6 @@ const styles: any = (theme: any) => ({
 
 const EventRenderer = ({ classes, event, ...props }: EventRendererT) => {
 
-  console.log(event);
-
   return (
     <div className={classes.root}>
       <div className={classes.border}></div>
