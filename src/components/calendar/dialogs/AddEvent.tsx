@@ -23,7 +23,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { Close, FiberManualRecord } from "@mui/icons-material";
+import { Close, FiberManualRecord, Repeat } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { postEventData } from "../../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../../utils";
@@ -33,6 +33,7 @@ import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { Event } from "microsoft-graph";
 import moment, { Moment } from "moment";
 import { SchedulerHelpers } from "@aldabil/react-scheduler/types";
+import RecurrenceDialog from "./RecurrenceDialog";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -126,12 +127,13 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
   const [selectedAttendees, setSelectedAttendees] = useState([]);
   const { contacts } = useTypeSelector(state => state.contacts);
   const [dirty, setDirty]= useState(false);
+  const [recurrenceDialog, setRecurrenceDialog] = useState(false);
 
   useEffect(() => {
-    const { start, end } = scheduler.state as any;
+    const { start } = scheduler.state as any;
     setEvent({
       start: moment(start.value),
-      end: moment(end.value).add(30, 'minutes'),
+      end: moment(start.value).add(30, 'minutes'),
       // TODO: Implement recurrence
     });
   }, [scheduler]);
@@ -214,6 +216,10 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
     const copy = [...selectedAttendees];
     copy.splice(index, 1);
     setSelectedAttendees(copy);
+  }
+
+  const handleRecurrence = (open: boolean) => () => {
+    setRecurrenceDialog(open);
   }
 
   return <ClickAwayListener onClickAway={scheduler.close}>
@@ -305,6 +311,14 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
                     value={event.end || ""}
                     onChange={handleDateChange("end")}
                   />}
+                  <Button
+                    onClick={handleRecurrence(true)}
+                    startIcon={<Repeat />}
+                    variant="outlined"
+                    size="large"
+                  >
+                    Repeat
+                  </Button>
                 </div>
               </LocalizationProvider>
             </div>
@@ -363,6 +377,11 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
           </div>
         </div>
       </DialogContent>
+      <RecurrenceDialog
+        open={recurrenceDialog}
+        handleClose={handleRecurrence(false)}
+        setEvent={setEvent}
+      />
     </div>
   </ClickAwayListener>
 }
