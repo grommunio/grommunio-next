@@ -218,6 +218,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
     setRecurrenceDialog(open);
   }
 
+  const recurrenceType = event.recurrence?.pattern?.type;
   return <ClickAwayListener onClickAway={scheduler.close}>
     <div className={classes.root}>
       <div className={classes.flexRow}>
@@ -312,8 +313,11 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
                     startIcon={<Repeat />}
                     variant="outlined"
                     size="large"
+                    style={{ marginLeft: 8 }}
                   >
-                    Repeat
+                    {recurrenceType ? (recurrenceType?.includes("absolute") ? recurrenceType.slice(8) :
+                      recurrenceType?.includes("relative") ? recurrenceType.slice(9) : recurrenceType) :
+                      "Don't repeat"}
                   </Button>
                 </div>
               </LocalizationProvider>

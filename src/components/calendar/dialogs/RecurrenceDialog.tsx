@@ -101,6 +101,14 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent, event }: Recur
     }
   }
 
+  const handleDelete = () => {
+    setEvent({
+      ...event,
+      recurrence: null,
+    });
+    handleClose();
+  }
+
   return <Dialog open={open} maxWidth="xs" onClose={handleClose}>
     <DialogTitle>
       Repeat
@@ -171,6 +179,13 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent, event }: Recur
         onClick={handleSave}
       >
         Save
+      </Button>
+      <Button
+        variant="outlined"
+        color="inherit"
+        onClick={handleDelete}
+      >
+        Delete recurrence
       </Button>
       <Button
         variant="outlined"
