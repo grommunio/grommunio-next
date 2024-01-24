@@ -193,6 +193,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
     setEvent({
       ...event,
       [field]: newVal,
+      end: field === "start" && newVal.isAfter(event.end) ? newVal.clone().add(30, "minutes") : event.end,
     });
     if(!dirty) setDirty(true);
   }
