@@ -315,8 +315,8 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
                     size="large"
                     style={{ marginLeft: 8 }}
                   >
-                    {recurrenceType ? (recurrenceType?.includes("absolute") ? recurrenceType.slice(8) :
-                      recurrenceType?.includes("relative") ? recurrenceType.slice(9) : recurrenceType) :
+                    {recurrenceType ? (recurrenceType?.includes("absolute") ? recurrenceType.slice(7) :
+                      recurrenceType?.includes("relative") ? recurrenceType.slice(8) : recurrenceType) :
                       "Don't repeat"}
                   </Button>
                 </div>
