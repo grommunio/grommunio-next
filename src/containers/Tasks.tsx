@@ -5,7 +5,7 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
 import { useTypeDispatch, useTypeSelector } from '../store';
 import { deleteTaskData, deleteTaskListData, fetchTaskListsData, fetchTasksData, patchTaskData } from '../actions/tasks';
-import { Button, Checkbox, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from '@mui/material';
+import { Button, Checkbox, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Slide } from '@mui/material';
 import { TodoTask, TodoTaskList } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import AddTask from '../components/dialogs/AddTask';
@@ -141,7 +141,7 @@ function Tasks({ t, classes }: any) {
         </FolderList>
         <Paper elevation={1} className={classes.taskPaper}>
           <List className={classes.taskList}>
-            {tasks.map((task: TodoTask) =>
+            {tasks.map((task: TodoTask) => <Slide key={task.id} in direction='left'>
               <ListItemButton
                 key={task.id}
                 onClick={handleTaskClick(task)}
@@ -160,6 +160,8 @@ function Tasks({ t, classes }: any) {
                   <Delete color="error"/>
                 </IconButton>
               </ListItemButton>
+            </Slide>
+              
             )}
           </List>
         </Paper>
