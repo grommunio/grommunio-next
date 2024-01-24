@@ -4,7 +4,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { Event } from "microsoft-graph";
 import moment, { Moment } from "moment";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { NewEvent } from "../../../types/calendar";
 
 
@@ -54,7 +54,11 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent, event }: Recur
   const [interval, setInterval] = useState<number>(1);
   const [type, setType] = useState<string>("day");
   const [daysOfWeek, setDaysOfWeek] = useState<string[]>(weekDays.map(d => d.value));
-  const [endDate, setEndDate] = useState<Moment | null>(null);
+  const [endDate, setEndDate] = useState<Moment | null>(event.start?.clone().add(3, "months") || null);
+
+  useEffect(() => {
+    updateEndDate(type);
+  }, [event])
 
   const handleDaysOfWeek = (
     _e: React.MouseEvent<HTMLElement>,
@@ -93,11 +97,29 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent, event }: Recur
   const handleType = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setType(value);
+
+    // Update weekdays
     if(interval === 1 && value === "day") {
       setDaysOfWeek(weekDays.map(d => d.value));
-    } else if (value === "week"){
+    } else if (value === "week") {
       const weekdayIndex = event.start?.day() || 0;
       setDaysOfWeek([weekDays[(weekdayIndex + 6) % 7].value]);
+    }
+
+    // Update endDate
+    updateEndDate(value);
+  }
+
+  const updateEndDate = (value: string) => {
+    const date = moment(event.start).clone();
+    if(value === "day") {
+      setEndDate(date.clone().add(3, "months"));
+    } else if(value === "week") {
+      setEndDate(date.clone().add(25, "weeks"));
+    } else if(value === "month") {
+      setEndDate(date.clone().add(1, "years"));
+    } else {
+      setEndDate(null);
     }
   }
 
