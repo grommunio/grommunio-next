@@ -31,9 +31,10 @@ import { useAppContext } from "../../../azure/AppContext";
 import AttendeeAutocomplete from "../../AttendeeAutocomplete";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { Event } from "microsoft-graph";
-import moment, { Moment } from "moment";
+import moment from "moment";
 import { SchedulerHelpers } from "@aldabil/react-scheduler/types";
 import RecurrenceDialog from "./RecurrenceDialog";
+import { NewEvent } from "../../../types/calendar";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -106,11 +107,6 @@ const styles = {
   }
 }
 
-type NewEvent = Event & {
-  start?: Moment;
-  end?: Moment;
-  location?: string;
-}
 
 type AddEventT = {
   classes: any;
@@ -380,6 +376,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
       <RecurrenceDialog
         open={recurrenceDialog}
         handleClose={handleRecurrence(false)}
+        event={event}
         setEvent={setEvent}
       />
     </div>

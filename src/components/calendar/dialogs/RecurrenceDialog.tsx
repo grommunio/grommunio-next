@@ -4,7 +4,8 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { Event } from "microsoft-graph";
 import moment, { Moment } from "moment";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
+import { NewEvent } from "../../../types/calendar";
 
 
 const styles = {
@@ -25,6 +26,7 @@ type RecurrenceDialogT = {
   open: boolean;
   handleClose: () => void;
   setEvent: (newState: any) => void;
+  event: NewEvent;
 }
 
 function getRecurrenceTypeFromSelection(selection: string): string {
@@ -41,16 +43,17 @@ const weekDays = [
   {value: "monday", label: "M"},
   {value: "tuesday", label: "T"},
   {value: "wednesday", label: "W"},
-  {value: "thursay", label: "T"},
+  {value: "thursday", label: "T"},
   {value: "friday", label: "F"},
   {value: "saturday", label: "S"},
   {value: "sunday", label: "S"},
 ];
 
-const RecurrenceDialog = ({ classes, open, handleClose, setEvent }: RecurrenceDialogT) => {
+
+const RecurrenceDialog = ({ classes, open, handleClose, setEvent, event }: RecurrenceDialogT) => {
   const [interval, setInterval] = useState<number>(1);
   const [type, setType] = useState<string>("day");
-  const [daysOfWeek, setDaysOfWeek] = useState<string[]>([]);
+  const [daysOfWeek, setDaysOfWeek] = useState<string[]>(weekDays.map(d => d.value));
   const [endDate, setEndDate] = useState<Moment | null>(null);
 
   const handleDaysOfWeek = (
@@ -72,14 +75,33 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent }: RecurrenceDi
         pattern: {
           interval,
           type: getRecurrenceTypeFromSelection(type),
-          daysOfWeek,
+          daysOfWeek: ((type === "day" && interval === 1) || type === "week") ? daysOfWeek : [],
         }
       }
     }));
     handleClose();
   }
 
-  return <Dialog open={open} maxWidth="xs">
+  const handleInterval = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    setInterval(value);
+    if(value === 1 && type === "day") {
+      setDaysOfWeek(weekDays.map(d => d.value));
+    }
+  }
+
+  const handleType = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setType(value);
+    if(interval === 1 && value === "day") {
+      setDaysOfWeek(weekDays.map(d => d.value));
+    } else if (value === "week"){
+      const weekdayIndex = event.start?.day() || 0;
+      setDaysOfWeek([weekDays[(weekdayIndex + 6) % 7].value]);
+    }
+  }
+
+  return <Dialog open={open} maxWidth="xs" onClose={handleClose}>
     <DialogTitle>
       Repeat
     </DialogTitle>
@@ -97,7 +119,7 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent }: RecurrenceDi
             }
           }}
           value={interval}
-          onChange={e => setInterval(parseInt(e.target.value))}
+          onChange={handleInterval}
         >
           {Array.from(Array(99).keys()).map(n =>
             <MenuItem key={n} value={n + 1}>{n + 1}</MenuItem>
@@ -114,7 +136,7 @@ const RecurrenceDialog = ({ classes, open, handleClose, setEvent }: RecurrenceDi
             }
           }}
           value={type}
-          onChange={e => setType(e.target.value)}
+          onChange={handleType}
         >
           {["day", "week", "month", "year"].map((type) => 
             <MenuItem key={type} value={type}>{type}{interval > 1 && "s"}</MenuItem>

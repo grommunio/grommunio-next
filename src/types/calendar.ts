@@ -1,4 +1,5 @@
 import { DateTimeTimeZone, Event, NullableOption } from "microsoft-graph";
+import { Moment } from "moment";
 
 export enum EventReponseType {
   accept = "accept",
@@ -14,3 +15,10 @@ export type ExtendedEvent = Event & {
   title: string | undefined;
   notes: string | undefined;
 };
+
+
+export type NewEvent = Event & {
+  start?: Moment;
+  end?: Moment;
+  location?: string;
+}
