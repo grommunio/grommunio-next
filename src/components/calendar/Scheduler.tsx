@@ -9,6 +9,7 @@ import EventPopper from "./EventPopper";
 import { ExtendedEvent } from "../../types/calendar";
 import AddEvent from "./dialogs/AddEvent";
 import EventRenderer from "./EventRenderer";
+import { View } from "@aldabil/react-scheduler/components/nav/Navigation";
 
 
 type SchedularType = {
@@ -39,7 +40,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       events={processedEvents as Array<ProcessedEvent>}
       height={1000}
       onDelete={handleDelete}
-      view="month"
+      view={localStorage.getItem("calendarView") as View || "month"}
       week={{ 
         weekDays: [0, 1, 2, 3, 4, 5, 6], 
         weekStartOn: 0, 

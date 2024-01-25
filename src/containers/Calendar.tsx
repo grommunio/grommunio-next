@@ -81,9 +81,9 @@ const ActionButton = ({children, color, classes, ...childProps }: any) => {
 function Calendar({ t, classes }: any) {
   const app = useAppContext();
   const dispatch: any = useTypeDispatch();
-  const [showCalenderSidebar, SetShowCalenderSidebar] = useState(true);
+  const [showCalenderSidebar, setShowCalenderSidebar] = useState(localStorage.getItem("calendarSidebar") === "true");
   const [visible, setVisible] = useState(false);
-  const [view, setView] = useState("month");
+  const [view, setView] = useState(localStorage.getItem("calendarView") || "month");
   const schedulerRef = useRef(null);
 
   useEffect(() => {
@@ -94,6 +94,7 @@ function Calendar({ t, classes }: any) {
   const handleViewChange = (view: string) => () => {
     (schedulerRef.current?.["scheduler"] as any).handleState(view, "view");
     setView(view);
+    localStorage.setItem("calendarView", view);
   };
 
   const handleListView = () => {
@@ -108,6 +109,12 @@ function Calendar({ t, classes }: any) {
     setVisible(false);
   };
 
+  const handleSidebar = () => {
+    const newVal = !showCalenderSidebar;
+    setShowCalenderSidebar(newVal);
+    localStorage.setItem("calendarSidebar", newVal.toString());
+  }
+
   return (
     <AuthenticatedView
       header={t("Calendar")}
@@ -115,7 +122,7 @@ function Calendar({ t, classes }: any) {
         <nav className={classes.nav} key={1}>
           <div className={classes.iconButtondiv}>
             <IconButton
-              onClick={() => SetShowCalenderSidebar(!showCalenderSidebar)}
+              onClick={handleSidebar}
             >
               <MenuIcon />
             </IconButton>
