@@ -31,7 +31,7 @@ type EventPopperT = {
 }
 
 const EventPopper = ({ classes, event, handleDialog }: EventPopperT) => {
-  const { subject, startDate, endDate, location } = event;
+  const { subject, startDate, endDate, location, isAllDay } = event;
 
   return <Paper className={classes.root}>
     <div>
@@ -44,9 +44,12 @@ const EventPopper = ({ classes, event, handleDialog }: EventPopperT) => {
       <Divider />
       <div className={classes.flexRow}>
         <Schedule style={{ marginRight: 8 }}/>
-        <Typography>
-          {toReadableTimeInTimezone(startDate)} - {toReadableTimeInTimezone(endDate)}
-        </Typography>
+        {isAllDay ? <Typography>
+          {toReadableTimeInTimezone(startDate, "ll")} (all day)
+        </Typography> : 
+          <Typography>
+            {toReadableTimeInTimezone(startDate)} - {toReadableTimeInTimezone(endDate)}
+          </Typography>}
       </div>
       {location?.displayName && <div className={classes.flexRow}>
         <LocationOn style={{ marginRight: 8 }}/>
