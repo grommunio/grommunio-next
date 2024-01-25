@@ -15,6 +15,7 @@ import {
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  Paper,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -30,13 +31,14 @@ import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { useDispatch, useSelector } from "react-redux";
 import { withStyles } from '@mui/styles';
-import { Close, EventAvailable, EventBusy, FiberManualRecord, Mic, PendingOutlined, QuestionMark } from "@mui/icons-material";
+import { AccessAlarm, Close, EventAvailable, EventBusy, FiberManualRecord, Mic, PendingOutlined, QuestionMark } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeSelector } from "../../store";
 import AttendeeAutocomplete from "../AttendeeAutocomplete";
+import { REMINDER_OPTIONS } from "../../constants";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -106,6 +108,12 @@ const styles = {
     display: 'flex',
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  topbar: {
+    display: 'flex',
+    flex: 1,
+    padding: 4,
+    marginBottom: 16,
   }
 }
 
@@ -132,9 +140,11 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   const [selectedAttendees, setSelectedAttendees] = useState([]);
   const { contacts } = useTypeSelector(state => state.contacts);
   const [dirty, setDirty]= useState(false);
+  const [reminder, setReminder] = useState("15");
+
 
   useEffect(() => {
-    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer } = storeEvent;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer, reminderMinutesBeforeStart } = storeEvent;
     setEvent({
       id: id,
       start: utcTimeToUserTimezone(startDate),
@@ -145,7 +155,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
       isAllDay: Boolean(isAllDay),
       attendees: attendees,
       organizer: organizer,
-      // TODO: Implement recurrence
     });
     if(attendees) {
       /*const contactAttendees = attendees.value.reduce((prev, attendee) => {
@@ -160,6 +169,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
         return contact || { displayName: attendee.emailAddress.address };
       });
       setSelectedAttendees(contactAttendees);
+      setReminder(reminderMinutesBeforeStart.toString());
     }
   }, [storeEvent]);
 
@@ -188,7 +198,8 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
       body: {
         contentType: 'html',
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
-      }
+      },
+      reminderMinutesBeforeStart: parseInt(reminder),
     };
   }
 
@@ -255,8 +266,41 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
     setSelectedAttendees(copy);
   }
 
+  const handleReminder = (e) => {
+    setReminder(e.target.value);
+    setDirty(true);
+  }
+
   const isNewAppointment = !event.id;
   return <div className={classes.root}>
+    <Paper className={classes.topbar}>
+      <TextField
+        select
+        InputProps={{
+          startAdornment: (<InputAdornment position="start">
+            <AccessAlarm />
+          </InputAdornment>),
+        }}
+        onChange={handleReminder}
+        SelectProps={{
+          MenuProps: {
+            disablePortal: true,
+          },
+        }}
+        value={reminder}
+        style={{ width: 200 }}
+        size="small"
+      >
+        {REMINDER_OPTIONS.map(option =>
+          <MenuItem
+            key={option.value}
+            value={option.value}
+          >
+            {option.label}
+          </MenuItem>
+        )}
+      </TextField>
+    </Paper>
     <div className={classes.flexRow}>
       <div className={classes.flexRow}>
         {!isNewAppointment && <div>

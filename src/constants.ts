@@ -30,3 +30,16 @@ export const COMMON_FOLDER_ORDER: IntMap = {
   "custom": 8, // Own folders
   "conversationhistory": 9,
 }
+
+export const REMINDER_OPTIONS = [
+  { label: "Don't remind me", value: -1 },
+  { label: "At time of event", value: 0 },
+  { label: "5 minutes", value: 5 },
+  { label: "15 minutes", value: 15 },
+  { label: "30 minutes", value: 30 },
+  { label: "1 hour", value: 60 },
+  { label: "2 hours", value: 120 },
+  { label: "12 hours", value: 720 },
+  { label: "1 day", value: 1440 },
+  { label: "1 week", value: 10080 },
+];

@@ -1,7 +1,6 @@
 import { ChangeEvent, SetStateAction, useEffect, useRef, useState } from "react";
 import {
   Button,
-  DialogContent,
   TextField,
   InputAdornment,
   Switch,
@@ -9,6 +8,7 @@ import {
   FormControlLabel,
   IconButton,
   ClickAwayListener,
+  Paper,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -23,7 +23,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { Close, FiberManualRecord, Repeat } from "@mui/icons-material";
+import { AccessAlarm, Close, FiberManualRecord, Repeat } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { postEventData } from "../../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../../utils";
@@ -35,6 +35,7 @@ import moment from "moment";
 import { SchedulerHelpers } from "@aldabil/react-scheduler/types";
 import RecurrenceDialog from "./RecurrenceDialog";
 import { NewEvent } from "../../../types/calendar";
+import { REMINDER_OPTIONS } from "../../../constants";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -104,9 +105,14 @@ const styles = {
     display: 'flex',
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  topbar: {
+    display: 'flex',
+    flex: 1,
+    padding: 4,
+    marginBottom: 16,
   }
 }
-
 
 type AddEventT = {
   classes: any;
@@ -124,13 +130,13 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
   const { contacts } = useTypeSelector(state => state.contacts);
   const [dirty, setDirty]= useState(false);
   const [recurrenceDialog, setRecurrenceDialog] = useState(false);
+  const [reminder, setReminder] = useState("15");
 
   useEffect(() => {
     const { start } = scheduler.state as any;
     setEvent({
       start: moment(start.value),
       end: moment(start.value).add(30, 'minutes'),
-      // TODO: Implement recurrence
     });
   }, [scheduler]);
 
@@ -159,7 +165,8 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
       body: {
         contentType: 'html',
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
-      }
+      },
+      reminderMinutesBeforeStart: parseInt(reminder),
     };
   }
 
@@ -219,16 +226,47 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
     setRecurrenceDialog(open);
   }
 
+  const handleReminder = (e: ChangeEvent<HTMLInputElement>) => {
+    setReminder(e.target.value);
+  }
+
   const recurrenceType = event.recurrence?.pattern?.type;
   return <ClickAwayListener onClickAway={scheduler.close}>
     <div className={classes.root}>
+      <Paper className={classes.topbar}>
+        <TextField
+          select
+          InputProps={{
+            startAdornment: (<InputAdornment position="start">
+              <AccessAlarm />
+            </InputAdornment>),
+          }}
+          onChange={handleReminder}
+          SelectProps={{
+            MenuProps: {
+              disablePortal: true,
+            },
+          }}
+          value={reminder}
+          style={{ width: 200 }}
+          size="small"
+        >
+          {REMINDER_OPTIONS.map(option =>
+            <MenuItem
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </MenuItem>
+          )}
+        </TextField>
+      </Paper>
       <div className={classes.flexRow}>
         <div className={classes.flexRow}>
           <div>
             <Button
               variant="contained"
               className={classes.button}
-              style={{ marginLeft: "16px" }}
               onClick={handleAdd}
               disabled={!dirty}
             >
@@ -258,126 +296,124 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
           </IconButton>
         </div>
       </div>
-      <DialogContent style={{ paddingBottom: "20px" }}>
-        <div className={classes.content}>
-          <div className={classes.flexRow}>
-            <Create className={classes.icon} color="action" />
-            <TextField
-              {...textEditorProps("subject")}
-              variant="standard"
-              label="Subject"
-              fullWidth
-              autoFocus
-            />
-          </div>
-          <div className={classes.flexRow}>
-            <PersonAddAltIcon className={classes.icon} color="action" />
-            <AttendeeAutocomplete
-              value={selectedAttendees}
-              onChange={handleAutocomplete}
-              options={contacts}
-              handleContactRemove={handleContactRemove}
-              textfieldProps={{
-                variant: "standard",
-                label: "Attendees"
-              }}
-            />
-          </div>
-          <div className={classes.datesContainer}>
-            <CalendarToday className={classes.icon} color="action" />
-            <div>
-              <LocalizationProvider dateAdapter={AdapterMoment}>
-                <div className={classes.flexRow}>
-                  <DatePicker value={event.start || null} onChange={handleDateChange("start")}/>
-                  {!event.isAllDay && <TimePicker
-                    value={event.start || ""}
-                    onChange={handleDateChange("start")}
+      <div className={classes.content}>
+        <div className={classes.flexRow}>
+          <Create className={classes.icon} color="action" />
+          <TextField
+            {...textEditorProps("subject")}
+            variant="standard"
+            label="Subject"
+            fullWidth
+            autoFocus
+          />
+        </div>
+        <div className={classes.flexRow}>
+          <PersonAddAltIcon className={classes.icon} color="action" />
+          <AttendeeAutocomplete
+            value={selectedAttendees}
+            onChange={handleAutocomplete}
+            options={contacts}
+            handleContactRemove={handleContactRemove}
+            textfieldProps={{
+              variant: "standard",
+              label: "Attendees"
+            }}
+          />
+        </div>
+        <div className={classes.datesContainer}>
+          <CalendarToday className={classes.icon} color="action" />
+          <div>
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+              <div className={classes.flexRow}>
+                <DatePicker value={event.start || null} onChange={handleDateChange("start")}/>
+                {!event.isAllDay && <TimePicker
+                  value={event.start || ""}
+                  onChange={handleDateChange("start")}
+                />}
+                <FormControlLabel
+                  control={<Switch
+                    value={event.isAllDay}
+                    checked={event.isAllDay || false}
+                    onChange={handleSwitch("isAllDay")}
                   />}
-                  <FormControlLabel
-                    control={<Switch
-                      value={event.isAllDay}
-                      checked={event.isAllDay || false}
-                      onChange={handleSwitch("isAllDay")}
-                    />}
-                    style={{ marginLeft: 8 }}
-                    label="All day"
-                  />
-                </div>
-                <div className={classes.flexRow}>
-                  <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
-                  {!event.isAllDay && <TimePicker
-                    value={event.end || ""}
-                    onChange={handleDateChange("end")}
-                  />}
-                  <Button
-                    onClick={handleRecurrence(true)}
-                    startIcon={<Repeat />}
-                    variant="outlined"
-                    size="large"
-                    style={{ marginLeft: 8 }}
-                  >
-                    {recurrenceType ? (recurrenceType?.includes("absolute") ? recurrenceType.slice(7) :
-                      recurrenceType?.includes("relative") ? recurrenceType.slice(8) : recurrenceType) :
-                      "Don't repeat"}
-                  </Button>
-                </div>
-              </LocalizationProvider>
-            </div>
-          </div>
-          <div className={classes.flexRow}>
-            <LocationOn className={classes.icon} color="action" />
-            <TextField
-              {...textEditorProps("location")}
-              variant="standard"
-              fullWidth
-              label="Location"
-              InputProps={{
-                endAdornment: (
-                  <Tooltip
-                    title="This will be turn on automatically once you add an attende"
-                    arrow
-                    placement="top"
-                  >
-                    <InputAdornment
-                      position="end"
-                      style={{ display: "flex", gap: "10px" }}
-                    >
-                      <AntSwitch
-                        inputProps={{ "aria-label": "ant design" }}
-                      />
-                      <i
-                        data-icon-name="IcFluentOfficeSkypeColor"
-                        aria-hidden="true"
-                      >
-                        <Skypeicon />
-                      </i>
-                      <p className="ms-Label wj3t5 root-473">
-                        Skype meeting
-                      </p>
-                    </InputAdornment>
-                  </Tooltip>
-                ),
-              }}
-            />
-          </div>
-          <div className={classes.body}>
-            <Notes className={classes.icon} color="action" />
-            <Editor
-              tinymceScriptSrc={
-                process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
-              }
-              initialValue={event.body as string || ""}
-              init={{
-                menubar: false,
-                readonly: true,
-                toolbar: true,
-                plugins: ["wordcount"],
-              }}
-              onInit={(evt, editor) => editorRef.current = editor}
-            />
+                  style={{ marginLeft: 8 }}
+                  label="All day"
+                />
+              </div>
+              <div className={classes.flexRow}>
+                <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
+                {!event.isAllDay && <TimePicker
+                  value={event.end || ""}
+                  onChange={handleDateChange("end")}
+                />}
+                <Button
+                  onClick={handleRecurrence(true)}
+                  startIcon={<Repeat />}
+                  variant="outlined"
+                  size="large"
+                  style={{ marginLeft: 8 }}
+                >
+                  {recurrenceType ? (recurrenceType?.includes("absolute") ? recurrenceType.slice(7) :
+                    recurrenceType?.includes("relative") ? recurrenceType.slice(8) : recurrenceType) :
+                    "Don't repeat"}
+                </Button>
+              </div>
+            </LocalizationProvider>
           </div>
         </div>
-      </DialogContent>
+        <div className={classes.flexRow}>
+          <LocationOn className={classes.icon} color="action" />
+          <TextField
+            {...textEditorProps("location")}
+            variant="standard"
+            fullWidth
+            label="Location"
+            InputProps={{
+              endAdornment: (
+                <Tooltip
+                  title="This will be turn on automatically once you add an attende"
+                  arrow
+                  placement="top"
+                >
+                  <InputAdornment
+                    position="end"
+                    style={{ display: "flex", gap: "10px" }}
+                  >
+                    <AntSwitch
+                      inputProps={{ "aria-label": "ant design" }}
+                    />
+                    <i
+                      data-icon-name="IcFluentOfficeSkypeColor"
+                      aria-hidden="true"
+                    >
+                      <Skypeicon />
+                    </i>
+                    <p className="ms-Label wj3t5 root-473">
+                        Skype meeting
+                    </p>
+                  </InputAdornment>
+                </Tooltip>
+              ),
+            }}
+          />
+        </div>
+        <div className={classes.body}>
+          <Notes className={classes.icon} color="action" />
+          <Editor
+            tinymceScriptSrc={
+              process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
+            }
+            initialValue={event.body as string || ""}
+            init={{
+              menubar: false,
+              readonly: true,
+              toolbar: true,
+              plugins: ["wordcount"],
+            }}
+            onInit={(evt, editor) => editorRef.current = editor}
+          />
+        </div>
+      </div>
       <RecurrenceDialog
         open={recurrenceDialog}
         handleClose={handleRecurrence(false)}
