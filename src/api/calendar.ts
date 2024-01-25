@@ -15,6 +15,7 @@ import { zonedTimeToUtc } from "date-fns-tz";
 import {  Event } from "microsoft-graph";
 import { graphClient } from "./utils";
 import { EventReponseType } from "../types/calendar";
+import moment from "moment";
 
 // <GetUserWeekCalendarSnippet>
 export async function getUserWeekCalendar(
@@ -83,9 +84,24 @@ export async function getEvents(calendarId?: string | undefined): Promise<Event[
 }
 
 export async function getRecurringEventInstances(event: Event, calendarId?: string | undefined): Promise<Event[]> {
+  let endDate = event.recurrence?.range?.endDate;
+  const start = moment(event.start?.dateTime);
+
+  // No enddate specified, calculate reasonable enddate based on pattern
+  if (!endDate || endDate === "0001-01-01") {
+    const type = event.recurrence?.pattern?.type || "absoluteYearly";
+    const clone = start.clone();
+    if (type === "daily") clone.add(3, "months");
+    else if (type === "weekly") clone.add(24, "weeks");
+    else if (type.includes("Yearly")) clone.add(5, "years");
+    else clone.add(1, "years");
+    
+    endDate = clone.toISOString();
+  }
+
   const response: PageCollection = await graphClient!
     .api((calendarId ? `/me/calendars/${calendarId}/events` : "/me/events") + "/" + event.id + "/instances?" +
-     `startDateTime=${event.start?.dateTime}&endDateTime=2025-11-08T20:00:00.0000000`) // TODO: Find way to calculate reasonable enddate
+     `startDateTime=${event.start?.dateTime}&endDateTime=${endDate}`)
     .get();
   return response.value;
 }
