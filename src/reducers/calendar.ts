@@ -47,6 +47,7 @@ function formatEvent(rawEvent: Event, color=undefined): ExtendedEvent {
     event_id: rawEvent.id,
     title: rawEvent.subject || "",
     notes: rawEvent.body?.content || '',
+    allDay: rawEvent.isAllDay || false,
   };
 }
 
