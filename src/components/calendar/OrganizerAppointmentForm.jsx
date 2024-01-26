@@ -31,14 +31,14 @@ import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { useDispatch, useSelector } from "react-redux";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Close, EventAvailable, EventBusy, FiberManualRecord, Mic, PendingOutlined, QuestionMark } from "@mui/icons-material";
+import { AccessAlarm, Close, EventAvailable, EventBusy, EventNote, FiberManualRecord, Mic, PendingOutlined, QuestionMark } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeSelector } from "../../store";
 import AttendeeAutocomplete from "../AttendeeAutocomplete";
-import { REMINDER_OPTIONS } from "../../constants";
+import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../constants";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -144,7 +144,8 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
 
 
   useEffect(() => {
-    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer, isReminderOn, reminderMinutesBeforeStart } = storeEvent;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer,
+      isReminderOn, reminderMinutesBeforeStart, showAs } = storeEvent;
     setEvent({
       id: id,
       start: utcTimeToUserTimezone(startDate),
@@ -155,6 +156,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
       isAllDay: Boolean(isAllDay),
       attendees: attendees,
       organizer: organizer,
+      showAs: showAs
     });
     if(attendees) {
       /*const contactAttendees = attendees.value.reduce((prev, attendee) => {
@@ -184,7 +186,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   const formatEventForRequest = (event) => {
     const { start, end, location } = event;
     const reminderTime = parseInt(reminder);
-    console.log(reminderTime);
+
     return {
       ...event,
       attendees: gabSelectionToRequestFormat(selectedAttendees) || [], // TODO: Implement non-contact mails
@@ -297,6 +299,31 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
         size="small"
       >
         {REMINDER_OPTIONS.map(option =>
+          <MenuItem
+            key={option.value}
+            value={option.value}
+          >
+            {option.label}
+          </MenuItem>
+        )}
+      </TextField>
+      <TextField
+        select
+        InputProps={{
+          startAdornment: (<InputAdornment position="start">
+            <EventNote />
+          </InputAdornment>),
+        }}
+        SelectProps={{
+          MenuProps: {
+            disablePortal: true,
+          },
+        }}
+        {...textEditorProps("showAs")}
+        style={{ width: 200, marginLeft: 8 }}
+        size="small"
+      >
+        {FREEBUSY_TYPES.map(option =>
           <MenuItem
             key={option.value}
             value={option.value}

@@ -23,7 +23,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Close, FiberManualRecord, Repeat } from "@mui/icons-material";
+import { AccessAlarm, Close, EventNote, FiberManualRecord, Repeat } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { postEventData } from "../../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../../utils";
@@ -35,7 +35,7 @@ import moment from "moment";
 import { SchedulerHelpers } from "@aldabil/react-scheduler/types";
 import RecurrenceDialog from "./RecurrenceDialog";
 import { NewEvent } from "../../../types/calendar";
-import { REMINDER_OPTIONS } from "../../../constants";
+import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../../constants";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -121,7 +121,9 @@ type AddEventT = {
 
 const AddEvent = ({ classes, scheduler }: AddEventT) => {
   const editorRef = useRef<any>();
-  const [event, setEvent] = useState<NewEvent>({});
+  const [event, setEvent] = useState<NewEvent>({
+    showAs: "free"
+  });
   const { calendars } = useTypeSelector(state => state.calendar);
   const [selectedCalendar, setSelectedCalendar] = useState("");
   const dispatch = useTypeDispatch();
@@ -135,6 +137,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
   useEffect(() => {
     const { start } = scheduler.state as any;
     setEvent({
+      ...event,
       start: moment(start.value),
       end: moment(start.value).add(30, 'minutes'),
     });
@@ -232,6 +235,8 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
     setReminder(e.target.value);
   }
 
+  
+
   const recurrenceType = event.recurrence?.pattern?.type;
   return <ClickAwayListener onClickAway={scheduler.close}>
     <div className={classes.root}>
@@ -254,6 +259,31 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
           size="small"
         >
           {REMINDER_OPTIONS.map(option =>
+            <MenuItem
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </MenuItem>
+          )}
+        </TextField>
+        <TextField
+          select
+          InputProps={{
+            startAdornment: (<InputAdornment position="start">
+              <EventNote />
+            </InputAdornment>),
+          }}
+          SelectProps={{
+            MenuProps: {
+              disablePortal: true,
+            },
+          }}
+          {...textEditorProps("showAs")}
+          style={{ width: 200, marginLeft: 8 }}
+          size="small"
+        >
+          {FREEBUSY_TYPES.map(option =>
             <MenuItem
               key={option.value}
               value={option.value}

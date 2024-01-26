@@ -43,3 +43,11 @@ export const REMINDER_OPTIONS = [
   { label: "1 day", value: 1440 },
   { label: "1 week", value: 10080 },
 ];
+
+export const FREEBUSY_TYPES = [
+  { label: "Free", value: "free" },
+  { label: "Working elsewhere", value: "workingElsewhere" },
+  { label: "Tentatively", value: "tentative" },
+  { label: "Busy", value: "busy" },
+  { label: "Away", value: "oof" },
+];

@@ -1,5 +1,5 @@
 import { Scheduler as ReactSchedular } from "@aldabil/react-scheduler";
-import type { ProcessedEvent, SchedulerRef } from "@aldabil/react-scheduler/types";
+import type { FieldProps, ProcessedEvent, SchedulerRef } from "@aldabil/react-scheduler/types";
 import { Event } from "microsoft-graph";
 import { ForwardedRef, forwardRef, useMemo, useState } from "react";
 import { useTypeDispatch } from "../../store";
@@ -10,6 +10,24 @@ import { ExtendedEvent } from "../../types/calendar";
 import AddEvent from "./dialogs/AddEvent";
 import EventRenderer from "./EventRenderer";
 import { View } from "@aldabil/react-scheduler/components/nav/Navigation";
+
+
+const eventFields: FieldProps[] = [
+  { name: "id", type: "hidden" },
+  { name: "subject", type: "input" },
+  { name: "startDate", type: "hidden" },
+  { name: "endDate", type: "hidden" },
+  { name: "webLink", type: "input" },
+  { name: "body", type: "input" },
+  { name: "location", type: "input" },
+  { name: "isAllDay", type: "hidden" },
+  { name: "attendees", type: "hidden" },
+  { name: "isOrganizer", type: "hidden" },
+  { name: "organizer", type: "hidden" },
+  { name: "reminderMinutesBeforeStart", type: "hidden" },
+  { name: "isReminderOn", type: "hidden" },
+  { name: "showAs", type: "hidden" },
+];
 
 
 type SchedularType = {
@@ -74,21 +92,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       />}
       eventRenderer={({ event, ...props }) => <EventRenderer event={event} {...props}/>}
       customEditor={(scheduler) => <AddEvent scheduler={scheduler}/>}
-      fields={[
-        { name: "id", type: "hidden" },
-        { name: "subject", type: "input" },
-        { name: "startDate", type: "hidden" },
-        { name: "endDate", type: "hidden" },
-        { name: "webLink", type: "input" },
-        { name: "body", type: "input" },
-        { name: "location", type: "input" },
-        { name: "isAllDay", type: "hidden" },
-        { name: "attendees", type: "hidden" },
-        { name: "isOrganizer", type: "hidden" },
-        { name: "organizer", type: "hidden" },
-        { name: "reminderMinutesBeforeStart", type: "hidden" },
-        { name: "isReminderOn", type: "hidden" },
-      ]}
+      fields={eventFields}
     />
     {dialogOpen && <EventDetails event={dialogOpen} onClose={handleDialog(null)}/>}
   </div>;
