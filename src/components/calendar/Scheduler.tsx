@@ -86,7 +86,8 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
         { name: "attendees", type: "hidden" },
         { name: "isOrganizer", type: "hidden" },
         { name: "organizer", type: "hidden" },
-        { name: "reminderMinutesBeforeStart", type: "hidden" }
+        { name: "reminderMinutesBeforeStart", type: "hidden" },
+        { name: "isReminderOn", type: "hidden" },
       ]}
     />
     {dialogOpen && <EventDetails event={dialogOpen} onClose={handleDialog(null)}/>}

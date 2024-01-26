@@ -148,6 +148,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
 
   const formatEventForRequest = (): Event => { 
     const { start, end, location } = event;
+    const reminderTime = parseInt(reminder);
     return {
       ...event,
       attendees: gabSelectionToRequestFormat(selectedAttendees) || [],
@@ -166,7 +167,8 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
         contentType: 'html',
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
       },
-      reminderMinutesBeforeStart: parseInt(reminder),
+      reminderMinutesBeforeStart: reminderTime !== -1 ? reminderTime : 0,
+      isReminderOn: reminderTime !== -1,
     };
   }
 

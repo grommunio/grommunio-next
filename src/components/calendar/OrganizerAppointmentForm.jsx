@@ -144,7 +144,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
 
 
   useEffect(() => {
-    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer, reminderMinutesBeforeStart } = storeEvent;
+    const { id, startDate, endDate, subject, location, body, isAllDay, attendees, organizer, isReminderOn, reminderMinutesBeforeStart } = storeEvent;
     setEvent({
       id: id,
       start: utcTimeToUserTimezone(startDate),
@@ -169,8 +169,10 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
         return contact || { displayName: attendee.emailAddress.address };
       });
       setSelectedAttendees(contactAttendees);
-      setReminder(reminderMinutesBeforeStart.toString());
     }
+    // Reminder
+    const reminder = isReminderOn ? reminderMinutesBeforeStart : -1;
+    setReminder(reminder.toString());
   }, [storeEvent]);
 
   useEffect(() => {
@@ -181,6 +183,8 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
 
   const formatEventForRequest = (event) => {
     const { start, end, location } = event;
+    const reminderTime = parseInt(reminder);
+    console.log(reminderTime);
     return {
       ...event,
       attendees: gabSelectionToRequestFormat(selectedAttendees) || [], // TODO: Implement non-contact mails
@@ -199,7 +203,8 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
         contentType: 'html',
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
       },
-      reminderMinutesBeforeStart: parseInt(reminder),
+      reminderMinutesBeforeStart: reminderTime !== -1 ? reminderTime : 0,
+      isReminderOn: reminderTime !== -1,
     };
   }
 
