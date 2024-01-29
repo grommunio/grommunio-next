@@ -9,6 +9,7 @@ import {
   IconButton,
   ClickAwayListener,
   Paper,
+  ListItemIcon,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -23,7 +24,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Close, EventNote, FiberManualRecord, Repeat } from "@mui/icons-material";
+import { AccessAlarm, Check, Close, EventNote, FiberManualRecord, Repeat, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { postEventData } from "../../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../../utils";
@@ -122,7 +123,9 @@ type AddEventT = {
 const AddEvent = ({ classes, scheduler }: AddEventT) => {
   const editorRef = useRef<any>();
   const [event, setEvent] = useState<NewEvent>({
-    showAs: "free"
+    showAs: "free",
+    responseRequested: true,
+    hideAttendees: false,
   });
   const { calendars } = useTypeSelector(state => state.calendar);
   const [selectedCalendar, setSelectedCalendar] = useState("");
@@ -235,12 +238,54 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
     setReminder(e.target.value);
   }
 
-  
+  const handlePropToggle = (field: keyof Event) => () => {
+    setEvent({
+      ...event,
+      [field]: !event[field],
+    })
+  }
 
   const recurrenceType = event.recurrence?.pattern?.type;
   return <ClickAwayListener onClickAway={scheduler.close}>
     <div className={classes.root}>
       <Paper className={classes.topbar}>
+        <TextField
+          select
+          InputProps={{
+            startAdornment: (<InputAdornment position="start">
+              <Tune />
+            </InputAdornment>),
+          }}
+          SelectProps={{
+            MenuProps: {
+              disablePortal: true,
+            },
+          }}
+          style={{ width: 208, marginRight: 8 }}
+          size="small"
+          label="Response options"
+          InputLabelProps={{
+            shrink: false,
+            style: { marginLeft: 32 }
+          }}
+        >
+          <MenuItem
+            onClick={handlePropToggle("responseRequested")}
+          >
+            <ListItemIcon>
+              {Boolean(event.responseRequested) && <Check />}
+            </ListItemIcon>
+            Request responses
+          </MenuItem>
+          <MenuItem
+            onClick={handlePropToggle("hideAttendees")}
+          >
+            <ListItemIcon>
+              {Boolean(event.hideAttendees) && <Check />}
+            </ListItemIcon>
+            Hide attendee list
+          </MenuItem>
+        </TextField>
         <TextField
           select
           InputProps={{

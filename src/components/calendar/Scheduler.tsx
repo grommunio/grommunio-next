@@ -27,6 +27,8 @@ const eventFields: FieldProps[] = [
   { name: "reminderMinutesBeforeStart", type: "hidden" },
   { name: "isReminderOn", type: "hidden" },
   { name: "showAs", type: "hidden" },
+  { name: "responseRequested", type: "hidden" },
+  { name: "hideAttendees", type: "hidden" },
 ];
 
 

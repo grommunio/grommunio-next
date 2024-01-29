@@ -61,15 +61,14 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   const [iframeContent, setIframeContent] = useState("");
 
   useEffect(() => {
-    const { id, startDate, endDate, subject, location, body, isAllDay, attendees } = storeEvent;
+    const { startDate, endDate, subject, location, body, isAllDay } = storeEvent;
     setEvent({
-      id: id.value,
+      ...storeEvent,
       start: startDate,
       end: endDate,
       subject: subject,
       location: location.displayName,
       isAllDay: Boolean(isAllDay),
-      attendees: attendees,
     });
 
     // Content
@@ -86,7 +85,7 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
     }
   }, [storeEvent]);
 
-  const { start, end, subject, location, attendees } = event;
+  const { start, end, subject, location, attendees, hideAttendees } = event;
   return <DialogContent className={classes.content}>
     <div className={classes.flexRow}>
       <div className={classes.flexEnd}>
@@ -128,7 +127,7 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
         </div>
       </div>
       {/* TODO: Implement proper scrolling div */}
-      {attendees && <div className={classes.attendees}>
+      {attendees && !hideAttendees && <div className={classes.attendees}>
         <Typography variant="h5">Attendees</Typography>
         <List>
           {attendees.map(({ emailAddress }, key) => <ListItem
