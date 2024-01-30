@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   Button,
   DialogContent,
@@ -29,16 +29,18 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
-import { useDispatch, useSelector } from "react-redux";
 import { withStyles } from '@mui/styles';
 import { AccessAlarm, Check, Close, EventAvailable, EventBusy, EventNote, FiberManualRecord, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
-import { useTypeSelector } from "../../store";
+import { useTypeDispatch, useTypeSelector } from "../../store";
 import AttendeeAutocomplete from "../AttendeeAutocomplete";
 import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../constants";
+import { BodyType, Contact, DateTimeTimeZone, EmailAddress, Event, NullableOption, ResponseStatus } from "microsoft-graph";
+import { ExtendedEvent } from "../../types/calendar";
+import { Moment } from "moment";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -117,8 +119,14 @@ const styles = {
   }
 }
 
-function getResponseStatusIcon(status) {
-  const response = status.response;
+type OrganizerAppointmentFormT = {
+  classes: any;
+  event: ExtendedEvent;
+  onClose: () => void;
+}
+
+function getResponseStatusIcon(status: NullableOption<ResponseStatus>) {
+  const response = status?.response || "";
   switch(response) {
   case "accepted":
     return <Tooltip title="Accepted"><EventAvailable /></Tooltip>;
@@ -130,14 +138,21 @@ function getResponseStatusIcon(status) {
   }
 }
 
-const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
-  const editorRef = useRef(null);
-  const [event, setEvent] = useState({});
-  const { calendars } = useSelector(state => state.calendar);
+type EventFormT = Event & {
+  start?: Moment | null;
+  end?: Moment | null;
+  location?: string;
+  body?: string;
+}
+
+const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: OrganizerAppointmentFormT) => {
+  const editorRef = useRef<any>(null);
+  const [event, setEvent] = useState<EventFormT>({});
+  const { calendars } = useTypeSelector(state => state.calendar);
   const [selectedCalendar, setSelectedCalendar] = useState("");
-  const dispatch = useDispatch();
+  const dispatch = useTypeDispatch();
   const app = useAppContext();
-  const [selectedAttendees, setSelectedAttendees] = useState([]);
+  const [selectedAttendees, setSelectedAttendees] = useState<Contact[]>([]);
   const { contacts } = useTypeSelector(state => state.contacts);
   const [dirty, setDirty]= useState(false);
   const [reminder, setReminder] = useState("15");
@@ -149,8 +164,8 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
       ...storeEvent,
       start: utcTimeToUserTimezone(startDate),
       end: utcTimeToUserTimezone(endDate),
-      location: location?.displayName,
-      body: body?.content,
+      location: location?.displayName || "",
+      body: body?.content || "",
       isAllDay: Boolean(isAllDay),
     });
     if(attendees) {
@@ -160,16 +175,16 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
         return contact ? [...prev, contact] : prev;
       }, []);*/
 
-      const contactAttendees = attendees.map((attendee) => {
-        const contact = contacts.find(contact =>
-          contact.emailAddresses.find(addr => addr.address === attendee.emailAddress.address));
-        return contact || { displayName: attendee.emailAddress.address };
+      const contactAttendees: Contact[] = attendees.map((attendee) => {
+        const contact = contacts.find((contact: Contact) =>
+          contact.emailAddresses?.find((addr: EmailAddress) => addr.address === attendee.emailAddress?.address));
+        return contact || { displayName: attendee.emailAddress?.address };
       });
       setSelectedAttendees(contactAttendees);
     }
     // Reminder
     const reminder = isReminderOn ? reminderMinutesBeforeStart : -1;
-    setReminder(reminder.toString());
+    setReminder(reminder?.toString() || "15");
   }, [storeEvent]);
 
   useEffect(() => {
@@ -178,7 +193,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
     }
   }, [calendars]);
 
-  const formatEventForRequest = (event) => {
+  const formatEventForRequest = () => {
     const { start, end, location } = event;
     const reminderTime = parseInt(reminder);
 
@@ -187,17 +202,17 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
       attendees: gabSelectionToRequestFormat(selectedAttendees) || [], // TODO: Implement non-contact mails
       start: {
         timeZone: app.user?.timeZone,
-        dateTime: start.toISOString()
+        dateTime: start?.toISOString() || "",
       },
       end: {
         timeZone: app.user?.timeZone,
-        dateTime: end.toISOString()
+        dateTime: end?.toISOString() || "",
       },
       location: location ? {
         displayName: location,
       } : undefined,
       body: {
-        contentType: 'html',
+        contentType: 'html' as BodyType,
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
       },
       reminderMinutesBeforeStart: reminderTime !== -1 ? reminderTime : 0,
@@ -205,11 +220,11 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
     };
   }
 
-  const handleCalendarChange = (e) => {
+  const handleCalendarChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setSelectedCalendar(e.target.value);
   }
 
-  const handleInput = (field, value) => {
+  const handleInput = (field: keyof EventFormT, value: string) => {
     setEvent({
       ...event,
       [field]: value,
@@ -217,7 +232,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
     if(!dirty) setDirty(true);
   };
 
-  const handleSwitch = field => (e) => {
+  const handleSwitch = (field: keyof EventFormT) => (e: ChangeEvent<HTMLInputElement>) => {
     setEvent({
       ...event,
       [field]: e.target.checked,
@@ -225,55 +240,55 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
     if(!dirty) setDirty(true);
   };
 
-  const textEditorProps = (field) => ({
-    onChange: e => handleInput(field, e.target.value),
+  const textEditorProps = (field: keyof EventFormT) => ({
+    onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => handleInput(field, e.target.value),
     value: event[field] || "",
     className: classes.textField,
   });
 
-  const handleDateChange = field => (newVal) => {
+  const handleDateChange = (field: keyof EventFormT) => (newVal: (DateTimeTimeZone & Moment) | null) => {
     setEvent({
       ...event,
       [field]: newVal,
-      end: field === "start" && newVal.isAfter(event.end) ? newVal.clone().add(30, "minutes") : event.end,
+      end: field === "start" && newVal?.isAfter(event.end) ? newVal.clone().add(30, "minutes") : event.end,
     });
     if(!dirty) setDirty(true);
   }
 
   const handleEdit = () => {
-    const data = formatEventForRequest(event);
+    const data = formatEventForRequest();
     dispatch(patchEventData(data))
       .catch(() => /*TODO: Error handling */ null);
   }
 
   const handleAdd = () => {
-    const data = formatEventForRequest(event);
+    const data = formatEventForRequest();
     dispatch(postEventData(data, selectedCalendar))
       .then(onClose);
   }
 
   const handleDelete = () => {
-    dispatch(deleteEventData(event.id))
+    dispatch(deleteEventData(event.id || ""))
       .then(onClose);
   }
 
-  const handleAutocomplete = (e, newVal) => {
+  const handleAutocomplete = (_e: any, newVal: Contact[]) => {
     setSelectedAttendees(newVal);
     if(!dirty) setDirty(true);
   }
 
-  const handleContactRemove = (index) => () => {
+  const handleContactRemove = (index: number) => () => {
     const copy = [...selectedAttendees];
     copy.splice(index, 1);
     setSelectedAttendees(copy);
   }
 
-  const handleReminder = (e) => {
+  const handleReminder = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setReminder(e.target.value);
     setDirty(true);
   }
 
-  const handlePropToggle = (field) => () => {
+  const handlePropToggle = (field: keyof EventFormT) => () => {
     setEvent({
       ...event,
       [field]: !event[field],
@@ -449,9 +464,9 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
             <div>
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <div className={classes.flexRow}>
-                  <DatePicker value={event.start || ""} onChange={handleDateChange("start")}/>
+                  <DatePicker value={event.start} onChange={handleDateChange("start")}/>
                   {!event.isAllDay && <TimePicker
-                    value={event.start || ""}
+                    value={event.start}
                     onChange={handleDateChange("start")}
                   />}
                   <FormControlLabel
@@ -465,9 +480,9 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
                   />
                 </div>
                 <div className={classes.flexRow}>
-                  <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
+                  <DatePicker value={event.end} onChange={handleDateChange("end")}/>
                   {!event.isAllDay && <TimePicker
-                    value={event.end || ""}
+                    value={event.end}
                     onChange={handleDateChange("end")}
                   />}
                 </div>
@@ -520,7 +535,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
               init={{
                 menubar: false,
                 readonly: true,
-                toolbar,
+                toolbar: true,
                 plugins: ["wordcount"],
               }}
               onInit={(evt, editor) => editorRef.current = editor}
@@ -528,7 +543,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
           </div>
         </div>
       </DialogContent>
-      {event.attendees?.length > 0 && <div className={classes.attendees}>
+      {event.attendees?.length! > 0 && <div className={classes.attendees}>
         <Typography variant="h6">Tracking</Typography>
         <List
           dense
@@ -543,7 +558,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
               <Mic />
             </ListItemIcon>
             <ListItemText
-              primary={event.organizer.emailAddress.name}
+              primary={event.organizer?.emailAddress?.name || ""}
               secondary={""}
             />
           </ListItem>
@@ -556,16 +571,16 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
           }
           dense
         >
-          {event.attendees.map(({ emailAddress, status, type }, key) => <ListItem
+          {event.attendees?.map(({ emailAddress, status, type }, key) => <ListItem
             disablePadding
             key={key}
             divider
           >
             <ListItemIcon style={{ minWidth: 40 }}>
-              {getResponseStatusIcon(status)}
+              {getResponseStatusIcon(status || null)}
             </ListItemIcon>
             <ListItemText
-              primary={emailAddress.name || emailAddress.address}
+              primary={emailAddress?.name || emailAddress?.address || ""}
               secondary={type}
             />
           </ListItem>)}

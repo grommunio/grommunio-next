@@ -448,7 +448,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
             InputProps={{
               endAdornment: (
                 <Tooltip
-                  title="This will be turn on automatically once you add an attende"
+                  title="This will be turned on automatically once you add an attendee"
                   arrow
                   placement="top"
                 >
