@@ -157,6 +157,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
   const { contacts } = useTypeSelector(state => state.contacts);
   const [reminder, setReminder] = useState("15");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [deleteAnchorEl, setDeleteAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     const { id, seriesMasterId, subject, startDate, endDate, location, body, isAllDay, attendees, responseRequested,
@@ -262,9 +263,10 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
       .catch(() => /*TODO: Error handling */ null);
   }
 
-  const handleDelete = () => {
-    dispatch(deleteEventData(event.id || ""))
-      .then(onClose);
+  const handleDelete = (allEvents: boolean) => () => {
+    dispatch(deleteEventData((allEvents ? event.seriesMasterId : event.id) || ""))
+      .then(onClose)
+      .catch(() => /*TODO: Error handling */ null);
   }
 
   const handleAutocomplete = (_e: any, newVal: Contact[]) => {
@@ -290,6 +292,10 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
 
   const handleSaveMenu = (open: boolean) => (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(open ? event.currentTarget : null);
+  };
+
+  const handleDeleteMenu = (open: boolean) => (event: React.MouseEvent<HTMLElement>) => {
+    setDeleteAnchorEl(open ? event.currentTarget : null);
   };
 
   return <div className={classes.root}>
@@ -385,16 +391,37 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
     </Paper>
     <div className={classes.flexRow}>
       <div className={classes.flexRow}>
-        <div>
+        {event.type === "singleInstance" ? <div>
           <Button
-            variant="outlined"
-            color="primary"
             className={classes.button}
-            onClick={handleDelete}
+            variant="outlined"
+            onClick={handleDelete(false)}
+            color="primary"
           >
             Delete
           </Button>
-        </div>
+        </div> : <div>
+          <Button
+            className={classes.button}
+            variant="outlined"
+            onClick={handleDeleteMenu(true)}
+            endIcon={<KeyboardArrowDown />}
+          >
+            Delete
+          </Button>
+          <Menu
+            anchorEl={deleteAnchorEl}
+            open={Boolean(deleteAnchorEl)}
+            onClose={handleDeleteMenu(false)}
+          >
+            <MenuItem onClick={handleDelete(false)}>
+              Delete this event
+            </MenuItem>
+            <MenuItem onClick={handleDelete(true)}>
+              Delete all events in the series
+            </MenuItem>
+          </Menu>
+        </div>}
         {event.type === "singleInstance" ? <div>
           <Button
             variant="contained"
