@@ -16,6 +16,7 @@ import {
   ListItemText,
   ListSubheader,
   Paper,
+  Menu,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -30,9 +31,9 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Check, Close, EventAvailable, EventBusy, EventNote, FiberManualRecord, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
+import { AccessAlarm, Check, Close, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import { deleteEventData, patchEventData, postEventData } from "../../actions/calendar";
+import { deleteEventData, patchEventData } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeDispatch, useTypeSelector } from "../../store";
@@ -154,19 +155,24 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
   const app = useAppContext();
   const [selectedAttendees, setSelectedAttendees] = useState<Contact[]>([]);
   const { contacts } = useTypeSelector(state => state.contacts);
-  const [dirty, setDirty]= useState(false);
   const [reminder, setReminder] = useState("15");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
-    const { startDate, endDate, location, body, isAllDay, attendees,
-      isReminderOn, reminderMinutesBeforeStart } = storeEvent;
+    const { id, seriesMasterId, subject, startDate, endDate, location, body, isAllDay, attendees, responseRequested,
+      isReminderOn, reminderMinutesBeforeStart, hideAttendees, showAs } = storeEvent;
     setEvent({
-      ...storeEvent,
+      id,
+      seriesMasterId,
       start: utcTimeToUserTimezone(startDate),
       end: utcTimeToUserTimezone(endDate),
       location: location?.displayName || "",
       body: body?.content || "",
       isAllDay: Boolean(isAllDay),
+      responseRequested,
+      hideAttendees,
+      showAs,
+      subject,
     });
     if(attendees) {
       /*const contactAttendees = attendees.value.reduce((prev, attendee) => {
@@ -193,12 +199,13 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
     }
   }, [calendars]);
 
-  const formatEventForRequest = () => {
+  const formatEventForRequest = (allEvents: boolean) => {
     const { start, end, location } = event;
     const reminderTime = parseInt(reminder);
 
     return {
       ...event,
+      id: (allEvents ? event.seriesMasterId : event.id) || "",
       attendees: gabSelectionToRequestFormat(selectedAttendees) || [], // TODO: Implement non-contact mails
       start: {
         timeZone: app.user?.timeZone,
@@ -220,16 +227,11 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
     };
   }
 
-  const handleCalendarChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setSelectedCalendar(e.target.value);
-  }
-
   const handleInput = (field: keyof EventFormT, value: string) => {
     setEvent({
       ...event,
       [field]: value,
     });
-    if(!dirty) setDirty(true);
   };
 
   const handleSwitch = (field: keyof EventFormT) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -237,7 +239,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
       ...event,
       [field]: e.target.checked,
     });
-    if(!dirty) setDirty(true);
   };
 
   const textEditorProps = (field: keyof EventFormT) => ({
@@ -252,19 +253,13 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
       [field]: newVal,
       end: field === "start" && newVal?.isAfter(event.end) ? newVal.clone().add(30, "minutes") : event.end,
     });
-    if(!dirty) setDirty(true);
   }
 
-  const handleEdit = () => {
-    const data = formatEventForRequest();
+  const handleEdit = (allEvents: boolean) => () => {
+    const data = formatEventForRequest(allEvents);
     dispatch(patchEventData(data))
+      .then(onClose)
       .catch(() => /*TODO: Error handling */ null);
-  }
-
-  const handleAdd = () => {
-    const data = formatEventForRequest();
-    dispatch(postEventData(data, selectedCalendar))
-      .then(onClose);
   }
 
   const handleDelete = () => {
@@ -274,7 +269,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
 
   const handleAutocomplete = (_e: any, newVal: Contact[]) => {
     setSelectedAttendees(newVal);
-    if(!dirty) setDirty(true);
   }
 
   const handleContactRemove = (index: number) => () => {
@@ -285,7 +279,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
 
   const handleReminder = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setReminder(e.target.value);
-    setDirty(true);
   }
 
   const handlePropToggle = (field: keyof EventFormT) => () => {
@@ -295,7 +288,10 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
     })
   }
 
-  const isNewAppointment = !event.id;
+  const handleSaveMenu = (open: boolean) => (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(open ? event.currentTarget : null);
+  };
+
   return <div className={classes.root}>
     <Paper className={classes.topbar}>
       <TextField
@@ -324,7 +320,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
           <ListItemIcon>
             {Boolean(event.responseRequested) && <Check />}
           </ListItemIcon>
-            Request responses
+          Request responses
         </MenuItem>
         <MenuItem
           onClick={handlePropToggle("hideAttendees")}
@@ -332,7 +328,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
           <ListItemIcon>
             {Boolean(event.hideAttendees) && <Check />}
           </ListItemIcon>
-            Hide attendee list
+          Hide attendee list
         </MenuItem>
       </TextField>
       <TextField
@@ -389,43 +385,48 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
     </Paper>
     <div className={classes.flexRow}>
       <div className={classes.flexRow}>
-        {!isNewAppointment && <div>
+        <div>
           <Button
             variant="outlined"
             color="primary"
             className={classes.button}
             onClick={handleDelete}
           >
-              Delete
+            Delete
           </Button>
-        </div>}
-        <div>
+        </div>
+        {event.type === "singleInstance" ? <div>
           <Button
             variant="contained"
             className={classes.button}
             style={{ marginLeft: "16px" }}
-            onClick={isNewAppointment ? handleAdd : handleEdit}
-            disabled={!dirty}
+            onClick={handleEdit(false)}
           >
-            {selectedAttendees.length === 0 ? (isNewAppointment ? "Create" : "Save") : "Send"}
+            {selectedAttendees.length === 0 ? "Save" : "Send"}
           </Button>
-        </div>
-        {isNewAppointment && <TextField
-          color="primary"
-          select
-          label="Calendar"
-          onChange={handleCalendarChange}
-          value={selectedCalendar}
-          variant="standard"
-          style={{ marginLeft: "16px", minWidth: 120 }}
-          InputProps={{
-            startAdornment: <FiberManualRecord fontSize="small" style={{ marginRight: 8 }}/>
-          }}
-        >
-          {calendars.map((cal, key) => 
-            <MenuItem value={cal.id} key={key}>{cal.name}</MenuItem>
-          )}
-        </TextField>}
+        </div> : <div>
+          <Button
+            className={classes.button}
+            style={{ marginLeft: "16px" }}
+            variant="contained"
+            onClick={handleSaveMenu(true)}
+            endIcon={<KeyboardArrowDown />}
+          >
+            {selectedAttendees.length === 0 ? "Save" : "Send"}
+          </Button>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleSaveMenu(false)}
+          >
+            <MenuItem onClick={handleEdit(false)}>
+              Edit this event
+            </MenuItem>
+            <MenuItem onClick={handleEdit(true)}>
+              Edit all events in the series
+            </MenuItem>
+          </Menu>
+        </div>}
       </div>
       <div className={classes.flexEnd}>
         <IconButton onClick={onClose}>
@@ -464,9 +465,9 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
             <div>
               <LocalizationProvider dateAdapter={AdapterMoment}>
                 <div className={classes.flexRow}>
-                  <DatePicker value={event.start} onChange={handleDateChange("start")}/>
+                  <DatePicker value={event.start || null} onChange={handleDateChange("start")}/>
                   {!event.isAllDay && <TimePicker
-                    value={event.start}
+                    value={event.start || null}
                     onChange={handleDateChange("start")}
                   />}
                   <FormControlLabel
@@ -480,9 +481,9 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
                   />
                 </div>
                 <div className={classes.flexRow}>
-                  <DatePicker value={event.end} onChange={handleDateChange("end")}/>
+                  <DatePicker value={event.end || null} onChange={handleDateChange("end")}/>
                   {!event.isAllDay && <TimePicker
-                    value={event.end}
+                    value={event.end || null}
                     onChange={handleDateChange("end")}
                   />}
                 </div>

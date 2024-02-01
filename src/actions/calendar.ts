@@ -37,17 +37,22 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
   return async (dispatch: any) => {
     try {
       const data = await getEvents(calendar?.id);
-      for(const e of data) {
+      const occurenceEvents = [];
+      let length = data.length;
+      for(let i = 0; i < length; i++) {
+        const e = data[i];
         if(e.recurrence) {
           try {
             const occurences = await getRecurringEventInstances(e, calendar?.id);
-            data.push(...occurences.filter(o => o.start?.dateTime !== e.start?.dateTime));
+            data.splice(i, 1);
+            length--;
+            occurenceEvents.push(...occurences);
           } catch (err) {
             console.error(err);
           }
         }
       }
-      await dispatch({ type: FETCH_EVENTS_DATA, payload: data, calendar: calendar });
+      await dispatch({ type: FETCH_EVENTS_DATA, payload: [...data, ...occurenceEvents], calendar: calendar });
       return data;
     } catch (error) {
       await dispatch(pushAlertStack({ message: (error as any)?.message || "", severity: "error" }));

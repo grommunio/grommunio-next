@@ -9,9 +9,8 @@ type EventDetailsT = {
 }
 
 const EventDetails = ({ event, onClose }: EventDetailsT) => {
-  const { isOrganizer, id } = event;
   return <Dialog open maxWidth="lg" onClose={onClose}>
-    {isOrganizer || !id ? <OrganizerAppointmentForm event={event} onClose={onClose}/>
+    {event.isOrganizer ? <OrganizerAppointmentForm event={event} onClose={onClose}/>
       : <AttendeeAppointmentForm event={event} onClose={onClose}/>}
   </Dialog>
 }
