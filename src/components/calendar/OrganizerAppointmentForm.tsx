@@ -31,17 +31,18 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, AttachFile, Check, Close, Download, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
+import { AccessAlarm, AttachFile, Check, Close, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { deleteEventData, fetchEventAttachments, patchEventData, postEventAttachments } from "../../actions/calendar";
-import { downloadBase64Content, gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
+import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeDispatch, useTypeSelector } from "../../store";
 import AttendeeAutocomplete from "../AttendeeAutocomplete";
 import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../constants";
-import { Attachment, BodyType, Contact, DateTimeTimeZone, EmailAddress, Event, FileAttachment, NullableOption, ResponseStatus } from "microsoft-graph";
+import { Attachment, BodyType, Contact, DateTimeTimeZone, EmailAddress, Event, NullableOption, ResponseStatus } from "microsoft-graph";
 import { ExtendedEvent } from "../../types/calendar";
 import { Moment } from "moment";
+import AttachmentItem from "../AttachmentItem";
 
 const AntSwitch = styled(Switch)(({ theme }) => ({
   width: 38,
@@ -124,9 +125,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
   },
-  attachment: {
-    cursor: 'pointer',
-  }
 }
 
 type OrganizerAppointmentFormT = {
@@ -326,10 +324,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
   const handleDeleteMenu = (open: boolean) => (event: React.MouseEvent<HTMLElement>) => {
     setDeleteAnchorEl(open ? event.currentTarget : null);
   };
-
-  const handleDownload = (attachment: FileAttachment) => () => {
-    downloadBase64Content(attachment);
-  }
 
   return <div className={classes.root}>
     <Paper className={classes.topbar}>
@@ -607,13 +601,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
               <AttachFile />
             </IconButton>
             {Array.from(attachments || []).map(file =>
-              <span
-                style={{ cursor: 'pointer', padding: 4, margin: 4, border: "1px solid grey", display: 'flex' }}
-                onClick={handleDownload(file)}
-              >
-                <Typography>{file.name}</Typography>
-                <Download color="primary" />
-              </span>  
+              <AttachmentItem attachment={file} />
             )}
             <Typography>
             </Typography>

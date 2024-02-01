@@ -18,6 +18,9 @@ import { withStyles } from '@mui/styles';
 import { AccessTime, AccountCircle, Close } from "@mui/icons-material";
 import { purify, toReadableTimeInTimezone } from "../../utils";
 import { convertHtmlMailToDarkmode } from "../../htmlUtils";
+import { fetchEventAttachments } from "../../actions/calendar";
+import { useDispatch } from "react-redux";
+import AttachmentItem from "../AttachmentItem";
 
 
 const styles = theme => ({
@@ -51,14 +54,21 @@ const styles = theme => ({
   },
   attendees: {
     backgroundColor: theme.palette.background.default,
-  }
+  },
+  attachments: {
+    marginLeft: 32,
+    display: 'flex',
+    alignItems: 'center',
+  },
 });
 
 const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
   const [event, setEvent] = useState({});
   const iframeRef = useRef(null);
   const theme = useTheme();
+  const dispatch = useDispatch();
   const [iframeContent, setIframeContent] = useState("");
+  const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
     const { startDate, endDate, subject, location, body, isAllDay } = storeEvent;
@@ -83,7 +93,14 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
       }
       setIframeContent(htmlMail.outerHTML);
     }
+
+    // Fetch event attachments
+    fetchAttachments(storeEvent);
   }, [storeEvent]);
+
+  const fetchAttachments = async (storeEvent) => {
+    setAttachments(await dispatch(fetchEventAttachments(storeEvent)));
+  }
 
   const { start, end, subject, location, attendees, hideAttendees } = event;
   return <DialogContent className={classes.content}>
@@ -124,6 +141,13 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
               />
             </div>
           </div>
+        </div>
+        <div className={classes.attachments}>
+          {Array.from(attachments || []).map(file =>
+            <AttachmentItem attachment={file} /> 
+          )}
+          <Typography>
+          </Typography>
         </div>
       </div>
       {/* TODO: Implement proper scrolling div */}
