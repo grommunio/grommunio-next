@@ -31,15 +31,15 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Attachment, Check, Close, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
+import { AccessAlarm, AttachFile, Check, Close, Download, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import { deleteEventData, patchEventData, postEventAttachments } from "../../actions/calendar";
-import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
+import { deleteEventData, fetchEventAttachments, patchEventData, postEventAttachments } from "../../actions/calendar";
+import { downloadBase64Content, gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeDispatch, useTypeSelector } from "../../store";
 import AttendeeAutocomplete from "../AttendeeAutocomplete";
 import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../constants";
-import { BodyType, Contact, DateTimeTimeZone, EmailAddress, Event, NullableOption, ResponseStatus } from "microsoft-graph";
+import { Attachment, BodyType, Contact, DateTimeTimeZone, EmailAddress, Event, FileAttachment, NullableOption, ResponseStatus } from "microsoft-graph";
 import { ExtendedEvent } from "../../types/calendar";
 import { Moment } from "moment";
 
@@ -119,9 +119,13 @@ const styles = {
     marginBottom: 16,
   },
   attachments: {
-    marginLeft: 42,
+    marginTop: 8,
+    marginLeft: 24,
     display: 'flex',
     alignItems: 'center',
+  },
+  attachment: {
+    cursor: 'pointer',
   }
 }
 
@@ -164,6 +168,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteAnchorEl, setDeleteAnchorEl] = useState<null | HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   // handles file upload
   const handleUploadConfirm = (e: ChangeEvent<HTMLInputElement>) => {
@@ -209,6 +214,9 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
     // Reminder
     const reminder = isReminderOn ? reminderMinutesBeforeStart : -1;
     setReminder(reminder?.toString() || "15");
+
+    // Fetch event attachments
+    fetchAttachments(storeEvent);
   }, [storeEvent]);
 
   useEffect(() => {
@@ -216,6 +224,10 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
       setSelectedCalendar(calendars[0]?.id || "");
     }
   }, [calendars]);
+
+  const fetchAttachments = async (storeEvent: Event) => {
+    setAttachments(await dispatch(fetchEventAttachments(storeEvent)));
+  }
 
   const formatEventForRequest = (allEvents: boolean) => {
     const { start, end, location } = event;
@@ -314,6 +326,10 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
   const handleDeleteMenu = (open: boolean) => (event: React.MouseEvent<HTMLElement>) => {
     setDeleteAnchorEl(open ? event.currentTarget : null);
   };
+
+  const handleDownload = (attachment: FileAttachment) => () => {
+    downloadBase64Content(attachment);
+  }
 
   return <div className={classes.root}>
     <Paper className={classes.topbar}>
@@ -588,8 +604,19 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
           </div>
           <div className={classes.attachments}>
             <IconButton onClick={handleUpload}>
-              <Attachment />
+              <AttachFile />
             </IconButton>
+            {Array.from(attachments || []).map(file =>
+              <span
+                style={{ cursor: 'pointer', padding: 4, margin: 4, border: "1px solid grey", display: 'flex' }}
+                onClick={handleDownload(file)}
+              >
+                <Typography>{file.name}</Typography>
+                <Download color="primary" />
+              </span>  
+            )}
+            <Typography>
+            </Typography>
           </div>
         </div>
       </DialogContent>

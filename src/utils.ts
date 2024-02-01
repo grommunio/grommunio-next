@@ -4,7 +4,7 @@
 import moment, { Moment } from 'moment-timezone';
 import * as DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
-import { Contact, DateTimeTimeZone, NullableOption, Recipient } from "microsoft-graph";
+import { Contact, DateTimeTimeZone, FileAttachment, NullableOption, Recipient } from "microsoft-graph";
 
 export type URLParams = {
   [index: string]: string;
@@ -220,3 +220,10 @@ export const fileToBase64 = (file: File): Promise<string> => new Promise((resolv
   reader.onload = () => resolve(reader.result as string);
   reader.onerror = reject;
 });
+
+export const downloadBase64Content = (attachment: FileAttachment) => {
+  const a = document.createElement("a");
+  a.href = `data:${attachment.contentType};base64,${attachment.contentBytes}`; 
+  a.download = attachment.name || "attachment";
+  a.click();
+}

@@ -83,6 +83,14 @@ export async function getEvents(calendarId?: string | undefined): Promise<Event[
   return response.value;
 }
 
+export async function eventAttachments(event: Event): Promise<Attachment[]> {
+  const response: PageCollection = await graphClient!
+    .api(`/me/events/${event.id}/attachments`)
+    .top(100)
+    .get();
+  return response.value;
+}
+
 export async function getRecurringEventInstances(event: Event, calendarId?: string | undefined): Promise<Event[]> {
   let endDate = event.recurrence?.range?.endDate;
   const start = moment(event.start?.dateTime);

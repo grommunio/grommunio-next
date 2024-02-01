@@ -13,7 +13,8 @@ import {
   getEvents,
   respondToEvent,
   getRecurringEventInstances,
-  uploadAttachment
+  uploadAttachment,
+  eventAttachments
 } from "../api/calendar";
 import {
   FETCH_EVENTS_DATA,
@@ -61,6 +62,10 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
       return false;
     }
   }
+}
+
+export function fetchEventAttachments(event: Event) {
+  return defaultFetchHandler(eventAttachments, null, event);
 }
 
 export function postEventData(event: Event, calendar: string | undefined) {
