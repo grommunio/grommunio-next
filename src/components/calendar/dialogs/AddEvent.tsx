@@ -1,4 +1,4 @@
-import { ChangeEvent, SetStateAction, useEffect, useRef, useState } from "react";
+import { ChangeEvent, MouseEvent, SetStateAction, useEffect, useRef, useState } from "react";
 import {
   Button,
   TextField,
@@ -10,6 +10,7 @@ import {
   ClickAwayListener,
   Paper,
   ListItemIcon,
+  Typography,
 } from "@mui/material";
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
@@ -24,9 +25,9 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Check, Close, EventNote, FiberManualRecord, Repeat, Tune } from "@mui/icons-material";
+import { AccessAlarm, AttachFile, Check, Close, EventNote, FiberManualRecord, Repeat, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import { postEventData } from "../../../actions/calendar";
+import { postEventAttachments, postEventData } from "../../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../../utils";
 import { useAppContext } from "../../../azure/AppContext";
 import AttendeeAutocomplete from "../../AttendeeAutocomplete";
@@ -112,6 +113,11 @@ const styles = {
     flex: 1,
     padding: 4,
     marginBottom: 16,
+  },
+  attachments: {
+    marginLeft: 42,
+    display: 'flex',
+    alignItems: 'center',
   }
 }
 
@@ -136,6 +142,18 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
   const [dirty, setDirty]= useState(false);
   const [recurrenceDialog, setRecurrenceDialog] = useState(false);
   const [reminder, setReminder] = useState("15");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<FileList>();
+
+  // handles file upload
+  const handleUploadConfirm = (e: ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files) setFiles(e.target.files);
+  };
+
+  const handleUpload = (e: MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    inputRef.current?.click();
+  };
 
   useEffect(() => {
     const { start } = scheduler.state as any;
@@ -216,7 +234,11 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
   const handleAdd = () => {
     const data = formatEventForRequest();
     dispatch(postEventData(data, selectedCalendar))
-      .then(scheduler.close);
+      .then(async event => {
+        if(files?.length) await dispatch(postEventAttachments(event, files));
+        scheduler.close()
+      });
+    if(inputRef.current) inputRef.current.value = "";
   }
 
   const handleAutocomplete = (e: ChangeEvent<HTMLInputElement>, newVal: SetStateAction<never[]>) => {
@@ -490,12 +512,26 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
             onInit={(evt, editor) => editorRef.current = editor}
           />
         </div>
+        <div className={classes.attachments}>
+          <IconButton onClick={handleUpload}>
+            <AttachFile />
+          </IconButton>
+          <Typography>{Array.from(files || []).map(file => file.name).join(", ")}</Typography>
+        </div>
       </div>
       <RecurrenceDialog
         open={recurrenceDialog}
         handleClose={handleRecurrence(false)}
         event={event}
         setEvent={setEvent}
+      />
+      <input
+        accept={"application/pdf"}
+        hidden
+        type="file"
+        multiple
+        ref={inputRef}
+        onChange={handleUploadConfirm}
       />
     </div>
   </ClickAwayListener>
