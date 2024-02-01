@@ -12,7 +12,8 @@ import {
   deleteUserCalendar,
   getEvents,
   respondToEvent,
-  getRecurringEventInstances
+  getRecurringEventInstances,
+  uploadAttachment
 } from "../api/calendar";
 import {
   FETCH_EVENTS_DATA,
@@ -32,6 +33,7 @@ import {
 } from "./defaults";
 import { pushAlertStack } from "./alerts";
 import { EventReponseType } from "../types/calendar";
+import { fileToBase64 } from "../utils";
 
 export function fetchEventsData(calendar?: Calendar | undefined) {
   return async (dispatch: any) => {
@@ -63,6 +65,24 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
 
 export function postEventData(event: Event, calendar: string | undefined) {
   return defaultPostHandler(postEvent, POST_EVENT_DATA, event, calendar)
+}
+
+export function postEventAttachments(event: Event, attachments: FileList | []) {
+  return async (dispatch: any) => {
+    try {
+      for(let i = 0; i < attachments.length; i++) {
+        const attachmentData = {
+          '@odata.type': '#microsoft.graph.fileAttachment',
+          name: attachments[i].name,
+          contentBytes: (await fileToBase64(attachments[i])).split("base64,")[1],
+        }
+        await uploadAttachment(event.id || "", attachmentData);
+      }
+    } catch (error) {
+      await dispatch(pushAlertStack({ message: (error as any)?.message || "", severity: "error" }));
+      return false;
+    }
+  }
 }
 
 export function patchEventData(event: Event) {

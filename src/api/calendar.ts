@@ -12,7 +12,7 @@ import {
 import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
-import {  Event } from "microsoft-graph";
+import {  Attachment, Event } from "microsoft-graph";
 import { graphClient } from "./utils";
 import { EventReponseType } from "../types/calendar";
 import moment from "moment";
@@ -155,4 +155,8 @@ export async function getEventFromEventMessage(eventMsgId: string) {
   return await graphClient!.api(`/me/messages/${eventMsgId}`)
     .expand("microsoft.graph.eventMessage/Event")
     .get();
+}
+
+export async function uploadAttachment(eventId: string, attachment: Attachment): Promise<Event> {
+  return await graphClient!.api(`/me/events/${eventId}/attachments`).post(attachment);
 }

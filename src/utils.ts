@@ -213,3 +213,10 @@ export function getUserTimezone() {
 export function capitalizeFirstLetter(input: string) {
   return input.charAt(0).toUpperCase() + input.slice(1);
 }
+
+export const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result as string);
+  reader.onerror = reject;
+});

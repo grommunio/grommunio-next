@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import {
   Button,
   DialogContent,
@@ -31,9 +31,9 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
-import { AccessAlarm, Check, Close, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
+import { AccessAlarm, Attachment, Check, Close, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import { deleteEventData, patchEventData } from "../../actions/calendar";
+import { deleteEventData, patchEventData, postEventAttachments } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
 import { useTypeDispatch, useTypeSelector } from "../../store";
@@ -117,6 +117,11 @@ const styles = {
     flex: 1,
     padding: 4,
     marginBottom: 16,
+  },
+  attachments: {
+    marginLeft: 42,
+    display: 'flex',
+    alignItems: 'center',
   }
 }
 
@@ -158,6 +163,18 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
   const [reminder, setReminder] = useState("15");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteAnchorEl, setDeleteAnchorEl] = useState<null | HTMLElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // handles file upload
+  const handleUploadConfirm = (e: ChangeEvent<HTMLInputElement>) => {
+    dispatch(postEventAttachments(event, e.target.files || []));
+    if(inputRef.current) inputRef.current.value = "";
+  };
+
+  const handleUpload = (e: MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    inputRef.current?.click();
+  };
 
   useEffect(() => {
     const { id, seriesMasterId, subject, startDate, endDate, location, body, isAllDay, attendees, responseRequested,
@@ -569,6 +586,11 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
               onInit={(evt, editor) => editorRef.current = editor}
             />
           </div>
+          <div className={classes.attachments}>
+            <IconButton onClick={handleUpload}>
+              <Attachment />
+            </IconButton>
+          </div>
         </div>
       </DialogContent>
       {event.attendees?.length! > 0 && <div className={classes.attendees}>
@@ -615,6 +637,14 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
         </List>
       </div>}
     </Grid>
+    <input
+      accept={"application/pdf"}
+      hidden
+      type="file"
+      multiple
+      ref={inputRef}
+      onChange={handleUploadConfirm}
+    />
   </div>
 }
 
