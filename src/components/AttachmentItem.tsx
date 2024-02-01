@@ -1,6 +1,6 @@
 import { Download } from "@mui/icons-material";
 import { FileAttachment } from "microsoft-graph"
-import { downloadBase64Content } from "../utils";
+import { downloadBase64Content, readableBytesFormat } from "../utils";
 import { Typography } from "@mui/material";
 
 type AttachmentItemT = {
@@ -18,8 +18,18 @@ const AttachmentItem = ({ attachment, ...props }: AttachmentItemT) => {
     onClick={handleDownload}
     {...props}
   >
-    <Typography style={{ marginRight: 4 }}>{attachment.name}</Typography>
-    <Download color="primary" />
+    <span>
+      <Typography style={{ marginRight: 4 }}>{attachment.name}</Typography>
+      <Typography
+        style={{ marginRight: 4 }}
+        variant="caption"
+      >
+        {readableBytesFormat(attachment.size || 0)}
+      </Typography>
+    </span>
+    <span style={{ display: 'flex', alignItems: 'center' }}>
+      <Download color="primary" />
+    </span>
   </span> 
 }
 

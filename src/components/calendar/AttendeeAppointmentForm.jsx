@@ -143,8 +143,8 @@ const AttendeeAppointmentForm = ({ classes, event: storeEvent, onClose }) => {
           </div>
         </div>
         <div className={classes.attachments}>
-          {Array.from(attachments || []).map(file =>
-            <AttachmentItem attachment={file} /> 
+          {Array.from(attachments || []).map((file, key) =>
+            <AttachmentItem key={key} attachment={file} /> 
           )}
           <Typography>
           </Typography>

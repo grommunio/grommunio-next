@@ -227,3 +227,13 @@ export const downloadBase64Content = (attachment: FileAttachment) => {
   a.download = attachment.name || "attachment";
   a.click();
 }
+
+export const readableBytesFormat = (bytes: number) => {
+  let result = bytes;
+  let counter = 0;
+  while(result > 1000) {
+    result /= 1000;
+    counter++;
+  }
+  return result.toFixed(1) + " kMGT"[counter] + "b";
+}

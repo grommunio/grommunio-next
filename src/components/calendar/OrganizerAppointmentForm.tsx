@@ -600,8 +600,8 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
             <IconButton onClick={handleUpload}>
               <AttachFile />
             </IconButton>
-            {Array.from(attachments || []).map(file =>
-              <AttachmentItem attachment={file} />
+            {Array.from(attachments || []).map((file, key) =>
+              <AttachmentItem key={key} attachment={file} />
             )}
             <Typography>
             </Typography>
