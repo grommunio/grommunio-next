@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { MouseEvent, useRef } from 'react';
+import { ChangeEvent, MouseEvent, useRef, useState } from 'react';
 import { withStyles } from '@mui/styles';
-import { Paper } from '@mui/material';
+import { IconButton, Paper, Typography } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { postMessage } from '../api/messages';
 import { Message } from 'microsoft-graph';
 import { useTranslation } from 'react-i18next';
 import GABAutocompleteTextfields from './NewMessageHeader';
 import { purify } from '../utils';
+import { AttachFile } from '@mui/icons-material';
 
 
 const styles: any = () => ({
@@ -24,6 +25,10 @@ const styles: any = () => ({
     flexDirection: 'column',
     padding: 16,
   },
+  attachments: {
+    display: 'flex',
+    alignItems: 'center',
+  }
 });
 
 type MessagesProps = {
@@ -37,6 +42,8 @@ type MessagesProps = {
 function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDraftClose, initialState }: MessagesProps) {
   const { i18n } = useTranslation();
   const editorRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<FileList>();
 
   const submitMessage = (message: Message, send: boolean) => {
     const finalMessage: Message = {
@@ -46,9 +53,19 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
         content: editorRef.current ? purify(editorRef.current.getContent()) : '',
       },
     }
-    postMessage(finalMessage, send)
+    postMessage(finalMessage, send, files || [])
       .then(handleDraftClose);
   }
+
+  // handles file upload
+  const handleUploadConfirm = (e: ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files) setFiles(e.target.files);
+  };
+
+  const handleUpload = (e: MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    inputRef.current?.click();
+  };
 
   return (
     <div className={classes.content}>
@@ -60,6 +77,12 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
           submit={submitMessage}
           handleDraftClose={handleDraftClose}
         />
+        <div className={classes.attachments}>
+          <IconButton onClick={handleUpload}>
+            <AttachFile />
+          </IconButton>
+          <Typography>{Array.from(files || []).map(file => file.name).join(", ")}</Typography>
+        </div>
         <Editor
           tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
           onInit={(evt, editor) => editorRef.current = editor}
@@ -71,6 +94,14 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
           }}
         />
       </Paper>
+      <input
+        accept={"application/pdf"}
+        hidden
+        type="file"
+        multiple
+        ref={inputRef}
+        onChange={handleUploadConfirm}
+      />
     </div>
   );
 }

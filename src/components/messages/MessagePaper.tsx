@@ -4,13 +4,16 @@
 import { Forward, Print, Reply, ReplyAll } from "@mui/icons-material";
 import { Avatar, IconButton, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import { withStyles } from "@mui/styles";
-import { EventMessage, Message } from "microsoft-graph";
+import { Attachment, EventMessage, Message } from "microsoft-graph";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react"; 
 import { buildEmailPrintView, convertHtmlMailToDarkmode } from "../../htmlUtils";
 import { purify } from "../../utils";
 import MeetingInfo from "./MeetingInfo";
 import MeetingCancelled from "./MeetingCancelled";
+import AttachmentItem from "../AttachmentItem";
+import { useTypeDispatch } from "../../store";
+import { fetchMessageAttachments } from "../../actions/messages";
 
 const styles: any = {
   root: {
@@ -44,6 +47,11 @@ const styles: any = {
     textDecoration: "underline",
     cursor: 'pointer',
   },
+  attachments: {
+    marginTop: 8,
+    display: 'flex',
+    alignItems: 'center',
+  },
 }
 
 type MessageProps = {
@@ -59,6 +67,8 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
   const iframeRef = useRef(null);
   const [iframeContent, setIframeContent] = useState<string>("");
   const [showOriginal, setShowOriginal] = useState<boolean>(false);
+  const dispatch = useTypeDispatch();
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   useEffect(() => {
     const cur = iframeRef.current as HTMLIFrameElement | null;
@@ -76,10 +86,17 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
 
   useEffect(() => {
     setShowOriginal(false);
+
+    // Fetch event attachments
+    fetchAttachments();
   }, [selectedMsg]);
 
   const handlePrintMail = () => {
     buildEmailPrintView(iframeContent, selectedMsg);
+  }
+
+  const fetchAttachments = async () => {
+    if(selectedMsg) setAttachments(await dispatch(fetchMessageAttachments(selectedMsg)));
   }
 
   const names = selectedMsg?.sender?.emailAddress?.name?.split(" ") || [" ", " "];
@@ -101,6 +118,13 @@ function MessagePaper({ classes, handleForward, handleReply, selectedMsg }: Mess
           <Typography variant="body1">
             {t("Cc")}: {selectedMsg.ccRecipients?.map(recip => recip.emailAddress?.address).join(", ")}
           </Typography>
+          <div className={classes.attachments}>
+            {Array.from(attachments || []).map((file, key) =>
+              <AttachmentItem key={key} attachment={file} />
+            )}
+            <Typography>
+            </Typography>
+          </div>
         </div>
         <div id="mailActionsContainer" className={classes.mailActionsContainer}>
           <Tooltip title={t("Print")} placement="top">

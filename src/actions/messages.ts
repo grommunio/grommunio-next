@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { MailFolder, Message } from "microsoft-graph";
-import { copyMessage, deleteMessage, getUserMessages, mailCategories, moveMessage, newMessages, patchMessage, postMailCategory } from "../api/messages";
+import { copyMessage, deleteMessage, getUserMessages, mailCategories, messageAttachments, moveMessage, newMessages, patchMessage, postMailCategory } from "../api/messages";
 import { AppContext } from "../azure/AppContext";
 import { DELETE_MESSAGE_DATA, FETCH_MAILS_DATA, FETCH_MESSAGE_CATEGORIES, PATCH_MESSAGE_DATA, POST_MESSAGE_CATEGORY,
   NEW_MESSAGE_RECEIVED, PATCH_BADGE_COUNT } from "./types";
@@ -30,6 +30,10 @@ export function patchMessageData(message: Message, specificProps?: any, mailFold
       return false;
     }
   };
+}
+
+export function fetchMessageAttachments(message: Message) {
+  return defaultFetchHandler(messageAttachments, null, message);
 }
 
 export function deleteMessageData(messages: Array<Message>, force?: boolean) {
