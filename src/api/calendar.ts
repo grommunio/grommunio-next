@@ -5,75 +5,12 @@
 
 // <GetUserSnippet>
 import {
-  GraphRequestOptions,
   PageCollection,
-  PageIterator,
 } from "@microsoft/microsoft-graph-client";
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
-import { startOfMonth, endOfMonth } from "date-fns";
-import { zonedTimeToUtc } from "date-fns-tz";
 import {  Attachment, Event } from "microsoft-graph";
 import { graphClient } from "./utils";
 import { EventReponseType } from "../types/calendar";
 import moment from "moment";
-
-// <GetUserWeekCalendarSnippet>
-export async function getUserWeekCalendar(
-  authProvider: AuthCodeMSALBrowserAuthenticationProvider,
-  timeZone: string,
-  id?: string
-): Promise<Event[]> {
-  // Generate startDateTime and endDateTime query params
-  // to display a 7-day window
-  const now = new Date();
-  const startDateTime = zonedTimeToUtc(
-    startOfMonth(now),
-    timeZone
-  ).toISOString();
-  const endDateTime = zonedTimeToUtc(endOfMonth(now), timeZone).toISOString();
-
-  // GET /me/calendarview?startDateTime=''&endDateTime=''
-  // &$select=subject,organizer,start,end
-  // &$orderby=start/dateTime
-  // &$top=50
-
-  const response: PageCollection = await graphClient!
-    .api(id ? `/me/calendars/${id}/calendarview` : `/me/calendarview`)
-    .header("Prefer", `outlook.timezone="${timeZone}"`)
-    .query({ startDateTime: startDateTime, endDateTime: endDateTime })
-    .orderby("start/dateTime")
-    .top(25)
-    .get();
-
-  if (response["@odata.nextLink"]) {
-    // Presence of the nextLink property indicates more results are available
-    // Use a page iterator to get all results
-    const events: Event[] = [];
-
-    // Must include the time zone header in page
-    // requests too
-    const options: GraphRequestOptions = {
-      headers: { Prefer: `outlook.timezone="${timeZone}"` },
-    };
-
-    const pageIterator = new PageIterator(
-      graphClient!,
-      response,
-      (event) => {
-        events.push(event);
-        return true;
-      },
-      options
-    );
-
-    await pageIterator.iterate();
-
-    return events;
-  } else {
-    return response.value;
-  }
-}
-// </GetUserWeekCalendarSnippet>
 
 export async function getEvents(calendarId?: string | undefined): Promise<Event[]> {
   const response: PageCollection = await graphClient!

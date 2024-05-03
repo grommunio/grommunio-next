@@ -13,7 +13,6 @@ import {
 import LocationOn from "@mui/icons-material/LocationOn";
 import Notes from "@mui/icons-material/Notes";
 import Create from "@mui/icons-material/Create";
-import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
 import { AccessTime, AccountCircle, Close } from "@mui/icons-material";
 import { purify, toReadableTimeInTimezone } from "../../utils";

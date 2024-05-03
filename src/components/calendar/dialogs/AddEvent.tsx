@@ -23,7 +23,6 @@ import { Skypeicon } from "../svgicon";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
-import "react-quill/dist/quill.snow.css";
 import { withStyles } from '@mui/styles';
 import { AccessAlarm, AttachFile, Check, Close, EventNote, FiberManualRecord, Repeat, Tune } from "@mui/icons-material";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
