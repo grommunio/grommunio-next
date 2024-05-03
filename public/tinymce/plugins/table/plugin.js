@@ -1,5 +1,5 @@
 /**
- * TinyMCE version 6.3.1 (2022-12-06)
+ * TinyMCE version 7.0.1 (2024-04-10)
  */
 
 (function () {
@@ -199,6 +199,14 @@
     };
     const has = (obj, key) => hasOwnProperty.call(obj, key);
     const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] !== undefined && obj[key] !== null;
+    const isEmpty$1 = r => {
+      for (const x in r) {
+        if (hasOwnProperty.call(r, x)) {
+          return false;
+        }
+      }
+      return true;
+    };
 
     const nativeIndexOf = Array.prototype.indexOf;
     const nativePush = Array.prototype.push;
@@ -331,6 +339,12 @@
       return Optional.none();
     };
 
+    const COMMENT = 8;
+    const DOCUMENT = 9;
+    const DOCUMENT_FRAGMENT = 11;
+    const ELEMENT = 1;
+    const TEXT = 3;
+
     const fromHtml = (html, scope) => {
       const doc = scope || document;
       const div = doc.createElement('div');
@@ -367,27 +381,6 @@
       fromPoint
     };
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
-
-    const COMMENT = 8;
-    const DOCUMENT = 9;
-    const DOCUMENT_FRAGMENT = 11;
-    const ELEMENT = 1;
-    const TEXT = 3;
-
-    const name = element => {
-      const r = element.dom.nodeName;
-      return r.toLowerCase();
-    };
-    const type = element => element.dom.nodeType;
-    const isType = t => element => type(element) === t;
-    const isComment = element => type(element) === COMMENT || name(element) === '#comment';
-    const isElement = isType(ELEMENT);
-    const isText = isType(TEXT);
-    const isDocument = isType(DOCUMENT);
-    const isDocumentFragment = isType(DOCUMENT_FRAGMENT);
-    const isTag = tag => e => isElement(e) && name(e) === tag;
-
     const is$2 = (element, selector) => {
       const dom = element.dom;
       if (dom.nodeType !== ELEMENT) {
@@ -419,6 +412,21 @@
 
     const eq = (e1, e2) => e1.dom === e2.dom;
     const is$1 = is$2;
+
+    typeof window !== 'undefined' ? window : Function('return this;')();
+
+    const name = element => {
+      const r = element.dom.nodeName;
+      return r.toLowerCase();
+    };
+    const type = element => element.dom.nodeType;
+    const isType = t => element => type(element) === t;
+    const isComment = element => type(element) === COMMENT || name(element) === '#comment';
+    const isElement = isType(ELEMENT);
+    const isText = isType(TEXT);
+    const isDocument = isType(DOCUMENT);
+    const isDocumentFragment = isType(DOCUMENT_FRAGMENT);
+    const isTag = tag => e => isElement(e) && name(e) === tag;
 
     const owner = element => SugarElement.fromDom(element.dom.ownerDocument);
     const documentOrOwner = dos => isDocument(dos) ? dos : owner(dos);
@@ -466,21 +474,6 @@
       return getShadowRoot(SugarElement.fromDom(dom)).fold(() => doc.body.contains(dom), compose1(inBody, getShadowHost));
     };
 
-    const children$2 = (scope, predicate) => filter(children$3(scope), predicate);
-    const descendants$1 = (scope, predicate) => {
-      let result = [];
-      each(children$3(scope), x => {
-        if (predicate(x)) {
-          result = result.concat([x]);
-        }
-        result = result.concat(descendants$1(x, predicate));
-      });
-      return result;
-    };
-
-    const children$1 = (scope, selector) => children$2(scope, e => is$2(e, selector));
-    const descendants = (scope, selector) => all$1(selector, scope);
-
     var ClosestOrAncestor = (is, ancestor, scope, a, isRoot) => {
       if (is(scope, a)) {
         return Optional.some(scope);
@@ -505,6 +498,10 @@
       }
       return Optional.none();
     };
+    const closest$2 = (scope, predicate, isRoot) => {
+      const is = (s, test) => test(s);
+      return ClosestOrAncestor(is, ancestor$1, scope, predicate, isRoot);
+    };
     const child$2 = (scope, predicate) => {
       const pred = node => predicate(SugarElement.fromDom(node));
       const result = find(scope.dom.childNodes, pred);
@@ -514,10 +511,44 @@
     const ancestor = (scope, selector, isRoot) => ancestor$1(scope, e => is$2(e, selector), isRoot);
     const child$1 = (scope, selector) => child$2(scope, e => is$2(e, selector));
     const descendant = (scope, selector) => one(selector, scope);
-    const closest = (scope, selector, isRoot) => {
+    const closest$1 = (scope, selector, isRoot) => {
       const is = (element, selector) => is$2(element, selector);
       return ClosestOrAncestor(is, ancestor, scope, selector, isRoot);
     };
+
+    const closest = target => closest$1(target, '[contenteditable]');
+    const isEditable = (element, assumeEditable = false) => {
+      if (inBody(element)) {
+        return element.dom.isContentEditable;
+      } else {
+        return closest(element).fold(constant(assumeEditable), editable => getRaw$1(editable) === 'true');
+      }
+    };
+    const getRaw$1 = element => element.dom.contentEditable;
+
+    const getNodeName = elm => elm.nodeName.toLowerCase();
+    const getBody = editor => SugarElement.fromDom(editor.getBody());
+    const getIsRoot = editor => element => eq(element, getBody(editor));
+    const removePxSuffix = size => size ? size.replace(/px$/, '') : '';
+    const addPxSuffix = size => /^\d+(\.\d+)?$/.test(size) ? size + 'px' : size;
+    const getSelectionStart = editor => SugarElement.fromDom(editor.selection.getStart());
+    const getSelectionEnd = editor => SugarElement.fromDom(editor.selection.getEnd());
+    const isInEditableContext = cell => closest$2(cell, isTag('table')).forall(isEditable);
+
+    const children$2 = (scope, predicate) => filter(children$3(scope), predicate);
+    const descendants$1 = (scope, predicate) => {
+      let result = [];
+      each(children$3(scope), x => {
+        if (predicate(x)) {
+          result = result.concat([x]);
+        }
+        result = result.concat(descendants$1(x, predicate));
+      });
+      return result;
+    };
+
+    const children$1 = (scope, selector) => children$2(scope, e => is$2(e, selector));
+    const descendants = (scope, selector) => all$1(selector, scope);
 
     const rawSet = (dom, key, value) => {
       if (isString(value) || isBoolean(value) || isNumber(value)) {
@@ -710,7 +741,7 @@
         return bind(columnGroups(ancestor), columnGroup => children$1(columnGroup, 'col'));
       }
     };
-    const table = (element, isRoot) => closest(element, 'table', isRoot);
+    const table = (element, isRoot) => closest$1(element, 'table', isRoot);
     const rows = ancestor => firstLayer(ancestor, 'tr');
     const columnGroups = ancestor => table(ancestor).fold(constant([]), table => children$1(table, 'colgroup'));
 
@@ -1062,14 +1093,6 @@
       return options.isSet('table_default_attributes') ? defaultAttributes : determineDefaultAttributes(editor, defaultAttributes);
     };
 
-    const getNodeName = elm => elm.nodeName.toLowerCase();
-    const getBody = editor => SugarElement.fromDom(editor.getBody());
-    const getIsRoot = editor => element => eq(element, getBody(editor));
-    const removePxSuffix = size => size ? size.replace(/px$/, '') : '';
-    const addPxSuffix = size => /^\d+(\.\d+)?$/.test(size) ? size + 'px' : size;
-    const getSelectionStart = editor => SugarElement.fromDom(editor.selection.getStart());
-    const getSelectionEnd = editor => SugarElement.fromDom(editor.selection.getEnd());
-
     const isWithin = (bounds, detail) => {
       return detail.column >= bounds.startCol && detail.column + detail.colspan - 1 <= bounds.finishCol && detail.row >= bounds.startRow && detail.row + detail.rowspan - 1 <= bounds.finishRow;
     };
@@ -1277,7 +1300,7 @@
       return {
         up: constant({
           selector: ancestor,
-          closest: closest,
+          closest: closest$1,
           predicate: ancestor$1,
           all: parents
         }),
@@ -1435,7 +1458,7 @@
     const getSelectionFromSelector = selector => (initCell, isRoot) => {
       const cellName = name(initCell);
       const cell = cellName === 'col' || cellName === 'colgroup' ? getSelectionCellFallback(initCell) : initCell;
-      return closest(cell, selector, isRoot);
+      return closest$1(cell, selector, isRoot);
     };
     const getSelectionCellOrCaption = getSelectionFromSelector('th,td,caption');
     const getSelectionCell = getSelectionFromSelector('th,td');
@@ -1465,7 +1488,7 @@
       }
     ];
 
-    const hexColour = value => ({ value });
+    const hexColour = value => ({ value: normalizeHex(value) });
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
     const longformRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
     const isHexString = hex => shorthandRegex.test(hex) || longformRegex.test(hex);
@@ -1598,6 +1621,18 @@
         };
       }
     });
+    const buildClassList = classList => {
+      if (!classList.length) {
+        return Optional.none();
+      }
+      return Optional.some(buildListItems([
+        {
+          text: 'Select...',
+          value: 'mce-no-match'
+        },
+        ...classList
+      ]));
+    };
     const buildMenuItems = (editor, items, format, onAction) => map(items, item => {
       const text = item.text || item.title;
       if (isListGroup(item)) {
@@ -1659,28 +1694,17 @@
       editor.execCommand('mceTableColType', false, { type: newType });
     };
 
-    const getClassList$1 = editor => {
-      const classes = buildListItems(getCellClassList(editor));
-      if (classes.length > 0) {
-        return Optional.some({
-          name: 'class',
-          type: 'listbox',
-          label: 'Class',
-          items: classes
-        });
-      }
-      return Optional.none();
-    };
+    const getClassList$1 = editor => buildClassList(getCellClassList(editor)).map(items => ({
+      name: 'class',
+      type: 'listbox',
+      label: 'Class',
+      items
+    }));
     const children = [
       {
         name: 'width',
         type: 'input',
         label: 'Width'
-      },
-      {
-        name: 'height',
-        type: 'input',
-        label: 'Height'
       },
       {
         name: 'celltype',
@@ -2017,7 +2041,7 @@
             const comparisonValue = baseData[key];
             if (comparisonValue !== '' && key === itemKey) {
               if (comparisonValue !== itemValue) {
-                baseData[key] = '';
+                baseData[key] = key === 'class' ? 'mce-no-match' : '';
               }
             }
           });
@@ -2123,7 +2147,6 @@
       const getStyle = (element, style) => dom.getStyle(element, style) || dom.getAttrib(element, style);
       return {
         width: getStyle(colElm, 'width'),
-        height: getStyle(cell, 'height'),
         scope: dom.getAttrib(cell, 'scope'),
         celltype: getNodeName(cell),
         class: dom.getAttrib(cell, 'class', ''),
@@ -2146,11 +2169,8 @@
       if (shouldUpdate('scope')) {
         modifier.setAttrib('scope', data.scope);
       }
-      if (shouldUpdate('class')) {
+      if (shouldUpdate('class') && data.class !== 'mce-no-match') {
         modifier.setAttrib('class', data.class);
-      }
-      if (shouldUpdate('height')) {
-        modifier.setStyle('height', addPxSuffix(data.height));
       }
       if (shouldUpdate('width')) {
         colModifier.setStyle('width', addPxSuffix(data.width));
@@ -2274,18 +2294,12 @@
       });
     };
 
-    const getClassList = editor => {
-      const classes = buildListItems(getRowClassList(editor));
-      if (classes.length > 0) {
-        return Optional.some({
-          name: 'class',
-          type: 'listbox',
-          label: 'Class',
-          items: classes
-        });
-      }
-      return Optional.none();
-    };
+    const getClassList = editor => buildClassList(getRowClassList(editor)).map(items => ({
+      name: 'class',
+      type: 'listbox',
+      label: 'Class',
+      items
+    }));
     const formChildren = [
       {
         type: 'listbox',
@@ -2338,7 +2352,7 @@
     const getItems$1 = editor => formChildren.concat(getClassList(editor).toArray());
 
     const updateSimpleProps = (modifier, data, shouldUpdate) => {
-      if (shouldUpdate('class')) {
+      if (shouldUpdate('class') && data.class !== 'mce-no-match') {
         modifier.setAttrib('class', data.class);
       }
       if (shouldUpdate('height')) {
@@ -2360,10 +2374,16 @@
       const isSingleRow = rows.length === 1;
       const shouldOverrideCurrentValue = isSingleRow ? always : wasChanged;
       each(rows, rowElm => {
+        const rowCells = children$1(SugarElement.fromDom(rowElm), 'td,th');
         const modifier = DomModifier.normal(editor, rowElm);
         updateSimpleProps(modifier, data, shouldOverrideCurrentValue);
         if (hasAdvancedRowTab(editor)) {
           updateAdvancedProps(modifier, data, shouldOverrideCurrentValue);
+        }
+        if (wasChanged('height')) {
+          each(rowCells, cell => {
+            editor.dom.setStyle(cell.dom, 'height', null);
+          });
         }
         if (wasChanged('align')) {
           setAlign(editor, rowElm, data.align);
@@ -2528,8 +2548,8 @@
           ]
         }];
       const classListItem = classes.length > 0 ? [{
-          type: 'listbox',
           name: 'class',
+          type: 'listbox',
           label: 'Class',
           items: classes
         }] : [];
@@ -2551,45 +2571,62 @@
         }
       }
     };
-    const applyDataToElement = (editor, tableElm, data) => {
+    const applyDataToElement = (editor, tableElm, data, shouldApplyOnCell) => {
       const dom = editor.dom;
       const attrs = {};
       const styles = {};
-      if (!isUndefined(data.class)) {
+      const shouldStyleWithCss$1 = shouldStyleWithCss(editor);
+      const hasAdvancedTableTab$1 = hasAdvancedTableTab(editor);
+      const borderIsZero = parseFloat(data.border) === 0;
+      if (!isUndefined(data.class) && data.class !== 'mce-no-match') {
         attrs.class = data.class;
       }
       styles.height = addPxSuffix(data.height);
-      if (shouldStyleWithCss(editor)) {
+      if (shouldStyleWithCss$1) {
         styles.width = addPxSuffix(data.width);
       } else if (dom.getAttrib(tableElm, 'width')) {
         attrs.width = removePxSuffix(data.width);
       }
-      if (shouldStyleWithCss(editor)) {
-        styles['border-width'] = addPxSuffix(data.border);
+      if (shouldStyleWithCss$1) {
+        if (borderIsZero) {
+          attrs.border = 0;
+          styles['border-width'] = '';
+        } else {
+          styles['border-width'] = addPxSuffix(data.border);
+          attrs.border = 1;
+        }
         styles['border-spacing'] = addPxSuffix(data.cellspacing);
       } else {
-        attrs.border = data.border;
+        attrs.border = borderIsZero ? 0 : data.border;
         attrs.cellpadding = data.cellpadding;
         attrs.cellspacing = data.cellspacing;
       }
-      if (shouldStyleWithCss(editor) && tableElm.children) {
-        for (let i = 0; i < tableElm.children.length; i++) {
-          styleTDTH(dom, tableElm.children[i], {
-            'border-width': addPxSuffix(data.border),
-            'padding': addPxSuffix(data.cellpadding)
-          });
-          if (hasAdvancedTableTab(editor)) {
-            styleTDTH(dom, tableElm.children[i], { 'border-color': data.bordercolor });
+      if (shouldStyleWithCss$1 && tableElm.children) {
+        const cellStyles = {};
+        if (borderIsZero) {
+          cellStyles['border-width'] = '';
+        } else if (shouldApplyOnCell.border) {
+          cellStyles['border-width'] = addPxSuffix(data.border);
+        }
+        if (shouldApplyOnCell.cellpadding) {
+          cellStyles.padding = addPxSuffix(data.cellpadding);
+        }
+        if (hasAdvancedTableTab$1 && shouldApplyOnCell.bordercolor) {
+          cellStyles['border-color'] = data.bordercolor;
+        }
+        if (!isEmpty$1(cellStyles)) {
+          for (let i = 0; i < tableElm.children.length; i++) {
+            styleTDTH(dom, tableElm.children[i], cellStyles);
           }
         }
       }
-      if (hasAdvancedTableTab(editor)) {
+      if (hasAdvancedTableTab$1) {
         const advData = data;
         styles['background-color'] = advData.backgroundcolor;
         styles['border-color'] = advData.bordercolor;
         styles['border-style'] = advData.borderstyle;
       }
-      attrs.style = dom.serializeStyle({
+      dom.setStyles(tableElm, {
         ...getDefaultStyles(editor),
         ...styles
       });
@@ -2603,9 +2640,6 @@
       const data = api.getData();
       const modifiedData = filter$1(data, (value, key) => oldData[key] !== value);
       api.close();
-      if (data.class === '') {
-        delete data.class;
-      }
       editor.undoManager.transact(() => {
         if (!tableElm) {
           const cols = toInt(data.cols).getOr(1);
@@ -2617,7 +2651,12 @@
           tableElm = getSelectionCell(getSelectionStart(editor), getIsRoot(editor)).bind(cell => table(cell, getIsRoot(editor))).map(table => table.dom).getOrDie();
         }
         if (size(modifiedData) > 0) {
-          applyDataToElement(editor, tableElm, data);
+          const applicableCellProperties = {
+            border: has(modifiedData, 'border'),
+            bordercolor: has(modifiedData, 'bordercolor'),
+            cellpadding: has(modifiedData, 'cellpadding')
+          };
+          applyDataToElement(editor, tableElm, data, applicableCellProperties);
           const captionElm = dom.select('caption', tableElm)[0];
           if (captionElm && !data.caption || !captionElm && data.caption) {
             editor.execCommand('mceTableToggleCaption');
@@ -2660,8 +2699,8 @@
           }
         }
       }
-      const classes = buildListItems(getTableClassList(editor));
-      if (classes.length > 0) {
+      const classes = buildClassList(getTableClassList(editor));
+      if (classes.isSome()) {
         if (data.class) {
           data.class = data.class.replace(/\s*mce\-item\-table\s*/g, '');
         }
@@ -2669,7 +2708,7 @@
       const generalPanel = {
         type: 'grid',
         columns: 2,
-        items: getItems(editor, classes, insertNewTable)
+        items: getItems(editor, classes.getOr([]), insertNewTable)
       };
       const nonAdvancedForm = () => ({
         type: 'panel',
@@ -2710,14 +2749,17 @@
     };
 
     const registerCommands = editor => {
+      const runAction = f => {
+        if (isInEditableContext(getSelectionStart(editor))) {
+          f();
+        }
+      };
       each$1({
         mceTableProps: curry(open, editor, false),
         mceTableRowProps: curry(open$1, editor),
-        mceTableCellProps: curry(open$2, editor)
-      }, (func, name) => editor.addCommand(name, () => func()));
-      editor.addCommand('mceInsertTableDialog', _ui => {
-        open(editor, true);
-      });
+        mceTableCellProps: curry(open$2, editor),
+        mceInsertTableDialog: curry(open, editor, true)
+      }, (func, name) => editor.addCommand(name, () => runAction(func)));
     };
 
     const child = (scope, selector) => child$1(scope, selector).isSome();
@@ -2812,13 +2854,13 @@
       const onSetup = (api, isDisabled) => setupHandler(() => targets.get().fold(() => {
         api.setEnabled(false);
       }, targets => {
-        api.setEnabled(!isDisabled(targets));
+        api.setEnabled(!isDisabled(targets) && editor.selection.isEditable());
       }));
       const onSetupWithToggle = (api, isDisabled, isActive) => setupHandler(() => targets.get().fold(() => {
         api.setEnabled(false);
         api.setActive(false);
       }, targets => {
-        api.setEnabled(!isDisabled(targets));
+        api.setEnabled(!isDisabled(targets) && editor.selection.isEditable());
         api.setActive(isActive(targets));
       }));
       const isDisabledFromLocked = lockedDisable => selectionDetails.exists(details => details.locked[lockedDisable]);
@@ -2870,10 +2912,21 @@
     const getRows = () => getData(tableTypeRow);
     const getColumns = () => getData(tableTypeColumn);
 
+    const onSetupEditable$1 = editor => api => {
+      const nodeChanged = () => {
+        api.setEnabled(editor.selection.isEditable());
+      };
+      editor.on('NodeChange', nodeChanged);
+      nodeChanged();
+      return () => {
+        editor.off('NodeChange', nodeChanged);
+      };
+    };
     const addButtons = (editor, selectionTargets) => {
       editor.ui.registry.addMenuButton('table', {
         tooltip: 'Table',
         icon: 'table',
+        onSetup: onSetupEditable$1(editor),
         fetch: callback => callback('inserttable | cell row column | advtablesort | tableprops deletetable')
       });
       const cmd = command => () => editor.execCommand(command);
@@ -3016,7 +3069,8 @@
       addButtonIfRegistered('tableinsertdialog', {
         tooltip: 'Insert table',
         command: 'mceInsertTableDialog',
-        icon: 'table'
+        icon: 'table',
+        onSetup: onSetupEditable$1(editor)
       });
       const tableClassList = filterNoneItem(getTableClassList(editor));
       if (tableClassList.length !== 0 && editor.queryCommandSupported('mceTableToggleClass')) {
@@ -3090,11 +3144,11 @@
       });
     };
     const addToolbars = editor => {
-      const isTable = table => editor.dom.is(table, 'table') && editor.getBody().contains(table);
+      const isEditableTable = table => editor.dom.is(table, 'table') && editor.getBody().contains(table) && editor.dom.isEditable(table.parentNode);
       const toolbar = getToolbar(editor);
       if (toolbar.length > 0) {
         editor.ui.registry.addContextToolbar('table', {
-          predicate: isTable,
+          predicate: isEditableTable,
           items: toolbar,
           scope: 'node',
           position: 'node'
@@ -3102,6 +3156,16 @@
       }
     };
 
+    const onSetupEditable = editor => api => {
+      const nodeChanged = () => {
+        api.setEnabled(editor.selection.isEditable());
+      };
+      editor.on('NodeChange', nodeChanged);
+      nodeChanged();
+      return () => {
+        editor.off('NodeChange', nodeChanged);
+      };
+    };
     const addMenuItems = (editor, selectionTargets) => {
       const cmd = command => () => editor.execCommand(command);
       const addMenuIfRegistered = (name, spec) => {
@@ -3247,7 +3311,8 @@
         editor.ui.registry.addMenuItem('inserttable', {
           text: 'Table',
           icon: 'table',
-          onAction: cmd('mceInsertTableDialog')
+          onAction: cmd('mceInsertTableDialog'),
+          onSetup: onSetupEditable(editor)
         });
       } else {
         editor.ui.registry.addNestedMenuItem('inserttable', {
@@ -3257,13 +3322,15 @@
               type: 'fancymenuitem',
               fancytype: 'inserttable',
               onAction: insertTableAction
-            }]
+            }],
+          onSetup: onSetupEditable(editor)
         });
       }
       editor.ui.registry.addMenuItem('inserttabledialog', {
         text: 'Insert table',
         icon: 'table',
-        onAction: cmd('mceInsertTableDialog')
+        onAction: cmd('mceInsertTableDialog'),
+        onSetup: onSetupEditable(editor)
       });
       addMenuIfRegistered('tableprops', {
         text: 'Table properties',
