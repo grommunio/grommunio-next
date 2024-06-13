@@ -6,7 +6,7 @@ import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-
 import config from '../azure/Config';
 
 
-export let graphClient: Client | undefined = undefined;
+let graphClient: Client | undefined = undefined;
 
 export function ensureClient(authProvider: AuthCodeMSALBrowserAuthenticationProvider) {
   if (!graphClient) {
@@ -16,5 +16,9 @@ export function ensureClient(authProvider: AuthCodeMSALBrowserAuthenticationProv
     });
   }
 
+  return graphClient;
+}
+
+export function getGraphClient() {
   return graphClient;
 }
