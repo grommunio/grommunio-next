@@ -99,7 +99,7 @@ function App(props) {
       i18n.changeLanguage(lang);
       dispatch(changeSettings("language", lang));
     }
-  }, []);
+  }, [authenticated]);
 
   const routesProps = {
     authenticated,
