@@ -8,19 +8,19 @@ import {
   PageCollection,
 } from "@microsoft/microsoft-graph-client";
 import {  Attachment, Event } from "microsoft-graph";
-import { getGraphClient } from "./utils";
+import { graphClient } from "./utils";
 import { EventReponseType } from "../types/calendar";
 import moment from "moment";
 
 export async function getEvents(calendarId?: string | undefined): Promise<Event[]> {
-  const response: PageCollection = await getGraphClient()?.api(calendarId ? `/me/calendars/${calendarId}/events` : "/me/events")
+  const response: PageCollection = await graphClient!.api(calendarId ? `/me/calendars/${calendarId}/events` : "/me/events")
     .top(100)
     .get();
   return response.value;
 }
 
 export async function eventAttachments(event: Event): Promise<Attachment[]> {
-  const response: PageCollection = await getGraphClient()?.api(`/me/events/${event.id}/attachments`)
+  const response: PageCollection = await graphClient!.api(`/me/events/${event.id}/attachments`)
     .top(100)
     .get();
   return response.value;
@@ -42,7 +42,7 @@ export async function getRecurringEventInstances(event: Event, calendarId?: stri
     endDate = clone.toISOString();
   }
 
-  const response: PageCollection = await getGraphClient()?.api((calendarId ?
+  const response: PageCollection = await graphClient!.api((calendarId ?
     `/me/calendars/${calendarId}/events` : "/me/events") + "/" + event.id + "/instances?" +
      `startDateTime=${event.start?.dateTime}&endDateTime=${endDate}`)
     .get();
@@ -53,19 +53,19 @@ export async function postEvent(newEvent: Event, calendarId: string | undefined)
   // POST /me/events
   // JSON representation of the new event is sent in the
   // request body
-  return await getGraphClient()?.api(calendarId ? `/me/calendars/${calendarId}/events` : "/me/events").post(newEvent);
+  return await graphClient!.api(calendarId ? `/me/calendars/${calendarId}/events` : "/me/events").post(newEvent);
 }
 
 export async function patchEvent(event: Event): Promise<Event> {
-  return await getGraphClient()?.api("/me/events/" + event.id).patch(event);
+  return await graphClient!.api("/me/events/" + event.id).patch(event);
 }
 
 export async function deleteEvent(event: string): Promise<Event> {
-  return await getGraphClient()?.api("/me/events/" + event).delete();
+  return await graphClient!.api("/me/events/" + event).delete();
 }
 
 export async function getUserCalendars(): Promise<Event[]> {
-  const response: PageCollection = await getGraphClient()?.api("/me/calendars")
+  const response: PageCollection = await graphClient!.api("/me/calendars")
     .get();
   return response.value;
 }
@@ -74,31 +74,31 @@ export async function patchUserCalendar(
   id?: string,
   calendar?: string
 ): Promise<Event[]> {
-  return await getGraphClient()?.api(`/me/calendars/${id}`).patch({
+  return await graphClient!.api(`/me/calendars/${id}`).patch({
     name: calendar,
   });
 }
 
 export async function createUserCalendar(calendarName: string): Promise<Event> {
-  return await getGraphClient()?.api("/me/calendars/").post({
+  return await graphClient!.api("/me/calendars/").post({
     name: calendarName,
   });
 }
 
 export async function deleteUserCalendar(id?: string): Promise<Event> {
-  return await getGraphClient()?.api(`/me/calendars/${id}`).delete();
+  return await graphClient!.api(`/me/calendars/${id}`).delete();
 }
 
 export async function respondToEvent(eventId: string, response: EventReponseType): Promise<Event> {
-  return await getGraphClient()?.api(`/me/events/${eventId}/${response}`).post(null);
+  return await graphClient!.api(`/me/events/${eventId}/${response}`).post(null);
 }
 
 export async function getEventFromEventMessage(eventMsgId: string) {
-  return await getGraphClient()?.api(`/me/messages/${eventMsgId}`)
+  return await graphClient!.api(`/me/messages/${eventMsgId}`)
     .expand("microsoft.graph.eventMessage/Event")
     .get();
 }
 
 export async function uploadAttachment(eventId: string, attachment: Attachment): Promise<Event> {
-  return await getGraphClient()?.api(`/me/events/${eventId}/attachments`).post(attachment);
+  return await graphClient!.api(`/me/events/${eventId}/attachments`).post(attachment);
 }

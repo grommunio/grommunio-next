@@ -2,13 +2,13 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import { MailFolder } from "microsoft-graph";
-import { getGraphClient } from "./utils";
+import { graphClient } from "./utils";
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 
 export async function getMailFolders(): Promise<PageCollection> {
   
   // Get toplevel folders
-  const response: PageCollection = await getGraphClient()?.api("/me/mailFolders")
+  const response: PageCollection = await graphClient!.api("/me/mailFolders")
     .top(50)  // TODO: This should be configurable
     .count()
     .get();
@@ -24,7 +24,7 @@ export async function getMailFolders(): Promise<PageCollection> {
 }
 
 export async function getChildFolders(parentFolderId: string): Promise<MailFolder[]> {
-  const response: PageCollection = await getGraphClient()?.api(`/me/mailFolders/${parentFolderId}/childFolders`)
+  const response: PageCollection = await graphClient!.api(`/me/mailFolders/${parentFolderId}/childFolders`)
     .top(50)  // TODO: This should be unlimited...probably needs more than 1 request if max count is exceeded
     .get();
   // Get recursive childFolders
@@ -38,7 +38,7 @@ export async function getChildFolders(parentFolderId: string): Promise<MailFolde
 
 export async function postMailFolder(folder: MailFolder, parentFolderId?: string): Promise<MailFolder> {
 
-  const response = await getGraphClient()?.api("/me/mailFolders" + (parentFolderId ? `/${parentFolderId}/childFolders` : ""))
+  const response = await graphClient!.api("/me/mailFolders" + (parentFolderId ? `/${parentFolderId}/childFolders` : ""))
     .post(folder);
 
   return response;

@@ -1,5 +1,5 @@
 import { Subscription } from "microsoft-graph";
-import { getGraphClient } from "./utils";
+import { graphClient } from "./utils";
 
 
 export async function postSubscription(): Promise<Subscription> {
@@ -11,7 +11,7 @@ export async function postSubscription(): Promise<Subscription> {
     expirationDateTime: '2023-11-20T18:23:45.9356913Z',
   };
 
-  const response = await getGraphClient()?.api('/subscriptions')
+  const response = await graphClient!.api('/subscriptions')
     .post(subscription);
 
   return response.value;

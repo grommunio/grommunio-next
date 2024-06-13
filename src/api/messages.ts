@@ -4,14 +4,14 @@
 import { PageCollection } from "@microsoft/microsoft-graph-client";
 import { Attachment, CategoryColor, MailFolder, Message } from "microsoft-graph";
 import { buildQuery, fileToBase64 } from "../utils";
-import { getGraphClient } from "./utils";
+import { graphClient } from "./utils";
 import { MessageCategory } from "../types/messages";
 import { SCROLL_ITEMS } from "../constants";
 
 export async function getUserMessages(folderid = 'inbox', params={}): Promise<PageCollection> {
   const url = buildQuery(`/me/mailFolders/${folderid}/messages`, params);
 
-  const response: PageCollection = await getGraphClient()?.api(url)
+  const response: PageCollection = await graphClient!.api(url)
     .top(SCROLL_ITEMS) // TODO: This limit will probably increased in the future, but is currently set for testing purposes
     .count()
     .get();
@@ -38,13 +38,13 @@ export async function postMessage(message: Message, send: boolean, filelist?: Fi
     attachments: attachments.length > 0 ? attachments : undefined,
   }
 
-  return await getGraphClient()?.api('/me/' + (send ? 'sendMail' : 'messages'))
+  return await graphClient!.api('/me/' + (send ? 'sendMail' : 'messages'))
     .post(send ? { message: finalMessage } : finalMessage);
 }
 
 export async function patchMessage(message: Message, specificProps: any, mailFolder?: MailFolder): Promise<Message | undefined> {
   
-  const response = await getGraphClient()?.api('/me/messages/'+ message.id)
+  const response = await graphClient!.api('/me/messages/'+ message.id)
     .patch(specificProps || message);
 
   return { ...response, mailFolder };
@@ -52,9 +52,9 @@ export async function patchMessage(message: Message, specificProps: any, mailFol
 
 export async function deleteMessage(id: string, force=false): Promise<string | undefined> {
   
-  const response = force ? await getGraphClient()?.api('/me/messages/'+ id) // Full delete
+  const response = force ? await graphClient!.api('/me/messages/'+ id) // Full delete
     .delete() :
-    await getGraphClient()?.api('/me/messages/'+ id + "/move") // Move to deleted items
+    await graphClient!.api('/me/messages/'+ id + "/move") // Move to deleted items
       .post({ destinationId: "deleteditems" });
 
   return response?.message;
@@ -62,7 +62,7 @@ export async function deleteMessage(id: string, force=false): Promise<string | u
 
 export async function moveMessage(id: string, destinationId: string): Promise<string | undefined> {
   
-  const response = await getGraphClient()?.api('/me/messages/'+ id + "/move")
+  const response = await graphClient!.api('/me/messages/'+ id + "/move")
     .post({ destinationId });
 
   return response?.message;
@@ -70,7 +70,7 @@ export async function moveMessage(id: string, destinationId: string): Promise<st
 
 export async function copyMessage(id: string, destinationId: string): Promise<string | undefined> {
   
-  const response = await getGraphClient()?.api('/me/messages/'+ id + "/copy")
+  const response = await graphClient!.api('/me/messages/'+ id + "/copy")
     .post({ destinationId });
 
   return response?.message;
@@ -78,7 +78,7 @@ export async function copyMessage(id: string, destinationId: string): Promise<st
 
 export async function mailCategories(): Promise<CategoryColor[]> {
   
-  const response = await getGraphClient()?.api("/me/outlook/masterCategories")
+  const response = await graphClient!.api("/me/outlook/masterCategories")
     .get();
 
   return response.value;
@@ -86,7 +86,7 @@ export async function mailCategories(): Promise<CategoryColor[]> {
 
 export async function postMailCategory(category: MessageCategory): Promise<MessageCategory> {
 
-  const response = await getGraphClient()?.api("/me/outlook/masterCategories")
+  const response = await graphClient!.api("/me/outlook/masterCategories")
     .post(category);
 
   return response;
@@ -95,7 +95,7 @@ export async function postMailCategory(category: MessageCategory): Promise<Messa
 export async function newMessages(folderid = 'inbox', count=1): Promise<PageCollection> {
   const url = buildQuery(`/me/mailFolders/${folderid}/messages`);
 
-  const response: PageCollection = await getGraphClient()?.api(url)
+  const response: PageCollection = await graphClient!.api(url)
     .top(count) // Only item count is relevant in this query, if 0, count won't be part of the response
     .count()
     .get();
@@ -104,7 +104,7 @@ export async function newMessages(folderid = 'inbox', count=1): Promise<PageColl
 }
 
 export async function messageAttachments(message: Message): Promise<Attachment[]> {
-  const response: PageCollection = await getGraphClient()?.api(`/me/messages/${message.id}/attachments`)
+  const response: PageCollection = await graphClient!.api(`/me/messages/${message.id}/attachments`)
     .top(100)
     .get();
   return response.value;

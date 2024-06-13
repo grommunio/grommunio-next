@@ -87,7 +87,7 @@ function App(props) {
   const dispatch = useTypeDispatch();
 
   const fetchSettings = async () => {
-    return await dispatch(fetchMailboxSettingsData());
+    return authenticated ? await dispatch(fetchMailboxSettingsData()) : null;
   }
 
   useEffect(() => {
