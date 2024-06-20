@@ -588,7 +588,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
               initialValue={event.body || ""}
               init={{
                 menubar: false,
-                readonly: true,
                 toolbar: true,
                 plugins: ["wordcount"],
               }}

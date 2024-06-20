@@ -124,7 +124,7 @@ function TopBar(props: any) {
           >
             {getLangs().map(({key, value}) =>
               <MenuItem
-                selected={language.locale === key}
+                selected={language?.locale === key}
                 value={key}
                 key={key}
                 onClick={handleLangChange({ locale: key, displayName: value })}

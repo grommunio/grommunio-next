@@ -425,7 +425,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
               <div className={classes.flexRow}>
                 <DatePicker value={event.start || null} onChange={handleDateChange("start")}/>
                 {!event.isAllDay && <TimePicker
-                  value={event.start || ""}
+                  value={event.start || null}
                   onChange={handleDateChange("start")}
                 />}
                 <FormControlLabel
@@ -439,9 +439,9 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
                 />
               </div>
               <div className={classes.flexRow}>
-                <DatePicker value={event.end || ""} onChange={handleDateChange("end")}/>
+                <DatePicker value={event.end || null} onChange={handleDateChange("end")}/>
                 {!event.isAllDay && <TimePicker
-                  value={event.end || ""}
+                  value={event.end || null}
                   onChange={handleDateChange("end")}
                 />}
                 <Button
@@ -504,7 +504,6 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
             initialValue={event.body as string || ""}
             init={{
               menubar: false,
-              readonly: true,
               toolbar: true,
               plugins: ["wordcount"],
             }}

@@ -2,10 +2,6 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import PropTypes from 'prop-types';
-import TreeView from '@mui/lab/TreeView';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import TreeItem from '@mui/lab/TreeItem';
 import { Badge, Button, Input, Typography } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import { DRAWER_WIDTH } from '../constants';
@@ -14,6 +10,7 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { postMailFolderData } from '../actions/folders';
 import FoldersContextMenu from './messages/FoldersContextMenu';
+import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 
 const styles = theme => ({
   root: {
@@ -67,7 +64,7 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
       <TreeItem
         onContextMenu={handleContextMenu(folder.id)}
         key={folder.id || -1}
-        nodeId={folder.id || "-1"}
+        itemId={folder.id || "-1"}
         label={<div className={classes.treeItemLabel}>
           <Typography variant='body1'>{folder.displayName}</Typography>
           <Badge
@@ -86,7 +83,7 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     )}
     <TreeItem
       onKeyDown={e => e.stopPropagation()}
-      nodeId={`${parentFolderId}-button`}
+      itemId={`${parentFolderId}-button`}
       label={adding === parentFolderId ?
         <Input
           value={newFolder}
@@ -108,14 +105,12 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
   </>
 
   return (<>
-    <TreeView
+    <SimpleTreeView
       selected={selected?.id || "-1"}
       className={classes.root}
-      defaultCollapseIcon={<ExpandMoreIcon />}
-      defaultExpandIcon={<ChevronRightIcon />}
     >
       {data.length !== 0 && renderTree(data, 0, 0)}
-    </TreeView>
+    </SimpleTreeView>
     <FoldersContextMenu
       isOpen={isContextMenuOpen}
       onClose={handleCloseContextMenu}
