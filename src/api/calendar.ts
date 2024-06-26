@@ -44,7 +44,8 @@ export async function getRecurringEventInstances(event: Event, calendarId?: stri
 
   const response: PageCollection = await graphClient!.api((calendarId ?
     `/me/calendars/${calendarId}/events` : "/me/events") + "/" + event.id + "/instances?" +
-     `startDateTime=${event.start?.dateTime}&endDateTime=${endDate}`)
+     `startDateTime=${event.start?.dateTime}&endDateTime=${endDate}T23:59:59.0000000`)
+    .top(100)
     .get();
   return response.value;
 }
