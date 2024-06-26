@@ -289,6 +289,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
             shrink: false,
             style: { marginLeft: 32 }
           }}
+          value=""
         >
           <MenuItem
             onClick={handlePropToggle("responseRequested")}
@@ -299,6 +300,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
             Request responses
           </MenuItem>
           <MenuItem
+            selected={false}
             onClick={handlePropToggle("hideAttendees")}
           >
             <ListItemIcon>

@@ -345,6 +345,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
           shrink: false,
           style: { marginLeft: 32 }
         }}
+        value=""
       >
         <MenuItem
           onClick={handlePropToggle("responseRequested")}
