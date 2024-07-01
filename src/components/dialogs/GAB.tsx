@@ -4,13 +4,12 @@
 import { withStyles } from '@mui/styles';
 import { Dialog, DialogTitle, DialogContent,
   DialogActions, List, ListItemText, ListItemButton, ListItemIcon, Button, Typography, Chip, Divider, TextField, Grid,
-  ListItem, IconButton,
-} from '@mui/material';
+  ListItem } from '@mui/material';
 import { withTranslation } from 'react-i18next';
 import { Contact } from 'microsoft-graph';
 import { useTypeDispatch, useTypeSelector } from '../../store';
 import { fetchContactsData } from '../../actions/contacts';
-import { AccountCircle, AddRounded, ContactMail } from '@mui/icons-material';
+import { AccountCircle, ContactMail } from '@mui/icons-material';
 import { MouseEvent, useEffect, useState } from 'react';
 import ContactDetails from '../ContactDetails';
 
@@ -134,15 +133,12 @@ function GAB({ t, classes, open, onClose, seletedContact, handleNewMessage, setS
               ).map((contact: Contact, key: number) =>
                 <ListItem
                   key={key}
-                  secondaryAction={<IconButton edge="end" onClick={handleContactSelect(contact)}>
-                    <AddRounded />
-                  </IconButton>}
                   disablePadding
                 >
                   <ListItemButton
                     dense
                     role={undefined} 
-                    onClick={handleContactDetails(contact)}
+                    onClick={handleContactSelect(contact)}
                     selected={details?.id === contact.id || preselection.findIndex(c => c.id === contact.id) !== -1}
                     classes={{ selected: classes.selected }}
                   >
