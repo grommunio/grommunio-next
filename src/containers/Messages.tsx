@@ -34,6 +34,7 @@ const styles: any = (theme: any) => ({
     flex: 1,
     height: '100%',
     display: 'flex',
+    overflow: 'hidden',
   },
   mailList: {
     width: 400,
@@ -244,6 +245,28 @@ function Messages({ classes }: MessagesProps) {
 
   const handleMailClick = (msg: Message) => () => {
     const copy = [...mailTabs];
+
+    // If in drafts folder
+    if(selectedFolder?.wellKnownName === "drafts") {
+      if(copy.length === 0) { /* No e-mail selected */
+        const readingTab = {
+          ID: 1, /* Reading tab ID */
+          label: 'Select mail to read',
+        }
+        copy.push(readingTab);
+      }
+      const tab = {
+        ID: now(),
+        label: msg.subject || '<No subject>',
+        Component: NewMessage,
+        initialState: msg,
+      };
+      copy.push(tab);
+      setMailTabs(copy);
+      setActiveMailTab(tab);
+      return;
+    }
+
     const tab = { ID: 1, label: msg.subject || '' };
     // No message selected and no empty reading tab created
     if(selectedMsg === null && copy.length === 0) {

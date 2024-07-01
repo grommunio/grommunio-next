@@ -59,12 +59,11 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
   const [ccVisible, setCcVisible] = useState<boolean>(Boolean(initialState?.ccRecipients?.length));
   const [bccVisible, setBccVisible] = useState<boolean>(false);
   const [selectedContacts, setSelectedContacts] = useState<GabSelections>({
-    toRecipients: [],
+    toRecipients: initialState?.toRecipients || [],
     ccRecipients: [],
     bccRecipients: [],
   });
   const { toRecipients, ccRecipients, bccRecipients } = selectedContacts;
-
   const [subject, setSubject] = useState(initialState?.subject || "");
   const [messageImportance, setMessageImportance] = useState<Importance>("normal");
   const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);

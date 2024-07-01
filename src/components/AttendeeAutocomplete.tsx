@@ -49,7 +49,7 @@ const AttendeeAutocomplete = ({ classes, options, value, onChange,
     multiple
     getOptionLabel={(option: string | Contact) => (option as Contact).displayName || ""}
     renderOption={(props: any, option: Contact) => (
-      <GABOption {...props} key={option.id} contact={option as Contact}/>
+      <GABOption {...props} key={option.id} contact={option}/>
     )}
     filterOptions={(options, state) => {
       return options.filter(o =>
