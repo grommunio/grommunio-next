@@ -63,8 +63,8 @@ const styles: any = (theme: any) => ({
   search: {
     flex: 1,
     marginRight: 4,
+    marginTop: 6,
   },
-  
   filterRow: {
     display: 'flex',
     marginRight: -4,

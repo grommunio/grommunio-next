@@ -15,6 +15,7 @@ import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 const styles = theme => ({
   root: {
     width: DRAWER_WIDTH,
+    overflow: 'auto',
   },
   treeItemLabel: {
     display: 'flex',
