@@ -55,10 +55,10 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
 
   const handleDialog = (event: ExtendedEvent | null) => () => setDialogOpen(event);
 
-  return <div>
+  return <div id="schedular-container">
     <ReactSchedular
       events={processedEvents as Array<ProcessedEvent>}
-      height={1000}
+      height={window.innerHeight - 303}
       onDelete={handleDelete}
       view={localStorage.getItem("calendarView") as View || "month"}
       week={{ 
