@@ -4,7 +4,7 @@
 import moment, { Moment } from 'moment-timezone';
 import * as DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
-import { Contact, DateTimeTimeZone, FileAttachment, NullableOption, Recipient } from "microsoft-graph";
+import { Contact, DateTimeTimeZone, EmailAddress, FileAttachment, NullableOption, Recipient } from "microsoft-graph";
 
 export type URLParams = {
   [index: string]: string;
@@ -236,4 +236,32 @@ export const readableBytesFormat = (bytes: number) => {
     counter++;
   }
   return result.toFixed(1) + " kMGT"[counter] + "b";
+}
+
+type UnnecessarilyNestedEmail = {
+  emailAddress: EmailAddress;
+}
+
+
+/*
+* This is horrible, but it's fine for now, i guess.
+* Naively lookup email address in contacts. First match wins.
+* If no contact is found, create pseudo contact for the UI with the email adress as displayname
+*/
+export const resolveContactsFromEmails = (emails: Array<UnnecessarilyNestedEmail>, contacts: Array<Contact>): Array<Contact> => {
+  const res = emails.map((email: UnnecessarilyNestedEmail) => {
+    const contact = contacts.find((contact: Contact) => {
+      contact.emailAddresses?.some((contactMail: EmailAddress) => contactMail.address === email.emailAddress.address)
+    });
+
+    if(contact) return contact;
+    else return {
+      displayName: email.emailAddress.name || email.emailAddress.address,
+      emailAddresses: [
+        { name: email.emailAddress.name || "", address: email.emailAddress.address }
+      ]
+    } as Contact
+  });
+
+  return res;
 }

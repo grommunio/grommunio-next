@@ -9,7 +9,7 @@ import { Contact, Importance, Message, NullableOption, Recipient } from "microso
 import { GabSelections } from "../types/misc";
 import { fetchContactsData } from "../actions/contacts";
 import { throttle } from "lodash";
-import { gabSelectionToRequestFormat } from "../utils";
+import { gabSelectionToRequestFormat, resolveContactsFromEmails } from "../utils";
 import AttendeeAutocomplete from "./AttendeeAutocomplete";
 
 
@@ -59,7 +59,7 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
   const [ccVisible, setCcVisible] = useState<boolean>(Boolean(initialState?.ccRecipients?.length));
   const [bccVisible, setBccVisible] = useState<boolean>(false);
   const [selectedContacts, setSelectedContacts] = useState<GabSelections>({
-    toRecipients: initialState?.toRecipients || [],
+    toRecipients: resolveContactsFromEmails(initialState?.toRecipients || [], contacts),
     ccRecipients: [],
     bccRecipients: [],
   });
