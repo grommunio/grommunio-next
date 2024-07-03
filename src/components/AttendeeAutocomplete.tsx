@@ -51,6 +51,7 @@ const AttendeeAutocomplete = ({ classes, options, value, onChange,
     renderOption={(props: any, option: Contact) => (
       <GABOption {...props} key={option.id} contact={option}/>
     )}
+    isOptionEqualToValue={(option, value) => option.id === value.id}
     filterOptions={(options, state) => {
       return options.filter(o =>
         (o as Contact)
