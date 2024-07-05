@@ -58,7 +58,7 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
   return <div id="schedular-container">
     <ReactSchedular
       events={processedEvents as Array<ProcessedEvent>}
-      height={window.innerHeight - 303}
+      height={Math.max(window.innerHeight - 303, 555)}
       onDelete={handleDelete}
       view={localStorage.getItem("calendarView") as View || "month"}
       week={{ 
