@@ -11,6 +11,7 @@ import AddEvent from "./dialogs/AddEvent";
 import EventRenderer from "./EventRenderer";
 import { View } from "@aldabil/react-scheduler/components/nav/Navigation";
 import { useAppContext } from "../../azure/AppContext";
+import moment from "moment";
 
 
 const eventFields: FieldProps[] = [
@@ -64,11 +65,11 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
       id: (allEvents ? event.seriesMasterId : event.id) || "",
       start: {
         timeZone: app.user?.timeZone,
-        dateTime: start?.toISOString() || "",
+        dateTime: moment(start)?.format('YYYY-MM-DDTHH:mm:ss') || "",
       },
       end: {
         timeZone: app.user?.timeZone,
-        dateTime: end?.toISOString() || "",
+        dateTime: moment(end)?.format('YYYY-MM-DDTHH:mm:ss') || "",
       },
     };
   }
