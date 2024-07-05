@@ -40,11 +40,13 @@ export async function getRecurringEventInstances(event: Event, calendarId?: stri
     else clone.add(1, "years");
     
     endDate = clone.toISOString();
+  } else {
+    endDate = moment(endDate).toISOString();
   }
 
   const response: PageCollection = await graphClient!.api((calendarId ?
     `/me/calendars/${calendarId}/events` : "/me/events") + "/" + event.id + "/instances?" +
-     `startDateTime=${event.start?.dateTime}&endDateTime=${endDate}T23:59:59.0000000`)
+     `startDateTime=${event.start?.dateTime}&endDateTime=${endDate}`)
     .top(100)
     .get();
   return response.value;
