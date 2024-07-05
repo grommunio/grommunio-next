@@ -66,6 +66,7 @@ const AttendeeAutocomplete = ({ classes, options, value, onChange,
         const { id, displayName } = ((option || {}) as Contact);
         return <ContactChip
           {...getTagProps({ index })}
+          key={index}
           id={id}
           label={displayName}
           onDelete={handleContactRemove(index)}

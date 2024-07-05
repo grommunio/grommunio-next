@@ -246,7 +246,7 @@ type UnnecessarilyNestedEmail = {
 /*
 * This is horrible, but it's fine for now, i guess.
 * Naively lookup email address in contacts. First match wins.
-* If no contact is found, create pseudo contact for the UI with the email adress as displayname
+* If no contact is found, create pseudo contact for the UI with the email address as displayname
 */
 export const resolveContactsFromEmails = (emails: Array<UnnecessarilyNestedEmail>, contacts: Array<Contact>): Array<Contact> => {
   const res = emails.map((email: UnnecessarilyNestedEmail) => {

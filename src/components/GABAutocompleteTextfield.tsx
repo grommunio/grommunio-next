@@ -45,6 +45,7 @@ const GABAutocompleteTextfield = ({ classes, options, value, inputValue, onChang
         const { id, displayName } = ((option || {}) as Contact);
         return <ContactChip
           {...getTagProps({ index })}
+          key={index}
           label={displayName}
           onDelete={handleContactRemove(id || "")}
         />
