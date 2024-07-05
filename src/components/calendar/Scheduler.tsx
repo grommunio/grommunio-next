@@ -1,15 +1,16 @@
 import { Scheduler as ReactSchedular } from "@aldabil/react-scheduler";
 import type { FieldProps, ProcessedEvent, SchedulerRef } from "@aldabil/react-scheduler/types";
 import { Event } from "microsoft-graph";
-import { ForwardedRef, forwardRef, useMemo, useState } from "react";
+import { DragEvent, ForwardedRef, forwardRef, useMemo, useState } from "react";
 import { useTypeDispatch } from "../../store";
-import { deleteEventData } from "../../actions/calendar";
+import { deleteEventData, patchEventData } from "../../actions/calendar";
 import EventDetails from "./dialogs/EventDetails";
 import EventPopper from "./EventPopper";
 import { ExtendedEvent } from "../../types/calendar";
 import AddEvent from "./dialogs/AddEvent";
 import EventRenderer from "./EventRenderer";
 import { View } from "@aldabil/react-scheduler/components/nav/Navigation";
+import { useAppContext } from "../../azure/AppContext";
 
 
 const eventFields: FieldProps[] = [
@@ -39,6 +40,7 @@ type SchedularType = {
 const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
   const dispatch = useTypeDispatch();
   const [dialogOpen, setDialogOpen] = useState<ExtendedEvent | null>(null);
+  const app = useAppContext();
 
   const processedEvents = useMemo(() => {
     return events.map((event: Event) => ({
@@ -55,8 +57,30 @@ const Schedular = forwardRef(({ events }: SchedularType, ref ) => {
 
   const handleDialog = (event: ExtendedEvent | null) => () => setDialogOpen(event);
 
+  const formatEventForRequest = (event: ProcessedEvent, allEvents: boolean) => {
+    const { start, end } = event;
+    // TODO: Properly update remindertime
+    return {
+      id: (allEvents ? event.seriesMasterId : event.id) || "",
+      start: {
+        timeZone: app.user?.timeZone,
+        dateTime: start?.toISOString() || "",
+      },
+      end: {
+        timeZone: app.user?.timeZone,
+        dateTime: end?.toISOString() || "",
+      },
+    };
+  }
+
+  const handleEventDrop = async (_: DragEvent<HTMLButtonElement>, __: Date, updatedEvent: ProcessedEvent): Promise<ProcessedEvent | void> => {
+    const formattedEvent = formatEventForRequest(updatedEvent, false);
+    dispatch(patchEventData(formattedEvent as Event)); // Error is catched elsewhere
+  }
+
   return <div id="schedular-container">
     <ReactSchedular
+      onEventDrop={handleEventDrop}
       events={processedEvents as Array<ProcessedEvent>}
       height={Math.max(window.innerHeight - 303, 555)}
       onDelete={handleDelete}
