@@ -95,7 +95,7 @@ const styles: any = (theme: any) => ({
   mailTabsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    marginBottom: 16,
+    marginBottom: 22,
   },
   tab: {
     textTransform: 'none',

@@ -16,8 +16,10 @@ import { AttachFile } from '@mui/icons-material';
 const styles: any = () => ({
   content: {
     display: 'flex',
-    height: '100%',
+    minHeight: '100%',
+    height: 0,
     flexDirection: 'column',
+    overflow: "auto",
   },
   tinyMceContainer: {
     flex: 1,
