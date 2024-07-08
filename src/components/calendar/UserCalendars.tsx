@@ -14,15 +14,14 @@ type MenuProps = {
 }
 
 const UserCalenders = () => {
-  const data = useTypeSelector(state => state.calendar.calendars);
+  const calendars = useTypeSelector(state => state.calendar.calendars);
   const [open, setOpen] = useState<boolean>(true);
-  const [selectedItem, setSelectedItem] = useState<Calendar | null>(data[0] || null);
+  const [selectedCalendars, setSelectedCalendars] = useState<string[]>(calendars[0] ? [calendars[0].id] : []);
   const dispatch = useTypeDispatch();
   const [adding, setAdding] = useState<boolean>(false);
   const [menuAnchor, setMenuAnchor] = useState<MenuProps | null>();
   const [editing, setEditing] = useState<string>("");
   const [editTextfield, setEditTextfield] = useState<string>("");
-
 
   const handleMenu = (item: Calendar) => (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -36,8 +35,16 @@ const UserCalenders = () => {
   }
 
   const handleCalendarClick = (calendar: Calendar) => () => {
-    setSelectedItem(calendar);
-    if(selectedItem?.id !== calendar?.id) dispatch(fetchEventsData(calendar));
+    const idx = selectedCalendars.findIndex(cID => cID === calendar.id);
+    if(idx === -1) {
+      setSelectedCalendars([...selectedCalendars, calendar.id!]);
+      dispatch(fetchEventsData(calendar));
+    } else {
+      const copy = [...selectedCalendars];
+      copy.splice(idx, 1);
+      setSelectedCalendars(copy);
+      dispatch(fetchEventsData(calendar, false));
+    }
   }
 
   const handleDialog = (open: boolean) => () => {
@@ -55,10 +62,11 @@ const UserCalenders = () => {
 
   // Set selected calendar on load
   useEffect(() => {
-    if(!selectedItem) {
-      setSelectedItem(data[0] || null);
+    if(!selectedCalendars.length && calendars.length) {
+      setSelectedCalendars([calendars[0].id]);
+      dispatch(fetchEventsData(calendars[0]));
     }
-  }, [data]);
+  }, [calendars]);
 
   const handleEnter = (e: KeyboardEvent<HTMLInputElement>) => {
     if(e.key === 'Enter') {
@@ -92,30 +100,30 @@ const UserCalenders = () => {
           <ListItemText primary="My Calenders" sx={{ my: 0, pl: 2 }} />
         </ListItemButton>
         <Collapse in={open}>
-          {data?.map((item: Calendar, index: number) => <Fragment key={index}>
+          {calendars?.map((calendar: Calendar, index: number) => <Fragment key={index}>
             <Input
-              id={`${item.id}-textfield`}
+              id={`${calendar.id}-textfield`}
               value={editTextfield}
               onChange={e => setEditTextfield(e.target.value)}
               autoFocus
-              style={editing === item.id ? { marginLeft: 56 } : { display: "none" }}
+              style={editing === calendar.id ? { marginLeft: 56 } : { display: "none" }}
               onKeyDown={handleEnter}
             />
-            {editing !== item.id && <ListItemButton
+            {editing !== calendar.id && <ListItemButton
               key={index}
-              selected={selectedItem?.id === item.id}
-              onClick={handleCalendarClick(item)}
+              selected={selectedCalendars.includes(calendar.id!)}
+              onClick={handleCalendarClick(calendar)}
               style={{
                 height: 38,
               }}
             >
-              <CalendarMonth fontSize="small" color="inherit" style={{ color: item.color as string }}/>
+              <CalendarMonth fontSize="small" color="inherit" style={{ color: calendar.color as string }}/>
               <ListItemText
-                primary={item.name}
+                primary={calendar.name}
                 primaryTypographyProps={{ ml: 2 }}
               />
               <ListItemSecondaryAction>
-                <IconButton disabled={index === 0} onClick={handleMenu(item)}>
+                <IconButton disabled={index === 0} onClick={handleMenu(calendar)}>
                   <MoreVert fontSize="small"/>
                 </IconButton>
               </ListItemSecondaryAction>

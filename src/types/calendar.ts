@@ -15,6 +15,7 @@ export type ExtendedEvent = Event & {
   title: string | undefined;
   notes: string | undefined;
   allDay: boolean;
+  calendarId: string;
 };
 
 

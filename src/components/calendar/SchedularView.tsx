@@ -6,7 +6,7 @@ import { forwardRef, useEffect, useState } from "react";
 import { Event } from "microsoft-graph";
 import DatePicker from "./DatePicker";
 import Scheduler from "./Scheduler";
-import { deleteCalendarData, fetchUserCalenders } from "../../actions/calendar";
+import { deleteCalendarData, fetchUserCalendars } from "../../actions/calendar";
 import ListView from "./ListView";
 
 type SchedularViewType = {
@@ -20,7 +20,7 @@ const SchedularView = forwardRef(({ showSideBar, listViewActive }: SchedularView
   const dispatch = useTypeDispatch();
   
   useEffect(() => {
-    dispatch(fetchUserCalenders());
+    dispatch(fetchUserCalendars());
   }, []);
 
   const handleAppointmentDelete = () => {

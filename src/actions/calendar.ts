@@ -36,8 +36,16 @@ import { pushAlertStack } from "./alerts";
 import { EventReponseType } from "../types/calendar";
 import { fileToBase64 } from "../utils";
 
-export function fetchEventsData(calendar?: Calendar | undefined) {
+export function fetchEventsData(calendar?: Calendar | undefined, add=true) {
   return async (dispatch: any) => {
+    if(!add) {
+      await dispatch({ 
+        type: FETCH_EVENTS_DATA, 
+        calendar: calendar,
+        add: false
+      });
+      return [];
+    }
     try {
       const data = await getEvents(calendar?.id);
       const occurenceEvents = [];
@@ -55,7 +63,12 @@ export function fetchEventsData(calendar?: Calendar | undefined) {
           }
         }
       }
-      await dispatch({ type: FETCH_EVENTS_DATA, payload: [...data, ...occurenceEvents], calendar: calendar });
+      await dispatch({ 
+        type: FETCH_EVENTS_DATA, 
+        payload: [...data, ...occurenceEvents],
+        calendar: calendar,
+        add
+      });
       return data;
     } catch (error) {
       await dispatch(pushAlertStack({ message: (error as any)?.message || "", severity: "error" }));
@@ -98,7 +111,7 @@ export function deleteEventData(eventId: string) {
   return defaultDeleteHandler(deleteEvent, DELETE_EVENT_DATA, eventId)
 }
 
-export function fetchUserCalenders() {
+export function fetchUserCalendars() {
   return defaultFetchHandler(getUserCalendars, FETCH_USER_CALENDER_DATA);
 }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH]
-import { Event } from 'microsoft-graph';
+import { Calendar, Event } from 'microsoft-graph';
 import { AnyAction } from 'redux'
 import {
   FETCH_EVENTS_DATA,
@@ -35,15 +35,15 @@ const disableCondition = (calendar: IUserCalender) => {
   return !(calendar.name === "Calendar" || calendar.name === "Birthdays");
 };
 
-function formatEvent(rawEvent: Event, color=undefined): ExtendedEvent {
+function formatEvent(rawEvent: Event | ExtendedEvent, calendar?: Calendar): ExtendedEvent {
   return {
-    color,
+    color: !calendar?.color || calendar?.color === "auto" ? undefined : calendar.color ,
+    calendarId: calendar?.id || "",
     ...rawEvent,
     // `start` and `end` are overwritten by schedular component
     startDate: rawEvent.start,
     endDate: rawEvent.end,
     // Add schedular properties
-    id: rawEvent.id,
     event_id: rawEvent.id,
     title: rawEvent.subject || "",
     notes: rawEvent.body?.content || '',
@@ -51,19 +51,28 @@ function formatEvent(rawEvent: Event, color=undefined): ExtendedEvent {
   };
 }
 
-function formatEvents(rawEvents: Array<Event>, color=undefined): Array<ExtendedEvent> {
-  return rawEvents.map((rawEvent: Event) => (formatEvent(rawEvent, color)))
+function formatEvents(rawEvents: Array<Event>, calendar: Calendar): Array<ExtendedEvent> {
+  return rawEvents.map((rawEvent: Event) => (formatEvent(rawEvent, calendar)))
 }
 
 // Modify your reducer to use these types
 function calendarReducer(state: CalendarState = defaultState, action: AnyAction): CalendarState {
   switch (action.type) {
 
-  case FETCH_EVENTS_DATA:
+  case FETCH_EVENTS_DATA: {
+    if(action.add) {
+      return {
+        ...state,
+        events: action.payload ?
+          [...state.events, ...formatEvents(action.payload, action.calendar)] :
+          state.events,
+      };
+    }
     return {
       ...state,
-      events: action.payload ? formatEvents(action.payload, action.calendar?.color) : [],
+      events: state.events.filter(e => e.calendarId !== action.calendar?.id),
     };
+  }
 
   case FETCH_USER_CALENDER_DATA:
     return {

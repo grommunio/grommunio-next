@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState  } from "react";
 import { useAppContext } from "../azure/AppContext";
 import { withStyles } from "@mui/styles";
-import { fetchEventsData } from "../actions/calendar";
 import { useTypeDispatch } from "../store";
 import AuthenticatedView from "../components/AuthenticatedView";
 import { withTranslation } from "react-i18next";
@@ -87,7 +86,6 @@ function Calendar({ t, classes }: any) {
   const schedulerRef = useRef(null);
 
   useEffect(() => {
-    dispatch(fetchEventsData());
     dispatch(fetchContactsData());
   }, [app.authProvider]);
 
