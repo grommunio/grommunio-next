@@ -180,7 +180,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
 
   useEffect(() => {
     const { id, seriesMasterId, subject, startDate, endDate, location, body, isAllDay, attendees, responseRequested,
-      isReminderOn, reminderMinutesBeforeStart, hideAttendees, showAs } = storeEvent;
+      isReminderOn, reminderMinutesBeforeStart, hideAttendees, showAs, type } = storeEvent;
     setEvent({
       id,
       seriesMasterId,
@@ -193,6 +193,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
       hideAttendees,
       showAs,
       subject,
+      type,
     });
     if(attendees) {
       /*const contactAttendees = attendees.value.reduce((prev, attendee) => {

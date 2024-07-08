@@ -31,6 +31,7 @@ const eventFields: FieldProps[] = [
   { name: "showAs", type: "hidden" },
   { name: "responseRequested", type: "hidden" },
   { name: "hideAttendees", type: "hidden" },
+  { name: "type", type: "hidden" },
 ];
 
 
