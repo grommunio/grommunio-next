@@ -13,7 +13,7 @@ type MenuProps = {
   calendar: Calendar;
 }
 
-const UserCalenders = () => {
+const UserCalendars = () => {
   const calendars = useTypeSelector(state => state.calendar.calendars);
   const [open, setOpen] = useState<boolean>(true);
   const [selectedCalendars, setSelectedCalendars] = useState<string[]>(calendars[0] ? [calendars[0].id] : []);
@@ -147,4 +147,4 @@ const UserCalenders = () => {
   );
 };
 
-export default UserCalenders;
+export default UserCalendars;

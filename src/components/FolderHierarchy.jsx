@@ -84,7 +84,7 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     )}
     <TreeItem
       onKeyDown={e => e.stopPropagation()}
-      itemId={`${parentFolderId}-button`}
+      itemId={`${parentFolderId}`}
       label={adding === parentFolderId ?
         <Input
           value={newFolder}
@@ -107,10 +107,10 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
 
   return (<>
     <SimpleTreeView
-      selected={selected?.id || "-1"}
+      selectedItems={[selected?.id] || []}
       className={classes.root}
     >
-      {data.length !== 0 && renderTree(data, 0, 0)}
+      {data.length !== 0 && renderTree(data, 0)}
     </SimpleTreeView>
     <FoldersContextMenu
       isOpen={isContextMenuOpen}
