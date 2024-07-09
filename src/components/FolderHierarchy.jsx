@@ -28,6 +28,7 @@ const styles = theme => ({
   },
 });
 
+
 const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -64,8 +65,8 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     {folders.map((folder) => 
       <TreeItem
         onContextMenu={handleContextMenu(folder.id)}
-        key={folder.id || -1}
-        itemId={folder.id || "-1"}
+        key={(folder.id) || -1}
+        itemId={(folder.id) || "-1"}
         label={<div className={classes.treeItemLabel}>
           <Typography variant='body1'>{folder.displayName}</Typography>
           <Badge
@@ -84,7 +85,7 @@ const FolderHierarchy = ({classes, data, handleMailFolderClick, selected}) => {
     )}
     <TreeItem
       onKeyDown={e => e.stopPropagation()}
-      itemId={`${parentFolderId}`}
+      itemId={`${parentFolderId}-textfield`}
       label={adding === parentFolderId ?
         <Input
           value={newFolder}
