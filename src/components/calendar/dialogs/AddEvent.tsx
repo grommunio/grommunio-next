@@ -526,7 +526,6 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
         setEvent={setEvent}
       />
       <input
-        accept={"application/pdf"}
         hidden
         type="file"
         multiple

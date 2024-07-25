@@ -97,7 +97,6 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
         />
       </Paper>
       <input
-        accept={"application/pdf"}
         hidden
         type="file"
         multiple

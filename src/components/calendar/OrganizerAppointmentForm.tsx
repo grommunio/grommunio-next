@@ -653,7 +653,6 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
       </div>}
     </Grid>
     <input
-      accept={"application/pdf"}
       hidden
       type="file"
       multiple
