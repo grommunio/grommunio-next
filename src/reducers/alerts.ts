@@ -27,7 +27,7 @@ function alertsReducer(state = defaultState, action: AnyAction) {
   case SPLICE_ALERT_STACK:
     return {
       ...state,
-      stack: state.stack.filter((alert: AlertType) => alert.id !== action.payload)
+      stack: state.stack.filter((alert: AlertType) => alert.id !== action.id)
     };
 
   default:
