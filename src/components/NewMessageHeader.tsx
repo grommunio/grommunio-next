@@ -244,7 +244,7 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
         onClick={handleGAB("bccRecipients")}
         sx={{ mr: 2 }}
       >
-        {t("Cc")}
+        {t("Bcc")}
       </Button>
       <AttendeeAutocomplete
         value={bccRecipients}
