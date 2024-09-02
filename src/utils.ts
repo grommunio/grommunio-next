@@ -238,30 +238,29 @@ export const readableBytesFormat = (bytes: number) => {
   return result.toFixed(1) + " kMGT"[counter] + "b";
 }
 
-type UnnecessarilyNestedEmail = {
-  emailAddress: EmailAddress;
-}
-
-
 /*
-* This is horrible, but it's fine for now, i guess.
-* Naively lookup email address in contacts. First match wins.
-* If no contact is found, create pseudo contact for the UI with the email address as displayname
+* Naively lookup email addresses in contacts. First match wins.
+* If no contact is found, create a pseudo contact for the UI with the email address as displayname.
+* Accepts Graph recipients ({ emailAddress: { name, address } }) as well as plain address strings.
 */
-export const resolveContactsFromEmails = (emails: Array<UnnecessarilyNestedEmail>, contacts: Array<Contact>): Array<Contact> => {
-  const res = emails.map((email: UnnecessarilyNestedEmail) => {
-    const contact = contacts.find((contact: Contact) => {
-      contact.emailAddresses?.some((contactMail: EmailAddress) => contactMail.address === email.emailAddress.address)
+export const resolveContactsFromEmails = (emails: Array<Recipient | string> | string | undefined | null, contacts: Array<Contact>): Array<Contact> => {
+  const list: Array<Recipient | string> = typeof emails === "string" ? emails.split(",") : (emails || []);
+  return list
+    .map((recipient): EmailAddress => typeof recipient === "string" ?
+      { address: recipient.trim(), name: "" } :
+      { address: recipient.emailAddress?.address || "", name: recipient.emailAddress?.name || "" })
+    .filter(email => email.address)
+    .map((email: EmailAddress) => {
+      const contact = contacts.find((contact: Contact) =>
+        contact.emailAddresses?.some((contactMail: EmailAddress) =>
+          contactMail.address?.toLowerCase() === email.address?.toLowerCase()));
+
+      if(contact) return contact;
+      return {
+        displayName: email.name || email.address,
+        emailAddresses: [
+          { name: email.name || "", address: email.address }
+        ]
+      } as Contact;
     });
-
-    if(contact) return contact;
-    else return {
-      displayName: email.emailAddress.name || email.emailAddress.address,
-      emailAddresses: [
-        { name: email.emailAddress.name || "", address: email.emailAddress.address }
-      ]
-    } as Contact
-  });
-
-  return res;
 }
