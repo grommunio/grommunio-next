@@ -290,7 +290,7 @@ function Messages({ classes }: MessagesProps) {
       initialState: {
         ...(selectedMsg || {}),
         subject: "Fwd: " + selectedMsg?.subject,
-        toRecipients: "",
+        toRecipients: [],
         body: {
           // TODO: Improve reply body (this already works really well)
           content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",
@@ -304,22 +304,14 @@ function Messages({ classes }: MessagesProps) {
 
   const handleReply = (all=true) => () => {
     const copy = [...mailTabs];
-    const { sender, toRecipients, ccRecipients } = selectedMsg as Message; // Ignore BCC recips
-    let newRecipients = [sender?.emailAddress?.address || ""]
+    const { from, sender, toRecipients, ccRecipients } = selectedMsg as Message; // Ignore BCC recips
+    const replyTo = from?.emailAddress?.address || sender?.emailAddress?.address || "";
+    const notMe = (recip: Recipient) => recip.emailAddress?.address?.toLowerCase() !== ownEmail?.toLowerCase();
+    const newRecipients: Recipient[] = [{ emailAddress: { address: replyTo, name: from?.emailAddress?.name || "" } }];
     if(all) {
-      newRecipients = newRecipients.concat(
-        (toRecipients || [])
-          .map((recip: Recipient) => recip.emailAddress?.address || "")
-          // Don't send reply to oneself
-          .filter(addr => addr !== ownEmail)
-          .join(",")
-      )
+      (toRecipients || []).filter(notMe).forEach(recip => newRecipients.push(recip));
     }
-    const filteredCCRecipsArrayString = all ? (ccRecipients || [])
-      .map((recip: Recipient) => recip.emailAddress?.address || "")
-      // Don't send reply to oneself
-      .filter(addr => addr !== ownEmail)
-      .join(",") : undefined;
+    const newCcRecipients: Recipient[] = all ? (ccRecipients || []).filter(notMe) : [];
     const tab: MailTab = {
       ID: now(),
       label: 'RE: ' + selectedMsg?.subject,
@@ -327,7 +319,7 @@ function Messages({ classes }: MessagesProps) {
       initialState: {
         subject: "RE: " + selectedMsg?.subject,
         toRecipients: newRecipients,
-        ccRecipients: filteredCCRecipsArrayString,
+        ccRecipients: newCcRecipients,
         body: {
           // TODO: Improve reply body (this already works really well)
           content: "<br><div>---------------<br>" + selectedMsg?.body?.content + "</div>",

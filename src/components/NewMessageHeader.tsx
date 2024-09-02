@@ -59,9 +59,9 @@ const NewMessageHeader = ({ classes, t, initialState, handleNewMessage, handleTa
   const [ccVisible, setCcVisible] = useState<boolean>(Boolean(initialState?.ccRecipients?.length));
   const [bccVisible, setBccVisible] = useState<boolean>(false);
   const [selectedContacts, setSelectedContacts] = useState<GabSelections>({
-    toRecipients: resolveContactsFromEmails(initialState?.toRecipients || [], contacts),
-    ccRecipients: [],
-    bccRecipients: [],
+    toRecipients: resolveContactsFromEmails(initialState?.toRecipients, contacts),
+    ccRecipients: resolveContactsFromEmails(initialState?.ccRecipients, contacts),
+    bccRecipients: resolveContactsFromEmails(initialState?.bccRecipients, contacts),
   });
   const { toRecipients, ccRecipients, bccRecipients } = selectedContacts;
   const [subject, setSubject] = useState(initialState?.subject || "");
