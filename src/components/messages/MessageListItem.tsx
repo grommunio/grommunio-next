@@ -164,7 +164,7 @@ const MesssageListItem = ({ classes, pinnedMessages, handlePin, checkedMessages,
               </Typography>
             </div>
             <div className={classes.mailDate}>
-              <Typography variant='body2' color={message.isRead ? "white" : "primary"}>
+              <Typography variant='body2' color={message.isRead ? "text.secondary" : "primary"}>
                 {parseISODate(message.receivedDateTime || "")}
               </Typography>
             </div>
