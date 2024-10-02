@@ -34,7 +34,7 @@ function messagesReducer(state = defaultState, action: AnyAction) {
     return {
       ...state,
       mails: state.mails.filter((mail: Message) => !action.payload.includes(mail.id)),
-      count: state.count - 1,
+      count: Math.max(state.count - action.payload.length, 0),
     };
   
   case PATCH_MESSAGE_DATA:
