@@ -86,19 +86,17 @@ function App(props) {
   const { i18n } = useTranslation();
   const dispatch = useTypeDispatch();
 
-  const fetchSettings = async () => {
-    return authenticated ? await dispatch(fetchMailboxSettingsData()) : null;
-  }
-
   useEffect(() => {
-    // Fetch mailbox settings
-    const settings = fetchSettings();
-
-    const lang = settings?.language?.locale || localStorage.getItem("lang");
-    if (lang) {
-      i18n.changeLanguage(lang);
-      dispatch(changeSettings("language", lang));
-    }
+    const applyLanguage = async () => {
+      // Mailbox settings win over the locally stored preference
+      const settings = authenticated ? await dispatch(fetchMailboxSettingsData()) : null;
+      const lang = settings?.language?.locale || localStorage.getItem("lang");
+      if (lang) {
+        i18n.changeLanguage(lang);
+        dispatch(changeSettings("language", lang));
+      }
+    };
+    applyLanguage();
   }, [authenticated]);
 
   const routesProps = {
