@@ -1,40 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
-import { Button, Paper, Tab, Tabs } from "@mui/material";
+import { Paper } from "@mui/material";
 import { withStyles } from "@mui/styles";
-import { useState } from "react";
 
 const styles = {
   root: {
     padding: 8,
+    marginTop: 16,
     marginBottom: 24,
-  },
-  tab: {
-    padding: 4,
-    minWidth: 60,
-    textTransform: 'none',
-  },
-  tabs: {
-    marginBottom: 8,
+    display: 'flex',
+    alignItems: 'center',
   },
 }
 
 const Toolbar = ({ classes, children }) => {
-  const [tab, setTab] = useState(0);
-
-  const handleTab = (e, newVal) => setTab(newVal);
-
-  return ( <>
-    <Tabs value={tab} onChange={handleTab} className={classes.tabs}>
-      <Tab className={classes.tab} label="Start" />
-      <Tab className={classes.tab} label="Help" />
-    </Tabs>
+  return (
     <Paper className={classes.root}>
-      {tab === 0 && children}
-      {tab === 1 && <Button variant="outlined" color="secondary">Send help</Button>}
+      {children}
     </Paper>
-  </>);
+  );
 }
 
 export default withStyles(styles)(Toolbar);
