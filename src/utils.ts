@@ -229,13 +229,14 @@ export const downloadBase64Content = (attachment: FileAttachment) => {
 }
 
 export const readableBytesFormat = (bytes: number) => {
+  const units = ["B", "KB", "MB", "GB", "TB"];
   let result = bytes;
-  let counter = 0;
-  while(result > 1000) {
-    result /= 1000;
-    counter++;
+  let unit = 0;
+  while(result >= 1024 && unit < units.length - 1) {
+    result /= 1024;
+    unit++;
   }
-  return result.toFixed(1) + " kMGT"[counter] + "b";
+  return (unit === 0 ? result : result.toFixed(1)) + " " + units[unit];
 }
 
 /*
