@@ -20,6 +20,7 @@ import { withRouter } from '../components/hocs/withRouter';
 import { changeSettings } from '../actions/settings';
 import { useAppContext } from '../azure/AppContext';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 const styles = theme => ({
   /* || General */
@@ -92,6 +93,7 @@ const styles = theme => ({
 
 
 const Login = ({ classes }) => {
+  const { t } = useTranslation();
   const app = useAppContext();
   const settings = useSelector(state => state.settings);
   const [langsAnchorEl, setLangsAnchorEl] = useState(null);
@@ -115,7 +117,7 @@ const Login = ({ classes }) => {
   return (
     <div className={classes.root}>
       <Paper elevation={3} className={classes.loginForm} component="form" onSubmit={handleLogin}>
-        <Tooltip title="Language">
+        <Tooltip title={t("Language")}>
           <IconButton className={classes.lang} onClick={handleMenuOpen}>
             <Translate />
           </IconButton>
@@ -153,7 +155,7 @@ const Login = ({ classes }) => {
             color="primary"
             onClick={handleLogin}
           >
-            <Typography>{('Login')}</Typography>
+            <Typography>{t('Sign in')}</Typography>
           </Button>
         </Paper>
       </Paper>
