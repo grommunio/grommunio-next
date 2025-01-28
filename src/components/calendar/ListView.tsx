@@ -58,7 +58,7 @@ const ListView = ({ events }: ListViewType) => {
       headerName: t("Location") || "",
       width: 120,
       valueFormatter: ({ value }: GridValueFormatterParams) =>
-        `${value.displayName || ''}`,
+        `${value?.displayName || ''}`,
     },
   ];
 
