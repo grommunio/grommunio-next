@@ -1,12 +1,10 @@
 import { Grid, Paper } from "@mui/material";
 import { useTypeDispatch, useTypeSelector } from "../../store";
 import UserCalenders from "./UserCalendars";
-import ConfirmAppointmentDelete from "./dialogs/ConfirmAppointmentDelete";
-import { forwardRef, useEffect, useState } from "react";
-import { Event } from "microsoft-graph";
+import { forwardRef, useEffect } from "react";
 import DatePicker from "./DatePicker";
 import Scheduler from "./Scheduler";
-import { deleteCalendarData, fetchUserCalendars } from "../../actions/calendar";
+import { fetchUserCalendars } from "../../actions/calendar";
 import ListView from "./ListView";
 
 type SchedularViewType = {
@@ -16,16 +14,11 @@ type SchedularViewType = {
 
 const SchedularView = forwardRef(({ showSideBar, listViewActive }: SchedularViewType, ref) => {
   const { events } = useTypeSelector(state => state.calendar);
-  const [deleting, setDeleting] = useState<Event | null>(null);
   const dispatch = useTypeDispatch();
   
   useEffect(() => {
     dispatch(fetchUserCalendars());
   }, []);
-
-  const handleAppointmentDelete = () => {
-    deleteCalendarData(deleting?.id || "");
-  }
 
   return <Paper sx={{ flex: 1 }}>
     <Grid container height="100%">
@@ -47,11 +40,6 @@ const SchedularView = forwardRef(({ showSideBar, listViewActive }: SchedularView
           </div>}
       </Grid>
     </Grid>
-    <ConfirmAppointmentDelete
-      open={Boolean(deleting)}
-      onClose={() => setDeleting(null)}
-      onConfirm={handleAppointmentDelete}
-    />
   </Paper>;
 });
 
