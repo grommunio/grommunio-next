@@ -11,20 +11,29 @@ import './i18n';
 import ToggleColorMode from './components/ToggleColorMode';
 import makeLoadableComponent from './lazy';
 import AppLoader from './components/AppLoader';
+import { loadConfig } from './config';
+import { createMsalInstance } from './azure/msal';
 
 const AsyncApp = makeLoadableComponent(() => import("./App"), <AppLoader />);
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
-  <Provider store={store}>
-    <StyledEngineProvider injectFirst>
-      <ToggleColorMode>
-        <BrowserRouter basename='' /* TODO: This will be configurable in the future */>
-          <AsyncApp />
-        </BrowserRouter>
-      </ToggleColorMode>
-    </StyledEngineProvider>
-  </Provider>
-);
+async function bootstrap() {
+  const config = await loadConfig();
+  createMsalInstance(config);
+
+  const root = ReactDOM.createRoot(
+    document.getElementById('root') as HTMLElement
+  );
+  root.render(
+    <Provider store={store}>
+      <StyledEngineProvider injectFirst>
+        <ToggleColorMode>
+          <BrowserRouter basename={process.env.PUBLIC_URL || ''}>
+            <AsyncApp />
+          </BrowserRouter>
+        </ToggleColorMode>
+      </StyledEngineProvider>
+    </Provider>
+  );
+}
+
+bootstrap();

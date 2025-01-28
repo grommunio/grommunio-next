@@ -1,0 +1,8 @@
+{
+  "appId": "YOUR_APP_ID",
+  "authority": "https://login.microsoftonline.com/common",
+  "redirectUri": "http://localhost:3000",
+  "graphBaseUrl": "https://graph.microsoft.com/",
+  "graphVersion": "v1.0",
+  "interactionType": "redirect"
+}

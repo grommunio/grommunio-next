@@ -1,26 +1,17 @@
-/* eslint-disable @typescript-eslint/ban-types */
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
-import React, {
-  useContext,
-  createContext,
-  useState,
-  MouseEventHandler,
-  useEffect
-} from 'react';
-import { AuthCodeMSALBrowserAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser';
-import { InteractionType, PublicClientApplication } from '@azure/msal-browser';
+import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useMsal } from '@azure/msal-react';
-
-import { getUser } from '../api/user';
-import config from './Config';
+import { InteractionStatus, PublicClientApplication } from '@azure/msal-browser';
+import type { AuthenticationProvider } from '@microsoft/microsoft-graph-client';
 import { useDispatch } from 'react-redux';
+import { getUser } from '../api/user';
+import { initGraphClient, resetGraphClient } from '../api/utils';
 import { setMeData } from '../actions/user';
+import getConfig from '../config';
+import { MsalAuthenticationProvider } from './authProvider';
 
-// <AppContextSnippet>
 export interface AppUser {
   displayName?: string,
   email?: string,
@@ -37,20 +28,22 @@ export interface AppError {
 export type AppContext = {
   user?: AppUser;
   error?: AppError;
-  signIn?: MouseEventHandler<HTMLElement>;
-  signOut?: Function;
-  displayError?: Function;
-  clearError?: Function;
-  authProvider?: AuthCodeMSALBrowserAuthenticationProvider;
+  loading: boolean;
+  signIn: () => Promise<void>;
+  signOut: () => Promise<void>;
+  displayError: (message: string, debug?: string) => void;
+  clearError: () => void;
+  authProvider?: AuthenticationProvider;
 }
 
 const appContext = createContext<AppContext>({
   user: undefined,
   error: undefined,
-  signIn: undefined,
-  signOut: undefined,
-  displayError: undefined,
-  clearError: undefined,
+  loading: true,
+  signIn: async () => undefined,
+  signOut: async () => undefined,
+  displayError: () => undefined,
+  clearError: () => undefined,
   authProvider: undefined,
 });
 
@@ -70,98 +63,83 @@ export default function ProvideAppContext({ children }: ProvideAppContextProps) 
     </appContext.Provider>
   );
 }
-// </AppContextSnippet>
 
-function useProvideAppContext() {
-  const msal = useMsal();
+function useProvideAppContext(): AppContext {
+  const { instance, inProgress, accounts } = useMsal();
   const dispatch = useDispatch();
   const [user, setUser] = useState<AppUser | undefined>(undefined);
   const [error, setError] = useState<AppError | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(true);
+  const config = getConfig();
 
-  const displayError = (message: string, debug?: string) => {
+  const displayError = useCallback((message: string, debug?: string) => {
     setError({ message, debug });
-  }
+  }, []);
 
-  const clearError = () => {
-    setError(undefined);
-  }
+  const clearError = useCallback(() => setError(undefined), []);
 
-  // <AuthProviderSnippet>
   // Used by the Graph SDK to authenticate API calls
-  const authProvider = new AuthCodeMSALBrowserAuthenticationProvider(
-    msal.instance as PublicClientApplication,
-    {
-      account: msal.instance.getActiveAccount()!,
-      scopes: config.scopes,
-      interactionType: InteractionType.Popup
-    }
+  const authProvider = useMemo(
+    () => new MsalAuthenticationProvider(instance as PublicClientApplication, config),
+    [instance, config]
   );
-  // </AuthProviderSnippet>
 
-  // <UseEffectSnippet>
-  useEffect(() => {
-    const checkUser = async () => {
-      if (!user) {
-        try {
-          // Check if user is already signed in
-          const account = msal.instance.getActiveAccount();
-          if (account) {
-            // Get the user from Microsoft Graph
-            const user = await getUser(authProvider);
-
-            setUser({
-              displayName: user.displayName || '',
-              email: user.mail || user.userPrincipalName || '',
-              timeFormat: user.mailboxSettings?.timeFormat || 'h:mm a',
-              timeZone: user.mailboxSettings?.timeZone || 'UTC'
-            });
-            dispatch(setMeData(user));
-          }
-        } catch (err: any) {
-          displayError(err.message);
-        }
-      }
-    };
-    checkUser();
-  });
-  // </UseEffectSnippet>
-
-  // <SignInSnippet>
-  const signIn = async () => {
-    await msal.instance.loginPopup({
-      scopes: config.scopes,
-      prompt: 'select_account'
-    });
-
-    // Get the user from Microsoft Graph
-    const user = await getUser(authProvider);
-
+  const loadUser = useCallback(async () => {
+    initGraphClient(authProvider);
+    const graphUser = await getUser(authProvider);
     setUser({
-      displayName: user.displayName || '',
-      email: user.mail || user.userPrincipalName || '',
-      timeFormat: user.mailboxSettings?.timeFormat || '',
-      timeZone: user.mailboxSettings?.timeZone || 'UTC'
+      displayName: graphUser.displayName || '',
+      email: graphUser.mail || graphUser.userPrincipalName || '',
+      timeFormat: graphUser.mailboxSettings?.timeFormat || 'h:mm a',
+      timeZone: graphUser.mailboxSettings?.timeZone || 'UTC'
     });
-    dispatch(setMeData(user));
-  };
-  // </SignInSnippet>
+    dispatch(setMeData(graphUser));
+  }, [authProvider, dispatch]);
 
-  // This flow is a bit sus.
-  // First we need to set the authentication state to false (by clearing the user data),
-  // so we get redirected to login screen.
-  // If we clear the context's user state simultanious,
-  // it will automatically try to log us in again (because of the useEffect).
-  // Thus, we first have to open the MS popout to logout remotely
-  // Afterwards, we can clear the context's state
-  const signOut = async () => {
+  // Wait for MSAL to handle a pending redirect first
+  useEffect(() => {
+    if (inProgress !== InteractionStatus.None) return;
+    const account = instance.getActiveAccount() || accounts[0];
+    if (!account) {
+      setLoading(false);
+      return;
+    }
+    if (!instance.getActiveAccount()) instance.setActiveAccount(account);
+    if (user) {
+      setLoading(false);
+      return;
+    }
+    loadUser()
+      .catch((err: any) => displayError(err.message))
+      .finally(() => setLoading(false));
+  }, [inProgress, accounts.length]);
+
+  const signIn = useCallback(async () => {
+    const request = { scopes: config.scopes, prompt: 'select_account' };
+    if (config.interactionType === 'popup') {
+      await instance.loginPopup(request);
+      await loadUser();
+    } else {
+      await instance.loginRedirect(request);
+    }
+  }, [instance, config, loadUser]);
+
+  const signOut = useCallback(async () => {
     dispatch(setMeData(null));
-    await msal.instance.logoutPopup();
     setUser(undefined);
-  };
+    resetGraphClient();
+    const account = instance.getActiveAccount() || undefined;
+    if (config.interactionType === 'popup') {
+      await instance.logoutPopup({ account });
+    } else {
+      await instance.logoutRedirect({ account });
+    }
+  }, [instance, config, dispatch]);
 
   return {
     user,
     error,
+    loading,
     signIn,
     signOut,
     displayError,

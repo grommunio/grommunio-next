@@ -1,8 +1,8 @@
 import { MailboxSettings } from "microsoft-graph";
 import { graphClient, ensureClient } from "./utils";
-import { AuthCodeMSALBrowserAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/authCodeMsalBrowser";
+import type { AuthenticationProvider } from "@microsoft/microsoft-graph-client";
 
-export async function getMailboxSettings(authProvider: AuthCodeMSALBrowserAuthenticationProvider) {
+export async function getMailboxSettings(authProvider: AuthenticationProvider) {
   ensureClient(authProvider);
   return await graphClient!.api(`/me/mailboxSettings/`)
     .get();

@@ -23,7 +23,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # development
-src/azure/Config.ts
+/public/config.json
 *.code-workspace
 
 # TinyMCE is copied from node_modules by postinstall.js

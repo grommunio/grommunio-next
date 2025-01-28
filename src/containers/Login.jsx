@@ -101,7 +101,7 @@ const Login = ({ classes }) => {
 
   const handleLogin = e => {
     e.preventDefault();
-    app.signIn();
+    app.signIn().catch(err => console.error(err));
   }
 
   const handleMenuOpen = e => setLangsAnchorEl(e.currentTarget);

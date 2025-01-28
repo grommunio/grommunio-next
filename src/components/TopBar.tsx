@@ -86,9 +86,7 @@ function TopBar(props: any) {
   const handleSettings = () => setSettingsOpen(!settingsOpen);
 
   const handleLogout = () => {
-    if(app?.signOut) {
-      app.signOut();
-    }
+    app.signOut().catch(err => console.error(err));
   }
 
   return (

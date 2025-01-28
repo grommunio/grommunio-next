@@ -5,8 +5,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './App.css';
 import { MsalProvider } from '@azure/msal-react';
-import config from './azure/Config';
-import { EventType, PublicClientApplication } from '@azure/msal-browser';
+import { getMsalInstance } from './azure/msal';
 import ProvideAppContext from './azure/AppContext';
 import { withStyles } from '@mui/styles';
 import { connect } from 'react-redux';
@@ -50,33 +49,6 @@ const styles = {
   }
 };
 
-// <MsalInstanceSnippet>
-const msalInstance = new PublicClientApplication({
-  auth: {
-    clientId: config.appId,
-    redirectUri: config.redirectUri
-  },
-  cache: {
-    cacheLocation: 'sessionStorage',
-    storeAuthStateInCookie: true
-  }
-});
-
-// Check if there are already accounts in the browser session
-// If so, set the first account as the active account
-const accounts = msalInstance.getAllAccounts();
-if (accounts && accounts.length > 0) {
-  msalInstance.setActiveAccount(accounts[0]);
-}
-
-msalInstance.addEventCallback((event) => {
-  if (event.eventType === EventType.LOGIN_SUCCESS && event.payload) {
-    // Set the active account - this simplifies token acquisition
-    const authResult = event.payload;
-    msalInstance.setActiveAccount(authResult.account);
-  }
-});
-// </MsalInstanceSnippet>
 
 // Create async component
 const AsyncMainView = makeLoadableComponent(() => import("./components/MainView"));
@@ -105,7 +77,7 @@ function App(props) {
 
   const darkMode = window.localStorage.getItem("darkMode");
   return (
-    <MsalProvider instance={msalInstance}>
+    <MsalProvider instance={getMsalInstance()}>
       <ProvideAppContext>
         <div
           className={classes.root}
