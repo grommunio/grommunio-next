@@ -7,7 +7,7 @@
 
 grommunio Next is the first open source Graph API web application ([https://learn.microsoft.com/en-us/graph/overview](https://learn.microsoft.com/en-us/graph/overview)) to provide all the familiar email, advanced calendaring and contact features you need to be productive. It is the future main web application for access to your productivity workspace, including email, calendar, contacts, tasks, notes and more.
 
-**Important: grommunio Next is still under heavy development - it is planned for production release in 2023.**
+**Important: grommunio Next is still under heavy development and not yet recommended for production use.**
 
 <details open="open">
 <summary>Overview</summary>
@@ -78,13 +78,33 @@ Together, we can make grommunio Next better!
 
 1. Clone this repository
 2. Move to root folder
-3. `yarn install && npm run postinstall`
-4. `cp src/azure/Config.example.ts src/azure/Config.ts`
-5. Follow the app registration tutorial at https://learn.microsoft.com/en-us/graph/tutorials/typescript?tabs=aad&tutorial-step=1
-6. Change `appId` of `config` in `src/azure/Config.ts` to the client ID of your azure app
+3. `yarn install` (copies the TinyMCE distribution into `public/tinymce`)
+4. `cp public/config.example.json public/config.json`
+5. Register an application as described in https://learn.microsoft.com/en-us/graph/tutorials/typescript?tabs=aad&tutorial-step=1
+   and add `http://localhost:3000` as a *Single-page application* redirect URI
+6. Set `appId` in `public/config.json` to the client ID of your app registration
 7. `yarn start` to run the app
-8. ???
-9. Profit
+
+### Configuration
+
+The build is a static bundle. All deployment specific settings are read from
+`config.json` next to `index.html` when the application starts:
+
+| Key               | Description                                                       |
+|-------------------|-------------------------------------------------------------------|
+| `appId`           | Client ID of the app registration                                 |
+| `authority`       | Sign-in authority (default `https://login.microsoftonline.com/common`) |
+| `redirectUri`     | Redirect URI registered for the SPA (default: current origin)     |
+| `scopes`          | Scopes requested at sign-in (optional, sensible defaults)         |
+| `graphBaseUrl`    | Graph endpoint (default `https://graph.microsoft.com/`)           |
+| `graphVersion`    | Graph API version (default `v1.0`)                                |
+| `interactionType` | `redirect` (default) or `popup`                                   |
+
+### Deployment
+
+`yarn build` creates the bundle in `build/`. Serve the folder with any web
+server, make sure unknown paths fall back to `index.html` (client side
+routing) and place a `config.json` next to it.
 
 ## Translators
 
