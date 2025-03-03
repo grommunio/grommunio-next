@@ -14,6 +14,7 @@ import AddTaskList from '../components/dialogs/AddTaskList';
 import { withTranslation } from 'react-i18next';
 import AuthenticatedView from '../components/AuthenticatedView';
 import FolderList from '../components/FolderList';
+import { TINYMCE_SCRIPT_SRC } from "../constants";
 
 const styles: any = {
   content: {
@@ -167,7 +168,7 @@ function Tasks({ t, classes }: any) {
         </Paper>
         <Paper elevation={4} className={classes.tinyMceContainer}>
           {selectedTask?.body?.content && <Editor
-            tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+            tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
             onInit={(evt, editor) => editorRef.current = editor}
             initialValue={selectedTask?.body?.content}
             init={{

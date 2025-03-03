@@ -2,8 +2,7 @@ import { Fragment, KeyboardEvent, MouseEvent, useEffect, useState } from "react"
 import { useTypeDispatch, useTypeSelector } from "../../store";
 import { Box, Collapse, IconButton, Input, List, ListItemButton, ListItemSecondaryAction, ListItemText, Menu, MenuItem } from "@mui/material";
 import AddCalendar from "./AddCalendar";
-import { BsCalendarPlus } from "react-icons/bs";
-import { KeyboardArrowDown, MoreVert, CalendarMonth } from "@mui/icons-material";
+import { KeyboardArrowDown, MoreVert, CalendarMonth, EventAvailableOutlined } from "@mui/icons-material";
 import { Calendar } from "microsoft-graph";
 import { fetchEventsData, patchCalendarData } from "../../actions/calendar";
 
@@ -85,7 +84,7 @@ const UserCalendars = () => {
         visible={adding}
       />
       <ListItemButton alignItems="flex-start" onClick={handleDialog(true)}>
-        <BsCalendarPlus />
+        <EventAvailableOutlined fontSize="small" />
         <ListItemText primary="Add calendar" sx={{ my: 0, pl: 2 }} />
       </ListItemButton>
       <List>

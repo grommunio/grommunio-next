@@ -27,7 +27,7 @@ async function bootstrap() {
     <Provider store={store}>
       <StyledEngineProvider injectFirst>
         <ToggleColorMode>
-          <BrowserRouter basename={process.env.PUBLIC_URL || ''}>
+          <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <AsyncApp />
           </BrowserRouter>
         </ToggleColorMode>

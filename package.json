@@ -1,6 +1,6 @@
 {
   "name": "grommunio-next",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "dependencies": {
     "@aldabil/react-scheduler": "^2.7.26",
@@ -8,7 +8,6 @@
     "@azure/msal-react": "^1.5.0",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@fontsource/roboto": "^4.5.8",
     "@microsoft/microsoft-graph-client": "^3.0.4",
     "@mui/icons-material": "^5.10.16",
     "@mui/material": "^5.10.16",
@@ -19,18 +18,9 @@
     "@mui/x-tree-view": "^7.3.1",
     "@reduxjs/toolkit": "^1.9.1",
     "@tinymce/tinymce-react": "^5.0.1",
-    "@types/dompurify": "^3.0.4",
-    "@types/jest": "^27.0.1",
-    "@types/lodash": "^4.14.191",
-    "@types/react": "^18.0.0",
-    "@types/react-csv": "^1.1.6",
-    "@types/react-dom": "^18.0.0",
-    "@types/react-router-dom": "^5.3.3",
-    "@types/redux-logger": "^3.0.9",
-    "axios": "^1.5.0",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.9",
-    "dompurify": "^3.0.6",
+    "dompurify": "^3.1.6",
     "i18next": "^22.1.4",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
@@ -41,22 +31,20 @@
     "react-csv": "^2.2.2",
     "react-dom": "^18.2.0",
     "react-i18next": "^12.1.1",
-    "react-icons": "^4.11.0",
-    "react-loadable": "^5.5.0",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.4.4",
-    "react-scripts": "5.0.1",
-    "react-to-print": "^2.14.13",
     "redux-logger": "^3.0.6",
     "tinymce": "^7.1.0",
-    "typescript": "^4.4.2",
     "windows-iana": "^5.1.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src",
+    "typecheck": "tsc --noEmit",
     "postinstall": "node ./postinstall.js",
     "translate": "python3 scripts/fillTranslations.py 'src/i18n/'"
   },
@@ -64,28 +52,27 @@
     "postcss": "^8.4.38",
     "nth-check": "^2.1.1"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
-    "@microsoft/microsoft-graph-types": "^2.25.0",
-    "@types/isomorphic-fetch": "^0.0.36",
-    "@types/microsoft-graph": "^2.24.0",
-    "@types/node": "^18.11.11"
+    "@microsoft/microsoft-graph-types": "^2.40.0",
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@types/lodash": "^4.17.7",
+    "@types/microsoft-graph": "^2.40.0",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-csv": "^1.1.10",
+    "@types/react-dom": "^18.3.0",
+    "@types/redux-logger": "^3.0.13",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "fs-extra": "^11.2.0",
+    "jsdom": "^24.1.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.5"
   }
 }

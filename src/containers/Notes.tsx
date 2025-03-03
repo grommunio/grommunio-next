@@ -14,6 +14,7 @@ import AddNote from '../components/dialogs/AddNote';
 import AuthenticatedView from '../components/AuthenticatedView';
 import FolderList from '../components/FolderList';
 import { truncateString } from '../utils';
+import { TINYMCE_SCRIPT_SRC } from "../constants";
 
 const styles: any = {
   content: {
@@ -110,7 +111,7 @@ function Notes({ t, classes }: any) {
         <Paper className={classes.flexContainer}>
           <div className={classes.tinyMceContainer}>
             {selectedNote?.body?.content && <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+              tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
               onInit={(evt, editor) => editorRef.current = editor}
               initialValue={selectedNote?.body?.content}
               onDirty={() => setDirty(true)}

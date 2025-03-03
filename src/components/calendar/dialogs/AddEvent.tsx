@@ -22,7 +22,8 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { Editor } from "@tinymce/tinymce-react";
 import { withStyles } from '@mui/styles';
 import { AccessAlarm, AttachFile, Check, Close, EventNote, FiberManualRecord, Repeat, Tune } from "@mui/icons-material";
-import { DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { postEventAttachments, postEventData } from "../../../actions/calendar";
 import { gabSelectionToRequestFormat, purify } from "../../../utils";
 import { useAppContext } from "../../../azure/AppContext";
@@ -34,6 +35,7 @@ import { SchedulerHelpers } from "@aldabil/react-scheduler/types";
 import RecurrenceDialog from "./RecurrenceDialog";
 import { NewEvent } from "../../../types/calendar";
 import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../../constants";
+import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 
 
 const styles = {
@@ -427,9 +429,7 @@ const AddEvent = ({ classes, scheduler }: AddEventT) => {
         <div className={classes.body}>
           <Notes className={classes.icon} color="action" />
           <Editor
-            tinymceScriptSrc={
-              process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
-            }
+            tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
             initialValue={event.body as string || ""}
             init={{
               menubar: false,

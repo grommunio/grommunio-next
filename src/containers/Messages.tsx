@@ -14,7 +14,6 @@ import SearchTextfield from '../components/SearchTextfield';
 import { CheckBoxOutlined, Close, EditOutlined, FilterList, Mail } from '@mui/icons-material';
 import { debounce } from 'lodash';
 import MailActions from '../components/messages/MailActions';
-import { now } from 'moment';
 import NewMessage from '../components/NewMessage';
 import MessagePaper from '../components/messages/MessagePaper';
 import MailContextMenu from '../components/messages/MailContextMenu/MailContextMenu';
@@ -256,7 +255,7 @@ function Messages({ classes }: MessagesProps) {
         copy.push(readingTab);
       }
       const tab = {
-        ID: now(),
+        ID: Date.now(),
         label: msg.subject || '<No subject>',
         Component: NewMessage,
         initialState: msg,
@@ -284,7 +283,7 @@ function Messages({ classes }: MessagesProps) {
   const handleForward = () => {
     const copy = [...mailTabs];
     const tab: MailTab = {
-      ID: now(),
+      ID: Date.now(),
       label: 'Fwd: ' + selectedMsg?.subject,
       Component: NewMessage,
       initialState: {
@@ -313,7 +312,7 @@ function Messages({ classes }: MessagesProps) {
     }
     const newCcRecipients: Recipient[] = all ? (ccRecipients || []).filter(notMe) : [];
     const tab: MailTab = {
-      ID: now(),
+      ID: Date.now(),
       label: 'RE: ' + selectedMsg?.subject,
       Component: NewMessage,
       initialState: {
@@ -387,7 +386,7 @@ function Messages({ classes }: MessagesProps) {
       copy.push(readingTab);
     }
     const tab = {
-      ID: now(),
+      ID: Date.now(),
       label: '<No subject>',
       Component: NewMessage,
       initialState,

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
 import moment, { Moment } from 'moment-timezone';
-import * as DOMPurify from 'dompurify'; 
+import DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
 import { Contact, DateTimeTimeZone, EmailAddress, FileAttachment, NullableOption, Recipient } from "microsoft-graph";
 

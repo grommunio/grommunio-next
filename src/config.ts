@@ -46,7 +46,7 @@ let loaded = false;
 export async function loadConfig(): Promise<AppConfig> {
   if (loaded) return config;
   try {
-    const response = await fetch(`${process.env.PUBLIC_URL || ""}/config.json`, { cache: "no-store" });
+    const response = await fetch(`${import.meta.env.BASE_URL}config.json`, { cache: "no-store" });
     if (response.ok) {
       const json = await response.json();
       config = { ...defaults, ...json };

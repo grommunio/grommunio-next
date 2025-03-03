@@ -29,7 +29,8 @@ import Tooltip from "@mui/material/Tooltip";
 import { Editor } from "@tinymce/tinymce-react";
 import { withStyles } from '@mui/styles';
 import { AccessAlarm, AttachFile, Check, Close, EventAvailable, EventBusy, EventNote, KeyboardArrowDown, Mic, PendingOutlined, QuestionMark, Tune } from "@mui/icons-material";
-import { DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { deleteEventData, fetchEventAttachments, patchEventData, postEventAttachments } from "../../actions/calendar";
 import { gabSelectionToRequestFormat, purify, utcTimeToUserTimezone } from "../../utils";
 import { useAppContext } from "../../azure/AppContext";
@@ -40,6 +41,7 @@ import { Attachment, BodyType, Contact, DateTimeTimeZone, EmailAddress, Event, N
 import { ExtendedEvent } from "../../types/calendar";
 import { Moment } from "moment";
 import AttachmentItem from "../AttachmentItem";
+import { TINYMCE_SCRIPT_SRC } from "../../constants";
 
 
 const styles = {
@@ -512,9 +514,7 @@ const OrganizerAppointmentForm = ({ classes, event: storeEvent, onClose }: Organ
           <div className={classes.body}>
             <Notes className={classes.icon} color="action" />
             <Editor
-              tinymceScriptSrc={
-                process.env.PUBLIC_URL + "/tinymce/tinymce.min.js"
-              }
+              tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
               initialValue={event.body || ""}
               init={{
                 menubar: false,

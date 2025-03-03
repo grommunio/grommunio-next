@@ -222,7 +222,7 @@ function Contacts({ classes }: any) {
               : contacts
             ).map((contact: Contact, idx: number) => {
               const checked = checkedContacts.includes(contact)
-              return <Hover>
+              return <Hover key={contact.id || idx}>
                 {(hover: boolean) => hover || checked ? <ListItemButton
                   key={idx}
                   onClick={handleContact(contact)}

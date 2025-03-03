@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import GABAutocompleteTextfields from './NewMessageHeader';
 import { purify } from '../utils';
 import { AttachFile } from '@mui/icons-material';
+import { TINYMCE_SCRIPT_SRC } from "../constants";
 
 
 const styles: any = () => ({
@@ -86,7 +87,7 @@ function NewMessage({ classes, handleTabLabelChange, handleNewMessage, handleDra
           <Typography>{Array.from(files || []).map(file => file.name).join(", ")}</Typography>
         </div>
         <Editor
-          tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+          tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
           onInit={(evt, editor) => editorRef.current = editor}
           initialValue={initialState?.body?.content || ''}
           init={{

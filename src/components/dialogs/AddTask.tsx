@@ -11,6 +11,7 @@ import { TodoTask } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { postTaskData } from '../../actions/tasks';
 import { useTypeDispatch } from '../../store';
+import { TINYMCE_SCRIPT_SRC } from "../../constants";
 
 const styles = (theme: any) => ({
   gridItem: {
@@ -82,7 +83,7 @@ function AddTask(props: any) {
           </Grid>
           <Grid item xs={12} className={classes.gridItem}>
             <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+              tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
               onInit={(evt, editor) => editorRef.current = editor}
               initialValue={''}
               init={{

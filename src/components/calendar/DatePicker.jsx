@@ -1,4 +1,5 @@
-import { DateCalendar, LocalizationProvider } from "@mui/x-date-pickers";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import SmallCalendarDay from "./SmallCalendar";
 

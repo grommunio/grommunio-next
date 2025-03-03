@@ -11,6 +11,7 @@ import { Message } from 'microsoft-graph';
 import { Editor } from '@tinymce/tinymce-react';
 import { useTypeDispatch } from '../../store';
 import { postNoteData } from '../../actions/notes';
+import { TINYMCE_SCRIPT_SRC } from "../../constants";
 
 const styles = {
   gridItem: {
@@ -52,7 +53,7 @@ function AddNote(props: any) {
         <Grid container>
           <Grid item xs={12} className={classes.gridItem}>
             <Editor
-              tinymceScriptSrc={process.env.PUBLIC_URL + '/tinymce/tinymce.min.js'}
+              tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
               onInit={(evt, editor) => editorRef.current = editor}
               initialValue={''}
               init={{

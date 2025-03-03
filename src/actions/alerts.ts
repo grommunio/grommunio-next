@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 
-import { now } from "moment";
 import { PUSH_ALERT_STACK, SPLICE_ALERT_STACK } from "./types";
 
 export function pushAlertStack(alert?: any) {
@@ -10,7 +9,7 @@ export function pushAlertStack(alert?: any) {
     alert: {
       ...(alert || {}),
       message: alert?.message || "Success",
-      id: now(),
+      id: Date.now(),
     },
   }
 }

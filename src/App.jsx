@@ -15,8 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useTypeDispatch } from './store';
 import { changeSettings, fetchMailboxSettingsData } from './actions/settings';
 import { CssBaseline } from '@mui/material';
-import background from "!file-loader!./res/background_light.svg";
-import backgroundDark from "!file-loader!./res/background_dark.svg";
+import background from "./res/background_light.svg";
+import backgroundDark from "./res/background_dark.svg";
 import AlertStack from './components/AlertStack';
 
 const styles = {

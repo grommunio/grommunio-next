@@ -22,8 +22,7 @@ import foldersReducer from './reducers/folders';
 
 const getMiddleware = (getDefaultMiddleware: any) => {
   const middleware = getDefaultMiddleware();
-  // eslint-disable-next-line no-undef
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     middleware.push(logger);
   }
   return middleware;
