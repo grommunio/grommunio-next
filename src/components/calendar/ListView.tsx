@@ -1,5 +1,6 @@
 import { Event } from "microsoft-graph";
-import { DataGrid, GridColDef, GridValueFormatterParams, GridValueGetterParams } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DateTimeTimeZone, Location } from 'microsoft-graph';
 import { useTranslation } from "react-i18next";
 import { getReadableDuration, toReadableTimeInTimezone } from "../../utils";
 import { EventOutlined, EventRepeatOutlined } from "@mui/icons-material";
@@ -36,28 +37,28 @@ const ListView = ({ events }: ListViewType) => {
       field: 'start',
       headerName: t("Start") || "",
       width: 200,
-      valueFormatter: ({ value }: GridValueFormatterParams) =>
+      valueFormatter: (value: DateTimeTimeZone) =>
         `${toReadableTimeInTimezone(value, "lll") || ''}`,
     },
     {
       field: 'end',
       headerName: t("End") || "",
       width: 200,
-      valueFormatter: ({ value }: GridValueFormatterParams) =>
+      valueFormatter: (value: DateTimeTimeZone) =>
         `${toReadableTimeInTimezone(value, "lll") || ''}`,
     },
     {
       field: 'duration',
       headerName: t("Duration") || "",
       width: 120,
-      valueGetter: (params: GridValueGetterParams) =>
-        `${getReadableDuration(params.row.start.dateTime, params.row.end.dateTime)}`,
+      valueGetter: (_value: unknown, row: Event) =>
+        `${getReadableDuration(row.start?.dateTime || "", row.end?.dateTime || "")}`,
     },
     {
       field: 'location',
       headerName: t("Location") || "",
       width: 120,
-      valueFormatter: ({ value }: GridValueFormatterParams) =>
+      valueFormatter: (value: Location | null) =>
         `${value?.displayName || ''}`,
     },
   ];
