@@ -18,7 +18,7 @@ const AsyncApp = makeLoadableComponent(() => import("./App"), <AppLoader />);
 
 async function bootstrap() {
   const config = await loadConfig();
-  createMsalInstance(config);
+  await createMsalInstance(config);
 
   const root = ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement

@@ -20,13 +20,9 @@ import { userReducer as meatGrinder } from './reducers/user';
 import alertsReducer from './reducers/alerts';
 import foldersReducer from './reducers/folders';
 
-const getMiddleware = (getDefaultMiddleware: any) => {
-  const middleware = getDefaultMiddleware();
-  if (import.meta.env.DEV) {
-    middleware.push(logger);
-  }
-  return middleware;
-}
+// Log actions during development only
+const getMiddleware = (getDefaultMiddleware: any) =>
+  import.meta.env.DEV ? getDefaultMiddleware().concat(logger) : getDefaultMiddleware();
 
 const rootReducer = combineReducers({
   alerts: alertsReducer,

@@ -8,8 +8,8 @@ import type { AppConfig } from "../config";
 let instance: PublicClientApplication | undefined;
 
 // Call once before rendering
-export function createMsalInstance(config: AppConfig): PublicClientApplication {
-  instance = new PublicClientApplication({
+export async function createMsalInstance(config: AppConfig): Promise<PublicClientApplication> {
+  const app = new PublicClientApplication({
     auth: {
       clientId: config.appId,
       authority: config.authority,
@@ -24,19 +24,23 @@ export function createMsalInstance(config: AppConfig): PublicClientApplication {
     },
   });
 
-  const accounts = instance.getAllAccounts();
+  // msal-browser 3 requires explicit initialisation before any other call
+  await app.initialize();
+
+  const accounts = app.getAllAccounts();
   if (accounts.length > 0) {
-    instance.setActiveAccount(accounts[0]);
+    app.setActiveAccount(accounts[0]);
   }
 
-  instance.addEventCallback((event: EventMessage) => {
+  app.addEventCallback((event: EventMessage) => {
     if (event.eventType === EventType.LOGIN_SUCCESS && event.payload) {
       const result = event.payload as AuthenticationResult;
-      instance?.setActiveAccount(result.account);
+      app.setActiveAccount(result.account);
     }
   });
 
-  return instance;
+  instance = app;
+  return app;
 }
 
 export function getMsalInstance(): PublicClientApplication {
