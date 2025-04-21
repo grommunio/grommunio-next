@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
 import { AnyAction } from 'redux'
+import { Message } from 'microsoft-graph';
 import {
   FETCH_MAIL_FOLDERS_DATA,
   NEW_MESSAGE_RECEIVED,
@@ -8,7 +9,7 @@ import {
   POST_MAIL_FOLDER,
 } from '../actions/types';
 import { addItem } from '../utils';
-import { COMMON_FOLDER_ORDER, FOLDER_COMMONNAME_DICT_MAPPING } from '../constants';
+import { COMMON_FOLDER_ORDER } from '../constants';
 import { ExtendedMailFolder } from '../types/messages';
 
 type state = {
@@ -21,19 +22,15 @@ const defaultState: state = {
   count: 0,
 };
 
-function addCommonName(folders: Array<ExtendedMailFolder>): Array<ExtendedMailFolder> {
-  folders.forEach(folder => {
-    folder['wellKnownName'] = FOLDER_COMMONNAME_DICT_MAPPING[folder?.displayName || ""] || "custom";
-  });
-  return folders;
-}
-
 function sortFolders(folders: Array<ExtendedMailFolder>): Array<ExtendedMailFolder> {
-  folders = addCommonName(folders);
-  folders.sort((a: ExtendedMailFolder, b: ExtendedMailFolder) => {
-    return (COMMON_FOLDER_ORDER[a["wellKnownName"]] ?? 9) - (COMMON_FOLDER_ORDER[b["wellKnownName"]] ?? 9);
+  const copy = [...folders];
+  copy.sort((a: ExtendedMailFolder, b: ExtendedMailFolder) => {
+    const orderA = COMMON_FOLDER_ORDER[a.wellKnownName] ?? 7;
+    const orderB = COMMON_FOLDER_ORDER[b.wellKnownName] ?? 7;
+    if (orderA !== orderB) return orderA - orderB;
+    return (a.displayName || "").localeCompare(b.displayName || "");
   });
-  return folders;
+  return copy;
 }
 
 function addLeaf(folders:  Array<ExtendedMailFolder>, newFolder: ExtendedMailFolder, parentFolderId: string) {
@@ -76,7 +73,7 @@ function foldersReducer(state = defaultState, action: AnyAction) {
   case FETCH_MAIL_FOLDERS_DATA:
     return {
       ...state,
-      count: action.payload ? action.payload["@odata.count"] || 0 : 0,
+      count: action.payload?.count || 0,
       mailFolders: action.payload ? sortFolders(action.payload.value) : [],
     };
 
@@ -91,13 +88,10 @@ function foldersReducer(state = defaultState, action: AnyAction) {
   case NEW_MESSAGE_RECEIVED:
     return {
       ...state,
-      mailFolders: [
-        {
-          ...state.mailFolders[0],
-          unreadItemCount: state.mailFolders[0].unreadItemCount + action.payload.value.length,
-        },
-        ...state.mailFolders.slice(1),
-      ]
+      mailFolders: state.mailFolders.map(folder => folder.wellKnownName === "inbox" ? {
+        ...folder,
+        unreadItemCount: (folder.unreadItemCount || 0) + action.payload.value.filter((m: Message) => !m.isRead).length,
+      } : folder),
     }
 
   case PATCH_BADGE_COUNT: {
