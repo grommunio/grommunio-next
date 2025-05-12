@@ -265,3 +265,19 @@ export const resolveContactsFromEmails = (emails: Array<Recipient | string> | st
       } as Contact;
     });
 }
+
+export function initialsOf(name?: string | null): string {
+  const words = (name || "").replace(/[<>()"]/g, "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+const AVATAR_COLORS = ["#7b61ff", "#0078d4", "#038387", "#498205", "#ca5010", "#c239b3", "#8e562e", "#5c2e91", "#e3008c", "#004e8c", "#10893e", "#d13438"];
+
+export function avatarColor(key?: string | null): string {
+  const s = (key || "").toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}

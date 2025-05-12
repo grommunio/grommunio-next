@@ -8,7 +8,7 @@ import { StyledEngineProvider } from '@mui/material';
 import { Provider } from 'react-redux';
 import store from './store';
 import './i18n';
-import ToggleColorMode from './components/ToggleColorMode';
+import AppThemeProvider from './components/ThemeContext';
 import makeLoadableComponent from './lazy';
 import AppLoader from './components/AppLoader';
 import { loadConfig } from './config';
@@ -26,11 +26,11 @@ async function bootstrap() {
   root.render(
     <Provider store={store}>
       <StyledEngineProvider injectFirst>
-        <ToggleColorMode>
+        <AppThemeProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <AsyncApp />
           </BrowserRouter>
-        </ToggleColorMode>
+        </AppThemeProvider>
       </StyledEngineProvider>
     </Provider>
   );

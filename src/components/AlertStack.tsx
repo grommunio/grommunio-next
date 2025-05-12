@@ -15,8 +15,8 @@ const AlertStack = () => {
       zIndex: 1400,
       maxWidth: 400,
       position: 'fixed',
-      bottom: 8,
-      left: 100,
+      bottom: 16,
+      left: 80,
     }}
     spacing={1}
   >
