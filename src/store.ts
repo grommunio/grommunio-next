@@ -19,6 +19,7 @@ import tasksReducer from './reducers/tasks';
 import { userReducer as meatGrinder } from './reducers/user';
 import alertsReducer from './reducers/alerts';
 import foldersReducer from './reducers/folders';
+import mailReducer from './features/mail/mailSlice';
 
 // Log actions during development only
 const getMiddleware = (getDefaultMiddleware: any) =>
@@ -31,6 +32,7 @@ const rootReducer = combineReducers({
   contacts: contactsReducer,
   folders: foldersReducer,
   gab: gabReducer,
+  mail: mailReducer,
   me: meReducer,
   messages: messagesReducer,
   notes: notesReducer,

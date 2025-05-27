@@ -4,10 +4,18 @@
 import { AlertColor } from "@mui/material";
 import { Contact } from "microsoft-graph";
 
+export type AlertUndo = {
+  // Ids change when a message is moved
+  ids: string[];
+  destinationId?: string | null;
+};
+
 export type AlertType = {
   id: number,
   message: string;
   severity?: AlertColor;
+  undo?: AlertUndo;
+  duration?: number;
 }
 
 export type ContextMenuCoords = {
