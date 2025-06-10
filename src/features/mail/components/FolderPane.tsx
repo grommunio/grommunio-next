@@ -28,6 +28,14 @@ const FOLDER_ICONS: Record<WellKnownFolderName, typeof InboxOutlined> = {
   custom: FolderOutlined,
 };
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Inbox")
+// t("Drafts")
+// t("Sent Items")
+// t("Deleted Items")
+// t("Junk Email")
+// t("Archive")
+// t("Outbox")
 export const FOLDER_LABELS: Record<WellKnownFolderName, string> = {
   inbox: "Inbox",
   drafts: "Drafts",

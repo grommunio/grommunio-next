@@ -4,6 +4,32 @@
 import type { OutlookCategory } from "microsoft-graph";
 
 // Outlook's 25 preset colors, keyed by Graph preset name
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Red")
+// t("Orange")
+// t("Brown")
+// t("Yellow")
+// t("Green")
+// t("Teal")
+// t("Olive")
+// t("Blue")
+// t("Purple")
+// t("Cranberry")
+// t("Steel")
+// t("Dark steel")
+// t("Gray")
+// t("Dark gray")
+// t("Black")
+// t("Dark red")
+// t("Dark orange")
+// t("Dark brown")
+// t("Dark yellow")
+// t("Dark green")
+// t("Dark teal")
+// t("Dark olive")
+// t("Dark blue")
+// t("Dark purple")
+// t("Dark cranberry")
 export const CATEGORY_PRESETS: Array<{ preset: string; label: string; color: string }> = [
   { preset: "preset0", label: "Red", color: "#d13438" },
   { preset: "preset1", label: "Orange", color: "#ff8c00" },

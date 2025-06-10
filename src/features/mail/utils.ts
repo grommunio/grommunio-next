@@ -36,6 +36,17 @@ export function formatFullDate(iso?: string | null): string {
   return new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
 }
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Today")
+// t("Yesterday")
+// t("This week")
+// t("Last week")
+// t("Two weeks ago")
+// t("Three weeks ago")
+// t("Last month")
+// t("Older")
+// t("Pinned")
+// t("Unknown sender")
 export type DateGroup =
   | "Today" | "Yesterday" | "This week" | "Last week" | "Two weeks ago" | "Three weeks ago" | "Last month" | "Older" | "Pinned";
 

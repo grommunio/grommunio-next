@@ -39,6 +39,17 @@ type MessageListProps = {
   onDragStart: (message: Message, e: React.DragEvent) => void;
 };
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("All")
+// t("Unread")
+// t("Flagged")
+// t("To me")
+// t("Has attachments")
+// t("Date")
+// t("From")
+// t("Subject")
+// t("Importance")
+// t("Attachments")
 const FILTERS: Array<{ value: MailFilter; label: string }> = [
   { value: "all", label: "All" },
   { value: "unread", label: "Unread" },

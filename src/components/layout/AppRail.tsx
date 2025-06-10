@@ -21,6 +21,12 @@ type RailItem = {
   activeIcon: SvgIconComponent;
 };
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Mail")
+// t("Calendar")
+// t("People")
+// t("Tasks")
+// t("Notes")
 const items: RailItem[] = [
   { key: "mail", label: "Mail", route: "/mail", match: ["/mail", "/"], icon: MailOutlined, activeIcon: Mail },
   { key: "calendar", label: "Calendar", route: "/calendar", match: ["/calendar"], icon: CalendarMonthOutlined, activeIcon: CalendarMonth },

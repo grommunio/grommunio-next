@@ -9,6 +9,16 @@ export type ColorMode = "light" | "dark";
 export type ColorModePreference = ColorMode | "system";
 
 // The key is stored in the user settings
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("grommunio")
+// t("Blue")
+// t("Teal")
+// t("Green")
+// t("Purple")
+// t("Magenta")
+// t("Orange")
+// t("Brown")
+// t("Blue grey")
 export const THEME_COLORS: Record<string, { label: string; main: string; palette: PaletteColorOptions }> = {
   grommunio: { label: "grommunio", main: "#1d4b99", palette: { main: "#1d4b99", light: "#4f78c7", dark: "#0f2f6b", contrastText: "#fff" } },
   blue: { label: "Blue", main: blue[700], palette: { main: blue[700], light: blue[400], dark: blue[900], contrastText: "#fff" } },
