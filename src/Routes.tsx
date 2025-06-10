@@ -8,7 +8,7 @@ import UnauthenticatedRoute from "./components/UnauthenticatedRoute";
 import { useTypeSelector } from "./store";
 
 const AsyncLogin = makeLoadableComponent(() => import("./containers/Login"));
-const AsyncMessages = makeLoadableComponent(() => import("./containers/Messages"));
+const AsyncMail = makeLoadableComponent(() => import("./features/mail/components/MailView"));
 const AsyncCalendar = makeLoadableComponent(() => import("./containers/Calendar"));
 const AsyncTasks = makeLoadableComponent(() => import('./containers/Tasks'));
 const AsyncContacts = makeLoadableComponent(() => import('./containers/Contacts'));
@@ -23,7 +23,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<UnauthenticatedRoute component={AsyncLogin} childProps={{ authenticated: isAuthenticated }} />} />
       <Route path="/" element={<Navigate to="/mail" replace />} />
-      <Route path="/mail/*" element={authenticated(<AsyncMessages />)} />
+      <Route path="/mail/:folder?/:messageId?" element={authenticated(<AsyncMail />)} />
       <Route path="/calendar/*" element={authenticated(<AsyncCalendar />)} />
       <Route path="/tasks/*" element={authenticated(<AsyncTasks />)} />
       <Route path="/contacts" element={authenticated(<AsyncContacts />)} />
