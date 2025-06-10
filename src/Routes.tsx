@@ -9,7 +9,7 @@ import { useTypeSelector } from "./store";
 
 const AsyncLogin = makeLoadableComponent(() => import("./containers/Login"));
 const AsyncMail = makeLoadableComponent(() => import("./features/mail/components/MailView"));
-const AsyncCalendar = makeLoadableComponent(() => import("./containers/Calendar"));
+const AsyncCalendar = makeLoadableComponent(() => import("./features/calendar/components/CalendarView"));
 const AsyncTasks = makeLoadableComponent(() => import('./containers/Tasks'));
 const AsyncContacts = makeLoadableComponent(() => import('./containers/Contacts'));
 const AsyncContact = makeLoadableComponent(() => import('./containers/Contact'));
@@ -24,7 +24,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<UnauthenticatedRoute component={AsyncLogin} childProps={{ authenticated: isAuthenticated }} />} />
       <Route path="/" element={<Navigate to="/mail" replace />} />
       <Route path="/mail/:folder?/:messageId?" element={authenticated(<AsyncMail />)} />
-      <Route path="/calendar/*" element={authenticated(<AsyncCalendar />)} />
+      <Route path="/calendar/:view?/:date?" element={authenticated(<AsyncCalendar />)} />
       <Route path="/tasks/*" element={authenticated(<AsyncTasks />)} />
       <Route path="/contacts" element={authenticated(<AsyncContacts />)} />
       <Route path="/contacts/:contactId" element={authenticated(<AsyncContact />)} />

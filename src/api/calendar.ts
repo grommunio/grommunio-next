@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
 import { PageCollection } from "@microsoft/microsoft-graph-client";
-import { Attachment, Calendar, CalendarGroup, CalendarPermission, Event, ScheduleInformation } from "microsoft-graph";
+import { Attachment, Calendar, CalendarGroup, CalendarPermission, Event, FileAttachment, ScheduleInformation } from "microsoft-graph";
 import { del, get, getAll, patch, post } from "./graph";
 import { EventReponseType } from "../types/calendar";
 import { fileToBase64 } from "../utils";
@@ -115,6 +115,10 @@ export async function addEventFileAttachment(eventId: string, file: File): Promi
     contentType: file.type || "application/octet-stream",
     contentBytes: (await fileToBase64(file)).split("base64,")[1],
   } as Attachment);
+}
+
+export async function getEventAttachmentContent(eventId: string, attachmentId: string): Promise<FileAttachment> {
+  return get<FileAttachment>(`/me/events/${eventId}/attachments/${attachmentId}`);
 }
 
 export async function deleteEventAttachment(eventId: string, attachmentId: string): Promise<void> {

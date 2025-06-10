@@ -1,26 +1,8 @@
-import { DateTimeTimeZone, Event, NullableOption } from "microsoft-graph";
-import { Moment } from "moment";
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-FileCopyrightText: 2023-2024 grommunio GmbH
 
 export enum EventReponseType {
   accept = "accept",
   tentatively = "tentativelyAccept",
   decline = "decline",
-}
-
-export type ExtendedEvent = Event & {
-  endDate: NullableOption<DateTimeTimeZone> | undefined;
-  startDate: NullableOption<DateTimeTimeZone> | undefined;
-  event_id: string | undefined;
-  color: string | undefined;
-  title: string | undefined;
-  notes: string | undefined;
-  allDay: boolean;
-  calendarId: string;
-};
-
-
-export type NewEvent = Event & {
-  start?: Moment;
-  end?: Moment;
-  location?: string;
 }
