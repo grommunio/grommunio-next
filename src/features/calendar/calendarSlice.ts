@@ -17,6 +17,16 @@ const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof
 type ThunkApi = { state: RootState; rejectValue: string };
 
 // Outlook's hex values for the Graph color enum
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Light blue")
+// t("Light green")
+// t("Light orange")
+// t("Light gray")
+// t("Light yellow")
+// t("Light teal")
+// t("Light pink")
+// t("Light brown")
+// t("Light red")
 export const CALENDAR_COLORS: Array<{ name: string; hex: string; label: string }> = [
   { name: "lightBlue", hex: "#a3c8f1", label: "Light blue" },
   { name: "lightGreen", hex: "#9bd38e", label: "Light green" },

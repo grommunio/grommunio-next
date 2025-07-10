@@ -11,6 +11,12 @@ import type { DayOfWeek, PatternedRecurrence, WeekIndex } from "microsoft-graph"
 import { dayjs, Dayjs } from "../dates";
 
 const WEEKDAYS: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("first")
+// t("second")
+// t("third")
+// t("fourth")
+// t("last")
 const WEEK_INDEX: WeekIndex[] = ["first", "second", "third", "fourth", "last"];
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";

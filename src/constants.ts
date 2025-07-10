@@ -19,6 +19,22 @@ export const COMMON_FOLDER_ORDER: IntMap = {
   "custom": 7,
 }
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Don't remind me")
+// t("At time of event")
+// t("5 minutes")
+// t("15 minutes")
+// t("30 minutes")
+// t("1 hour")
+// t("2 hours")
+// t("12 hours")
+// t("1 day")
+// t("1 week")
+// t("Free")
+// t("Working elsewhere")
+// t("Tentatively")
+// t("Busy")
+// t("Away")
 export const REMINDER_OPTIONS = [
   { label: "Don't remind me", value: -1 },
   { label: "At time of event", value: 0 },

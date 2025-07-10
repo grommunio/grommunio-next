@@ -18,6 +18,13 @@ type SchedulingAssistantProps = {
 
 const INTERVAL = 30;
 const COLORS: Record<string, string> = { "0": "transparent", "1": "#8fbcf0", "2": "#4f78c7", "3": "#8e2a9b", "4": "#9aa4b2" };
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Free")
+// t("Tentative")
+// t("Busy")
+// t("Out of office")
+// t("Working elsewhere")
+// t("Unknown")
 const LABELS: Record<string, string> = { "0": "Free", "1": "Tentative", "2": "Busy", "3": "Out of office", "4": "Working elsewhere" };
 
 const SchedulingAssistant = ({ attendees, ownAddress, start, end }: SchedulingAssistantProps) => {

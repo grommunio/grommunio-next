@@ -12,6 +12,12 @@ import { isValidEmail } from "../../mail/utils";
 import { useTypeDispatch } from "../../../store";
 import { pushAlertStack } from "../../../actions/alerts";
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Can view when I'm busy")
+// t("Can view titles and locations")
+// t("Can view all details")
+// t("Can edit")
+// t("Delegate")
 const ROLES: Array<{ value: CalendarRoleType; label: string }> = [
   { value: "freeBusyRead", label: "Can view when I'm busy" },
   { value: "limitedRead", label: "Can view titles and locations" },
