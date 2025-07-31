@@ -13,7 +13,6 @@ import { useTheme } from "@mui/material/styles";
 import type { Attachment, FileAttachment, Recipient } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { addDraftAttachments, composeClosed, discardCompose, removeDraftAttachment, saveDraft, sendCompose } from "../mailSlice";
-import { fetchContactsData } from "../../../actions/contacts";
 import RecipientField from "./RecipientField";
 import AttachmentList from "./AttachmentList";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -68,7 +67,6 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
     setReadReceipt(init.isReadReceiptRequested);
     setDirty(false);
     dirtyRef.current = false;
-    dispatch(fetchContactsData());
   }, [key, compose?.status === "creating"]);
 
   const currentPatch = useCallback(() => ({

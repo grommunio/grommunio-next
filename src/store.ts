@@ -9,7 +9,7 @@ import logger from 'redux-logger';
 // Keep alphabetically ordered
 import authReducer from './reducers/auth';
 import calendarReducer from './features/calendar/calendarSlice';
-import contactsReducer from './reducers/contacts';
+import contactsReducer from './features/contacts/contactsSlice';
 import meReducer from './reducers/me';
 import notesReducer from './reducers/notes';
 import settingsReducer from './reducers/settings';

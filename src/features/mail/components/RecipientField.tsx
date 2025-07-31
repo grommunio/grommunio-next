@@ -6,7 +6,8 @@ import { ErrorOutline } from "@mui/icons-material";
 import { HTMLAttributes, ReactNode, SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Contact, Person, Recipient } from "microsoft-graph";
-import { useTypeSelector } from "../../../store";
+import { useTypeDispatch, useTypeSelector } from "../../../store";
+import { loadAllContacts, selectAllContacts } from "../../contacts/contactsSlice";
 import { searchPeople } from "../../../api/contacts";
 import { formatRecipient, isValidEmail, toRecipient } from "../utils";
 import PersonAvatar from "../../../components/common/PersonAvatar";
@@ -52,7 +53,10 @@ function personOptions(people: Person[]): Option[] {
 
 const RecipientField = ({ label, value, onChange, autoFocus, endAdornment, onBlur }: RecipientFieldProps) => {
   const { t } = useTranslation();
-  const contacts = useTypeSelector(state => state.contacts.contacts as Contact[]);
+  const dispatch = useTypeDispatch();
+  const contacts = useTypeSelector(selectAllContacts);
+
+  useEffect(() => { dispatch(loadAllContacts()); }, []);
   const [input, setInput] = useState("");
   const [people, setPeople] = useState<Option[]>([]);
   const [searching, setSearching] = useState(false);

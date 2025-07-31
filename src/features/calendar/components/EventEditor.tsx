@@ -28,7 +28,6 @@ import SchedulingAssistant from "./SchedulingAssistant";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../../constants";
 import { purify } from "../../mail/utils-compose";
-import { fetchContactsData } from "../../../actions/contacts";
 import { deleteEventAttachment, eventAttachments, getEventAttachmentContent } from "../../../api/calendar";
 import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -97,7 +96,6 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
 
   // Load full details (body, attendees) when editing
   useEffect(() => {
-    dispatch(fetchContactsData());
     if (editing && editId) {
       dispatch(loadEventDetails(editId));
       eventAttachments({ id: editId }).then(setAttachments).catch(() => undefined);
