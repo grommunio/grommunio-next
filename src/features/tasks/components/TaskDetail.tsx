@@ -24,6 +24,13 @@ type TaskDetailProps = {
   onDeleted: () => void;
 };
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Never")
+// t("Daily")
+// t("Weekdays")
+// t("Weekly")
+// t("Monthly")
+// t("Yearly")
 const REPEAT_OPTIONS: Array<{ key: string; label: string; recurrence: PatternedRecurrence | null }> = [
   { key: "none", label: "Never", recurrence: null },
   { key: "daily", label: "Daily", recurrence: { pattern: { type: "daily", interval: 1 }, range: { type: "noEnd" } } },

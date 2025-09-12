@@ -19,6 +19,11 @@ import { loadCategories } from "../../mail/mailSlice";
 import { dayjs } from "../../calendar/dates";
 import { presetColor } from "../../mail/categories";
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Creation date")
+// t("Importance")
+// t("Due date")
+// t("Alphabetically")
 const SORTS: Array<{ value: TaskSort; label: string }> = [
   { value: "default", label: "Creation date" },
   { value: "importance", label: "Importance" },

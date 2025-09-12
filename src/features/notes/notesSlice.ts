@@ -12,6 +12,13 @@ const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof
 type ThunkApi = { state: RootState; rejectValue: string };
 
 export type NoteColor = "yellow" | "green" | "pink" | "blue" | "purple" | "gray";
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Yellow")
+// t("Green")
+// t("Pink")
+// t("Blue")
+// t("Purple")
+// t("Gray")
 export const NOTE_COLORS: Record<NoteColor, { light: string; dark: string; label: string }> = {
   yellow: { light: "#fff4b8", dark: "#5c4d12", label: "Yellow" },
   green: { light: "#d3f3c5", dark: "#2f4d24", label: "Green" },
