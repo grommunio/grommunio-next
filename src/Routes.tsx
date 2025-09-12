@@ -10,9 +10,9 @@ import { useTypeSelector } from "./store";
 const AsyncLogin = makeLoadableComponent(() => import("./containers/Login"));
 const AsyncMail = makeLoadableComponent(() => import("./features/mail/components/MailView"));
 const AsyncCalendar = makeLoadableComponent(() => import("./features/calendar/components/CalendarView"));
-const AsyncTasks = makeLoadableComponent(() => import('./containers/Tasks'));
+const AsyncTasks = makeLoadableComponent(() => import('./features/tasks/components/TasksView'));
 const AsyncContacts = makeLoadableComponent(() => import('./features/contacts/components/PeopleView'));
-const AsyncNotes = makeLoadableComponent(() => import('./containers/Notes'));
+const AsyncNotes = makeLoadableComponent(() => import('./features/notes/components/NotesView'));
 
 const authenticated = (element: JSX.Element) => <RequireAuth>{element}</RequireAuth>;
 
@@ -24,9 +24,9 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/mail" replace />} />
       <Route path="/mail/:folder?/:messageId?" element={authenticated(<AsyncMail />)} />
       <Route path="/calendar/:view?/:date?" element={authenticated(<AsyncCalendar />)} />
-      <Route path="/tasks/*" element={authenticated(<AsyncTasks />)} />
+      <Route path="/tasks/:listId?/:taskId?" element={authenticated(<AsyncTasks />)} />
       <Route path="/contacts/:folder?/:contactId?" element={authenticated(<AsyncContacts />)} />
-      <Route path="/notes/*" element={authenticated(<AsyncNotes />)} />
+      <Route path="/notes/:noteId?" element={authenticated(<AsyncNotes />)} />
       <Route path="*" element={<Navigate to="/mail" replace />} />
     </Routes>
   );
