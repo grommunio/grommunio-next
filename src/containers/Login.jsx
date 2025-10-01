@@ -17,7 +17,7 @@ import logo from '../res/grommunio_logo_default.svg';
 import { Translate } from '@mui/icons-material';
 import { getLangs } from '../utils';
 import { withRouter } from '../components/hocs/withRouter';
-import { changeSettings } from '../actions/settings';
+import { setLanguage } from '../features/settings/settingsSlice';
 import { useAppContext } from '../azure/AppContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -109,8 +109,7 @@ const Login = ({ classes }) => {
   const handleMenuClose = () => setLangsAnchorEl(null);
 
   const handleLangChange = lang => () => {
-    dispatch(changeSettings('language', lang));
-    window.localStorage.setItem('lang', lang);
+    dispatch(setLanguage(lang));
     handleMenuClose();
   }
 

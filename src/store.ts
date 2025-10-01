@@ -12,9 +12,8 @@ import calendarReducer from './features/calendar/calendarSlice';
 import contactsReducer from './features/contacts/contactsSlice';
 import meReducer from './reducers/me';
 import notesReducer from './features/notes/notesSlice';
-import settingsReducer from './reducers/settings';
+import settingsReducer from './features/settings/settingsSlice';
 import tasksReducer from './features/tasks/tasksSlice';
-import { userReducer as meatGrinder } from './reducers/user';
 import alertsReducer from './reducers/alerts';
 import mailReducer from './features/mail/mailSlice';
 
@@ -28,7 +27,6 @@ const rootReducer = combineReducers({
   notes: notesReducer,
   settings: settingsReducer,
   tasks: tasksReducer,
-  user: meatGrinder
 });
 
 // Create redux store

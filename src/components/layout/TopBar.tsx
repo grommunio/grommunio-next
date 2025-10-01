@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import GrommunioLogo from "../logos/GrommunioLogo";
 import GlobalSearch from "./GlobalSearch";
 import UserMenu from "./UserMenu";
-import SettingsDrawer from "../settings/SettingsDrawer";
+import SettingsDialog from "../../features/settings/components/SettingsDialog";
 import { useThemeSettings } from "../ThemeContext";
 
 export const TOPBAR_HEIGHT = 48;
@@ -48,7 +48,7 @@ const TopBar = () => {
           <UserMenu />
         </Box>
       </Toolbar>
-      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </AppBar>
   );
 };

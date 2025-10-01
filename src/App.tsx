@@ -12,7 +12,7 @@ import AppLayout from './components/layout/AppLayout';
 import AppLoader from './components/AppLoader';
 import AlertStack from './components/AlertStack';
 import { useTypeDispatch, useTypeSelector } from './store';
-import { changeSettings, fetchMailboxSettingsData } from './actions/settings';
+import { loadMailboxSettings, setLanguage } from './features/settings/settingsSlice';
 
 function AppFrame() {
   const { i18n } = useTranslation();
@@ -23,11 +23,16 @@ function AppFrame() {
   useEffect(() => {
     const applyLanguage = async () => {
       // Mailbox settings win over the locally stored preference
-      const settings = authenticated ? await dispatch(fetchMailboxSettingsData()) : null;
-      const lang = settings?.language?.locale || localStorage.getItem("lang");
+      let lang = localStorage.getItem("lang");
+      if (authenticated) {
+        const result = await dispatch(loadMailboxSettings());
+        if (loadMailboxSettings.fulfilled.match(result) && result.payload.language?.locale) {
+          lang = result.payload.language.locale;
+        }
+      }
       if (lang) {
         i18n.changeLanguage(lang);
-        dispatch(changeSettings("language", lang));
+        dispatch(setLanguage(lang));
       }
     };
     applyLanguage();
