@@ -135,6 +135,28 @@ export const NotificationSettings = () => {
   );
 };
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Everywhere")
+// t("People and tasks")
+// t("Focus the search box")
+// t("Clear selection / search")
+// t("New mail")
+// t("Reply")
+// t("Reply all")
+// t("Forward")
+// t("Delete")
+// t("Archive")
+// t("Mark as read/unread")
+// t("Flag")
+// t("Next / previous message")
+// t("Select all")
+// t("Send (in the editor)")
+// t("New event")
+// t("Today")
+// t("Previous / next period")
+// t("Day, work week, week, month, agenda")
+// t("New contact / focus task input")
+// t("Delete selection")
 const SHORTCUTS: Array<{ group: string; items: Array<[string, string]> }> = [
   { group: "Everywhere", items: [["/", "Focus the search box"], ["Esc", "Clear selection / search"]] },
   { group: "Mail", items: [["n", "New mail"], ["r", "Reply"], ["Shift + a", "Reply all"], ["f", "Forward"], ["Delete", "Delete"], ["e", "Archive"], ["u", "Mark as read/unread"], ["i", "Flag"], ["j / k, ↑ / ↓", "Next / previous message"], ["Ctrl + a", "Select all"], ["Ctrl + Enter", "Send (in the editor)"]] },

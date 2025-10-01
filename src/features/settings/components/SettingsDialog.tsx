@@ -24,6 +24,21 @@ type SettingsDialogProps = {
   initialPage?: SettingsPage;
 };
 
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("General")
+// t("Mail")
+// t("Calendar")
+// t("Appearance")
+// t("Language and time")
+// t("Notifications")
+// t("Categories")
+// t("Keyboard shortcuts")
+// t("Account")
+// t("Layout")
+// t("Compose and reply")
+// t("Rules")
+// t("Automatic replies")
+// t("View and events")
 const NAV: Array<{ group: string; items: Array<{ key: SettingsPage; label: string; icon: JSX.Element }> }> = [
   { group: "General", items: [
     { key: "appearance", label: "Appearance", icon: <PaletteOutlined fontSize="small" /> },
