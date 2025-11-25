@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildQuery, readableBytesFormat, resolveContactsFromEmails, parseParams, invertColor } from "./utils";
-import type { Contact } from "microsoft-graph";
+import { avatarColor, initialsOf, invertColor, readableBytesFormat, toReadableTimeInTimezone } from "./utils";
 
 describe("readableBytesFormat", () => {
   it("formats bytes with binary units", () => {
@@ -16,24 +15,6 @@ describe("readableBytesFormat", () => {
   });
 });
 
-describe("buildQuery", () => {
-  it("returns the endpoint when there are no params", () => {
-    expect(buildQuery("/me/messages")).toBe("/me/messages");
-  });
-
-  it("appends defined params only", () => {
-    expect(buildQuery("/me/messages", { skip: 25, search: undefined, filter: "isRead eq false" }))
-      .toBe("/me/messages?skip=25&filter=isRead eq false");
-  });
-});
-
-describe("parseParams", () => {
-  it("parses a query string", () => {
-    expect(parseParams("redirect=%2Fcalendar&foo")).toEqual({ redirect: "/calendar", foo: "" });
-    expect(parseParams("")).toEqual({});
-  });
-});
-
 describe("invertColor", () => {
   it("inverts hex colors", () => {
     expect(invertColor("#000000")).toBe("#ffffff");
@@ -42,32 +23,32 @@ describe("invertColor", () => {
   });
 });
 
-describe("resolveContactsFromEmails", () => {
-  const contacts: Contact[] = [
-    { id: "1", displayName: "Alice Example", emailAddresses: [{ address: "alice@example.com", name: "Alice" }] },
-  ];
-
-  it("matches known contacts case-insensitively", () => {
-    const res = resolveContactsFromEmails([{ emailAddress: { address: "Alice@Example.com" } }], contacts);
-    expect(res).toHaveLength(1);
-    expect(res[0].id).toBe("1");
+describe("initialsOf", () => {
+  it("uses the first letters of first and last word", () => {
+    expect(initialsOf("Alice Example")).toBe("AE");
+    expect(initialsOf("Alice Marie Example")).toBe("AE");
+    expect(initialsOf("alice@example.com")).toBe("AL");
+    expect(initialsOf("")).toBe("");
+    expect(initialsOf('"Example, Alice" <a@x.org>')).toBe("EA");
   });
+});
 
-  it("creates pseudo contacts for unknown recipients", () => {
-    const res = resolveContactsFromEmails([{ emailAddress: { address: "bob@example.com", name: "Bob" } }], contacts);
-    expect(res[0].id).toBeUndefined();
-    expect(res[0].displayName).toBe("Bob");
-    expect(res[0].emailAddresses?.[0].address).toBe("bob@example.com");
+describe("avatarColor", () => {
+  it("is deterministic and case insensitive", () => {
+    expect(avatarColor("Alice@Example.com")).toBe(avatarColor("alice@example.com"));
+    expect(avatarColor("a")).toMatch(/^#[0-9a-f]{6}$/);
   });
+});
 
-  it("accepts plain address strings and comma separated lists", () => {
-    expect(resolveContactsFromEmails("alice@example.com, bob@example.com", contacts).map(c => c.displayName))
-      .toEqual(["Alice Example", "bob@example.com"]);
-    expect(resolveContactsFromEmails(["carol@example.com"], contacts)[0].displayName).toBe("carol@example.com");
+describe("toReadableTimeInTimezone", () => {
+  it("formats UTC values in local time", () => {
+    const result = toReadableTimeInTimezone({ dateTime: "2024-09-11T10:30:00.0000000", timeZone: "UTC" }, "YYYY-MM-DD HH:mm");
+    const expected = new Date("2024-09-11T10:30:00Z");
+    const pad = (n: number) => String(n).padStart(2, "0");
+    expect(result).toBe(`${expected.getFullYear()}-${pad(expected.getMonth() + 1)}-${pad(expected.getDate())} ${pad(expected.getHours())}:${pad(expected.getMinutes())}`);
   });
-
-  it("handles missing input", () => {
-    expect(resolveContactsFromEmails(undefined, contacts)).toEqual([]);
-    expect(resolveContactsFromEmails(null, contacts)).toEqual([]);
+  it("returns an empty string for missing values", () => {
+    expect(toReadableTimeInTimezone(undefined)).toBe("");
+    expect(toReadableTimeInTimezone({ dateTime: undefined })).toBe("");
   });
 });

@@ -5,7 +5,6 @@ import {
   PUSH_ALERT_STACK, SPLICE_ALERT_STACK,
 } from '../actions/types';
 import { AlertType } from '../types/misc';
-import { addItem } from '../utils';
 
 type AlertReducerType = {
   stack: Array<AlertType>;
@@ -21,7 +20,7 @@ function alertsReducer(state = defaultState, action: AnyAction) {
   case PUSH_ALERT_STACK:
     return {
       ...state,
-      stack: addItem(state.stack, action.alert),
+      stack: [...state.stack, action.alert],
     };
 
   case SPLICE_ALERT_STACK:

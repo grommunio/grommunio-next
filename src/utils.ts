@@ -1,53 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
-import moment, { Moment } from 'moment-timezone';
-import DOMPurify from 'dompurify'; 
 import { rgbToHex } from "@mui/material";
-import { Contact, DateTimeTimeZone, EmailAddress, FileAttachment, NullableOption, Recipient } from "microsoft-graph";
-
-export type URLParams = {
-  [index: string]: string;
-}
-
-export function parseParams(s: string): URLParams {
-  if (!s) {
-    return {};
-  }
-  const segments = s.split('&');
-  const data:URLParams = {};
-  let parts;
-  for (let i = 0; i < segments.length; i++) {
-    parts = segments[i].split('=');
-    if (parts.length < 2) {
-      parts.push('');
-    }
-    data[decodeURIComponent(parts[0]) as keyof URLParams] = decodeURIComponent(parts[1]);
-  }
-
-  return data;
-}
-
-export function addItem(arr: Array<any>, item: any): Array<any> {
-  const copy = [...arr];
-  copy.push(item);
-  return copy;
-}
-
-export function editItem(arr: Array<any>, item: any): Array<any> {
-  const copy = [...arr];
-  const idx = arr.findIndex(e => e.id === item.id);
-  if (idx != -1) {
-    copy[idx] = item;
-  }
-  return copy;
-}
-
-export function spliceArray(arr: Array<any>, index: number): Array<any> {
-  const copy = [...arr];
-  copy.splice(index, 1);
-  return copy;
-}
+import type { DateTimeTimeZone, NullableOption } from "microsoft-graph";
+import { dayjs, graphDateToDate } from "./features/calendar/dates";
 
 export function getLangs() {
   return [
@@ -76,90 +32,12 @@ export function getLangs() {
   ];
 }
 
-export function getStringAfterFirstSlash(): string {
-  return window.location.pathname.split('/')[1] || '';
-}
-
-export function getStringAfterLastSlash() {
-  return window?.location?.href.split("/").pop() || '';
-}
-
-
-export function buildQuery(endpoint: string, params={}): string {
-  const paramsArray = Object.entries(params);
-  if(paramsArray.length === 0) return endpoint;
-  const query = endpoint + '?' + paramsArray.reduce((prev, [name, val]) => prev + (val !== undefined ? `${name}=${val}&` : ''), '');
-  return query.slice(0, -1);
-}
-
-export function parseISODate(isoDateString: string) {
-  if(!isoDateString) return "";
-  // TODO: Get locale
-  return moment(isoDateString).format('l'); // TODO: Format date depending on time since received
-}
-
-export function utcTimeToUserTimezone(msDatetime?: NullableOption<DateTimeTimeZone>): Moment | null {
-  if(!msDatetime) return null;
-  const { dateTime, timeZone } = msDatetime;
-  if(!dateTime) return null;
-  
-  const preShiftTime = moment.tz(dateTime, timeZone || "");
-  const shiftedTime = preShiftTime.tz(getUserTimezone());
-
-  return shiftedTime;
-}
-
-export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>, dateFormat="lll") {
-  const shiftedTime = utcTimeToUserTimezone(msDatetime);
-  if(!shiftedTime) return "";
-  return shiftedTime.format(dateFormat);
-}
-
-export function getReadableDuration(start: string, end: string) {
-  if (!start || !end) return "";
-  const duration = moment.duration(moment(end).diff(moment(start)));
-  const minutes = duration.asMinutes();
-  if(minutes < 60) {
-    return minutes + " minutes";
-  } else if (minutes < 1440) {
-    return duration.asHours() + " hours";
-  }
-  return duration.asDays().toPrecision(1) + " days";
-}
-
-export function getMessageCategoryColor(pseudoColor: string) {
-  switch(pseudoColor) {
-  case "preset0": return 'red';
-  case "preset1": return 'orange';
-  case "preset3": return 'yellow';
-  case "preset4": return 'green';
-  case "preset7": return 'blue';
-  case "preset8": return 'purple';
-  // TODO: Add all preset colors
-  default: return "white";
-  }
-}
-
-export function hexColorToPresetName(pseudoColor: string) {
-  switch(pseudoColor) {
-  case "#ff0000": return 'preset0';
-  case "#ffa500": return 'preset1';
-  case "#ffff00": return 'preset3';
-  case "#008000": return 'preset4';
-  case "#0000ff": return 'preset7';
-  case "#800080": return 'preset8';
-  // TODO: Add all preset colors
-  default: return "preset0";
-  }
-}
-
-export function truncateString(str: string): string {
-  const truncatedLength = 24;
-  return str.length > truncatedLength ? `${str.substring(0, truncatedLength)}...` : str;
-}
-
-export function purify(rawHtml: string): string {
-  return DOMPurify.sanitize(rawHtml, { USE_PROFILES: { html: true } });
+// Formats in the browser's zone, format takes dayjs localized tokens like lll
+export function toReadableTimeInTimezone(msDatetime?: NullableOption<DateTimeTimeZone>, dateFormat = "lll"): string {
+  if (!msDatetime?.dateTime) return "";
+  const date = graphDateToDate(msDatetime);
+  if (isNaN(date.getTime())) return "";
+  return dayjs(date).format(dateFormat);
 }
 
 export function convertToDarkModeColor(color: string) {
@@ -195,38 +73,12 @@ function padZero(str: string, len=2) {
   return (zeros + str).slice(-len);
 }
 
-export function gabSelectionToRequestFormat(contacts: Array<Contact>):  NullableOption<Recipient[]> {
-  const res: Recipient[] = (contacts || []).filter(c => c.emailAddresses?.length! > 0).map((c: Contact) => ({
-    emailAddress: {
-      // TODO: Which email to select?
-      address: c.emailAddresses![0].address,
-    },
-  }));
-  return res;
-}
-
-// TODO: Implement properly
-export function getUserTimezone() {
-  return moment.tz.guess(true);
-}
-
-export function capitalizeFirstLetter(input: string) {
-  return input.charAt(0).toUpperCase() + input.slice(1);
-}
-
 export const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onload = () => resolve(reader.result as string);
   reader.onerror = reject;
 });
-
-export const downloadBase64Content = (attachment: FileAttachment) => {
-  const a = document.createElement("a");
-  a.href = `data:${attachment.contentType};base64,${attachment.contentBytes}`; 
-  a.download = attachment.name || "attachment";
-  a.click();
-}
 
 export const readableBytesFormat = (bytes: number) => {
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -237,33 +89,6 @@ export const readableBytesFormat = (bytes: number) => {
     unit++;
   }
   return (unit === 0 ? result : result.toFixed(1)) + " " + units[unit];
-}
-
-/*
-* Naively lookup email addresses in contacts. First match wins.
-* If no contact is found, create a pseudo contact for the UI with the email address as displayname.
-* Accepts Graph recipients ({ emailAddress: { name, address } }) as well as plain address strings.
-*/
-export const resolveContactsFromEmails = (emails: Array<Recipient | string> | string | undefined | null, contacts: Array<Contact>): Array<Contact> => {
-  const list: Array<Recipient | string> = typeof emails === "string" ? emails.split(",") : (emails || []);
-  return list
-    .map((recipient): EmailAddress => typeof recipient === "string" ?
-      { address: recipient.trim(), name: "" } :
-      { address: recipient.emailAddress?.address || "", name: recipient.emailAddress?.name || "" })
-    .filter(email => email.address)
-    .map((email: EmailAddress) => {
-      const contact = contacts.find((contact: Contact) =>
-        contact.emailAddresses?.some((contactMail: EmailAddress) =>
-          contactMail.address?.toLowerCase() === email.address?.toLowerCase()));
-
-      if(contact) return contact;
-      return {
-        displayName: email.name || email.address,
-        emailAddresses: [
-          { name: email.name || "", address: email.address }
-        ]
-      } as Contact;
-    });
 }
 
 export function initialsOf(name?: string | null): string {
