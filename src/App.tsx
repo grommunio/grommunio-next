@@ -18,7 +18,7 @@ function AppFrame() {
   const { i18n } = useTranslation();
   const dispatch = useTypeDispatch();
   const { loading } = useAppContext();
-  const authenticated = useTypeSelector(state => state.auth.authenticated);
+  const authenticated = useTypeSelector(state => state.session.authenticated);
 
   useEffect(() => {
     const applyLanguage = async () => {

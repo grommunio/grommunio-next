@@ -17,7 +17,7 @@ import RecipientField from "./RecipientField";
 import AttachmentList from "./AttachmentList";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
-import { pushAlertStack } from "../../../actions/alerts";
+import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 import { isValidEmail, purify } from "../utils-compose";
 import { getAttachment } from "../../../api/messages";
 

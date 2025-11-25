@@ -8,7 +8,7 @@ import type { AuthenticationProvider } from '@microsoft/microsoft-graph-client';
 import { useDispatch } from 'react-redux';
 import { getUser } from '../api/user';
 import { initGraphClient, resetGraphClient } from '../api/utils';
-import { setMeData } from '../actions/user';
+import { setMe } from '../features/session/sessionSlice';
 import getConfig from '../config';
 import { MsalAuthenticationProvider } from './authProvider';
 
@@ -93,7 +93,7 @@ function useProvideAppContext(): AppContext {
       timeFormat: graphUser.mailboxSettings?.timeFormat || 'h:mm a',
       timeZone: graphUser.mailboxSettings?.timeZone || 'UTC'
     });
-    dispatch(setMeData(graphUser));
+    dispatch(setMe(graphUser));
   }, [authProvider, dispatch]);
 
   // Wait for MSAL to handle a pending redirect first
@@ -125,7 +125,7 @@ function useProvideAppContext(): AppContext {
   }, [instance, config, loadUser]);
 
   const signOut = useCallback(async () => {
-    dispatch(setMeData(null));
+    dispatch(setMe(null));
     setUser(undefined);
     resetGraphClient();
     const account = instance.getActiveAccount() || undefined;

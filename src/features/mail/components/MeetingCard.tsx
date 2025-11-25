@@ -10,7 +10,7 @@ import { useTypeDispatch } from "../../../store";
 import { deleteEvent, getEventFromEventMessage, respondToEvent } from "../../../api/calendar";
 import { EventReponseType } from "../../../types/calendar";
 import { toReadableTimeInTimezone } from "../../../utils";
-import { pushAlertStack } from "../../../actions/alerts";
+import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 import { deleteMessages } from "../mailSlice";
 
 type MeetingCardProps = {

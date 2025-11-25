@@ -10,7 +10,7 @@ import { createCalendarPermission, deleteCalendarPermission, getCalendarPermissi
 import PersonAvatar from "../../../components/common/PersonAvatar";
 import { isValidEmail } from "../../mail/utils";
 import { useTypeDispatch } from "../../../store";
-import { pushAlertStack } from "../../../actions/alerts";
+import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 
 // Dynamic translation keys, picked up by scripts/extractTranslations.py:
 // t("Can view when I'm busy")

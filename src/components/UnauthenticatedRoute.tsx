@@ -6,7 +6,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useTypeSelector } from "../store";
 
 const UnauthenticatedRoute = ({ children }: { children: React.ReactNode }) => {
-  const authenticated = useTypeSelector(state => state.auth.authenticated);
+  const authenticated = useTypeSelector(state => state.session.authenticated);
   const location = useLocation();
   if (authenticated) {
     const redirect = new URLSearchParams(location.search).get("redirect");

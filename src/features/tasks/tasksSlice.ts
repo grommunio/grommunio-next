@@ -6,7 +6,7 @@ import type { ChecklistItem, TodoTask, TodoTaskList } from "microsoft-graph";
 import type { RootState } from "../../store";
 import * as api from "../../api/tasks";
 import { ApiError } from "../../api/graph";
-import { pushAlertStack } from "../../actions/alerts";
+import { pushAlertStack } from "../../features/alerts/alertsSlice";
 
 const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof Error ? err.message : String(err);
 type ThunkApi = { state: RootState; rejectValue: string };

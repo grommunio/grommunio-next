@@ -13,7 +13,7 @@ import { avatarColor, initialsOf } from "../../utils";
 const UserMenu = () => {
   const { t } = useTranslation();
   const app = useAppContext();
-  const me = useTypeSelector(state => state.me);
+  const me = useTypeSelector(state => state.session.me);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
 

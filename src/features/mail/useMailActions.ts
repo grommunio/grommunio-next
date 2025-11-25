@@ -7,7 +7,7 @@ import { useTypeDispatch, useTypeSelector } from "../../store";
 import {
   copyMessages, createFolder, deleteMessages, moveMessages, startCompose, togglePinned, updateMessages, findWellKnownFolder,
 } from "./mailSlice";
-import { pushAlertStack } from "../../actions/alerts";
+import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { getMessageSource } from "../../api/messages";
 import { buildPrintDocument, printHtml } from "./utils";
 

@@ -22,7 +22,7 @@ import {
 } from "../contactsSlice";
 import { loadCategories } from "../../mail/mailSlice";
 import { contactsToCsv, contactsToVCard, csvToContacts, downloadText } from "../vcard";
-import { pushAlertStack } from "../../../actions/alerts";
+import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 import { getContacts } from "../../../api/contacts";
 
 const PeopleView = () => {

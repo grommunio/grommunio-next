@@ -7,7 +7,7 @@ import type { RootState } from "../../store";
 import * as settingsApi from "../../api/settings";
 import * as rulesApi from "../../api/rules";
 import { ApiError } from "../../api/graph";
-import { pushAlertStack } from "../../actions/alerts";
+import { pushAlertStack } from "../../features/alerts/alertsSlice";
 
 const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof Error ? err.message : String(err);
 type ThunkApi = { state: RootState; rejectValue: string };

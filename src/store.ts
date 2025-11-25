@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// SPDX-FileCopyrightText: 2020-2023 grommunio GmbH
+// SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
@@ -7,24 +7,22 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import logger from 'redux-logger';
 
 // Keep alphabetically ordered
-import authReducer from './reducers/auth';
 import calendarReducer from './features/calendar/calendarSlice';
 import contactsReducer from './features/contacts/contactsSlice';
-import meReducer from './reducers/me';
 import notesReducer from './features/notes/notesSlice';
 import settingsReducer from './features/settings/settingsSlice';
 import tasksReducer from './features/tasks/tasksSlice';
-import alertsReducer from './reducers/alerts';
+import alertsReducer from './features/alerts/alertsSlice';
+import sessionReducer from './features/session/sessionSlice';
 import mailReducer from './features/mail/mailSlice';
 
 const rootReducer = combineReducers({
   alerts: alertsReducer,
-  auth: authReducer,
   calendar: calendarReducer,
   contacts: contactsReducer,
   mail: mailReducer,
-  me: meReducer,
   notes: notesReducer,
+  session: sessionReducer,
   settings: settingsReducer,
   tasks: tasksReducer,
 });
@@ -37,7 +35,6 @@ export const store = configureStore({
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>;
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;
 export const useTypeDispatch: () => AppDispatch = useDispatch;
 export const useTypeSelector: TypedUseSelectorHook<RootState> = useSelector;

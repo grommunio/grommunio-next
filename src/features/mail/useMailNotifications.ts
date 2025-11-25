@@ -7,7 +7,7 @@ import { useTypeDispatch, useTypeSelector } from "../../store";
 import { clearNewArrivals } from "./mailSlice";
 import { selectInboxUnread } from "./selectors";
 import { senderName } from "./utils";
-import { pushAlertStack } from "../../actions/alerts";
+import { pushAlertStack } from "../../features/alerts/alertsSlice";
 
 // Unread count in the title, notification for new mail
 export default function useMailNotifications(onOpen: (messageId: string) => void) {

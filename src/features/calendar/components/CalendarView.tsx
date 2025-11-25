@@ -22,7 +22,7 @@ import { eventMoved, loadCalendars, loadEvents, makeSelectCalendarEvents, select
 import { dateToGraphDate, dayjs, roundToStep, setDayjsLocale } from "../dates";
 import { loadCategories } from "../../mail/mailSlice";
 import type { CalendarEvent, CalendarViewName } from "../types";
-import { pushAlertStack } from "../../../actions/alerts";
+import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 
 const DnDCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar as any);
 

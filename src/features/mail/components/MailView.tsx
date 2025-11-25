@@ -26,7 +26,7 @@ import {
   loadMessages, loadMoreMessages, moveMessages, setListFilter, setListSort, setSelection, startCompose, syncFolder,
   toggleSelection, togglePinned, updateMessages, updatePrefs,
 } from "../mailSlice";
-import { pushAlertStack } from "../../../actions/alerts";
+import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 import type { MailFilter, MailSort } from "../types";
 import type { ExtendedMailFolder, WellKnownFolderName } from "../../../types/messages";
 

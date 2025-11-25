@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertType } from "../types/misc";
 import { useTypeDispatch, useTypeSelector } from "../store";
-import { spliceAlertStack } from "../actions/alerts";
+import { spliceAlertStack } from "../features/alerts/alertsSlice";
 import { moveMessages } from "../features/mail/mailSlice";
 
 const AlertStack = () => {

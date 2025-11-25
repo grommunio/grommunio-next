@@ -8,7 +8,7 @@ import type { ExtendedMailFolder, WellKnownFolderName } from "../../types/messag
 import * as foldersApi from "../../api/folders";
 import * as messagesApi from "../../api/messages";
 import { ApiError } from "../../api/graph";
-import { pushAlertStack } from "../../actions/alerts";
+import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { COMMON_FOLDER_ORDER, SCROLL_ITEMS } from "../../constants";
 import {
   ComposeDraft, ComposeMode, ComposeState, MailFilter, MailPrefs, MailSort, MailState, MessageList,
@@ -219,7 +219,7 @@ export const loadMessages = createAsyncThunk<{ key: string; messages: Message[];
     const filter = arg.filter ?? existing?.filter ?? "all";
     const sort = arg.sort ?? existing?.sort ?? DEFAULT_SORT;
     try {
-      const params = buildListParams({ filter, sort, search: arg.search }, state.me.mail || undefined);
+      const params = buildListParams({ filter, sort, search: arg.search }, state.session.me.mail || undefined);
       const page = arg.search && !arg.folderId ?
         await messagesApi.searchMessages(arg.search) :
         await messagesApi.getMessagesPage(arg.folderId || "inbox", { ...params, top: SCROLL_ITEMS });

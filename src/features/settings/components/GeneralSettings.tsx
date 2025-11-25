@@ -187,7 +187,7 @@ export const ShortcutsHelp = () => {
 export const AccountSettings = () => {
   const { t } = useTranslation();
   const app = useAppContext();
-  const me = useTypeSelector(state => state.me);
+  const me = useTypeSelector(state => state.session.me);
   const email = me.mail || me.userPrincipalName || "";
   return (
     <Section title={t("Account")}>

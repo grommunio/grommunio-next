@@ -6,7 +6,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useTypeSelector } from "../store";
 
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
-  const authenticated = useTypeSelector(state => state.auth.authenticated);
+  const authenticated = useTypeSelector(state => state.session.authenticated);
   const location = useLocation();
   if (!authenticated) {
     return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`} replace />;

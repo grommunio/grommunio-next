@@ -58,7 +58,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
   const calendars = useTypeSelector(state => state.calendar.calendars);
   const details = useTypeSelector(state => target.mode === "edit" ? state.calendar.details[target.scope === "series" && target.event.seriesMasterId ? target.event.seriesMasterId : target.event.id!] : undefined);
   const categories = useTypeSelector(state => state.mail.categories);
-  const me = useTypeSelector(state => state.me);
+  const me = useTypeSelector(state => state.session.me);
   const prefs = useTypeSelector(state => state.calendar.prefs);
   const editorRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

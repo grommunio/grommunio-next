@@ -6,7 +6,7 @@ import type { Attachment, Calendar, Event } from "microsoft-graph";
 import type { RootState } from "../../store";
 import * as api from "../../api/calendar";
 import { ApiError } from "../../api/graph";
-import { pushAlertStack } from "../../actions/alerts";
+import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { CalendarEvent, CalendarPrefs, CalendarState, CalendarViewName } from "./types";
 import { loadCalendarPrefs, loadView, loadVisibleCalendars, saveCalendarPrefs, saveView, saveVisibleCalendars } from "./prefs";
 import { browserTimeZone, graphDateToDate } from "./dates";
