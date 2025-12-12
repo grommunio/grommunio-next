@@ -13,7 +13,23 @@ export default defineConfig({
   build: {
     outDir: "build",
     sourcemap: false,
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        // Big libraries get their own long-lived chunks so app updates keep them cached
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("@mui/x-date-pickers") || id.includes("@mui/x-data-grid") || id.includes("@mui/x-tree-view")) return "mui-x";
+          if (id.includes("@mui/") || id.includes("@emotion/")) return "mui";
+          if (id.includes("@azure/msal")) return "msal";
+          if (id.includes("react-big-calendar")) return "calendar";
+          if (id.includes("@tinymce/")) return "tinymce";
+          if (id.includes("dayjs") || id.includes("i18next") || id.includes("dompurify") || id.includes("lodash")) return "libs";
+          if (id.includes("react") || id.includes("redux") || id.includes("scheduler")) return "react";
+          return "vendor";
+        },
+      },
+    },
   },
   test: {
     environment: "jsdom",
