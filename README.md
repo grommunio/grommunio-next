@@ -3,117 +3,108 @@
 ![project license](https://img.shields.io/badge/license-AGPL--3.0-orange)
 [![latest version](https://shields.io/github/v/tag/grommunio/grommunio-next)](https://github.com/grommunio/grommunio-next/tags)
 [![code size](https://img.shields.io/github/languages/code-size/grommunio/grommunio-next)](https://github.com/grommunio/grommunio-next)
-[![twitter](https://img.shields.io/twitter/follow/grommunio?style=social)](https://twitter.com/grommunio)
 
-grommunio Next is the first open source Graph API web application ([https://learn.microsoft.com/en-us/graph/overview](https://learn.microsoft.com/en-us/graph/overview)) to provide all the familiar email, advanced calendaring and contact features you need to be productive. It is the future main web application for access to your productivity workspace, including email, calendar, contacts, tasks, notes and more.
+grommunio Next is an open source web client for mail, calendar, contacts,
+tasks and notes that speaks the Microsoft Graph API. It runs against
+Microsoft 365 / Outlook.com today and is built so that any Graph compatible
+backend can be configured instead of a rebuild.
 
-**Important: grommunio Next is still under heavy development and not yet recommended for production use.**
+**grommunio Next is under active development. Treat it as a preview.**
 
-<details open="open">
-<summary>Overview</summary>
+## Features
 
-- [About](#about)
-- [Getting Started](#getting-started)
-- [Status](#status)
-- [Support](#support)
-- [Project assistance](#project-assistance)
-- [Development](#development)
-  - [Setup development environment](#setup-development-environment)
-- [Translators](#translators)
-- [License](#license)
+- **Mail**: three pane layout, folder tree with favorites and drag and drop,
+  grouped message list with filters, sorting, pinning and multi selection,
+  Focused/Other, sanitised reading pane with inline images and attachment
+  preview, meeting invitations with accept/tentative/decline, compose with
+  recipient suggestions, attachments (incl. large files), autosaved drafts,
+  signatures, categories, undo for move/delete, keyboard shortcuts, folder sync
+  via delta queries and desktop notifications.
+- **Calendar**: day, work week, week, month and agenda views, multiple
+  calendars with colors, drag and drop and resizing, event editor with
+  attendees, availability, recurrence, reminders, categories, attachments and
+  response tracking, RSVP, calendar sharing.
+- **People**: contact folders, contact cards, editor with photo, CSV and vCard
+  import/export.
+- **Tasks**: lists, steps, due dates, reminders, repeat, importance.
+- **Notes**: colored notes with autosave.
+- **Settings**: appearance (light/dark/system, accent colors), language and
+  time zone, notifications, categories, mail layout, signature, inbox rules,
+  automatic replies, calendar working hours.
+- 22 interface languages (English and German complete, others via Weblate).
 
-</details>
+## Getting started
 
----
+Requirements: Node.js 20 or newer and Yarn 1.
 
-## About grommunio Next
+```sh
+yarn install
+cp public/config.example.json public/config.json
+# set appId to the client id of your app registration
+yarn start
+```
 
-- Provides modern web-based groupware (emails, contacts, calendar, tasks and notes) connectivity
-- Authentication based on OAuth 2.0
-- Modern Typescript/React 18-based framework 
-- Design based on well-defined industry standards (MUI 5)
-- Compatible, works with any modern web browser such as Chrome, Edge, Firefox, Safari and others
-- Component-based architecture, no dependencies to runtime backend components
-- Modern, feature-rich TinyMCE-based editor (6.3+)
-- Easy to use, with an intuitive user interface 
-- Scalable, capable of running with tens of thousands of sessions concurrently
-- Security driven development, with clear API abstraction 
+Register an application in Microsoft Entra (see the
+[Graph tutorial](https://learn.microsoft.com/en-us/graph/tutorials/typescript?tabs=aad&tutorial-step=1))
+with `http://localhost:3000` as a *Single-page application* redirect URI. The
+app requests the delegated permissions `User.Read`, `MailboxSettings.ReadWrite`,
+`Mail.ReadWrite`, `Mail.Send`, `Calendars.ReadWrite`, `Contacts.ReadWrite`,
+`Tasks.ReadWrite` and `People.Read`.
 
-### Roadmap
+## Configuration
 
-- Multiple Account support (multiple Graph API endpoints)
-- Feature-list on-par with grommunio Web
-- Plugin architecture
-- Native integration with extensions integrating grommunio Meet, Chat, Archive and more
-- Mobile enhancements
+The build is a static bundle. Everything that differs between deployments is
+read from `config.json` next to `index.html` when the application starts:
 
-## Getting Started
+| Key               | Description                                                             |
+|-------------------|-------------------------------------------------------------------------|
+| `appId`           | Client ID of the app registration                                       |
+| `authority`       | Sign-in authority (default `https://login.microsoftonline.com/common`)  |
+| `redirectUri`     | Redirect URI registered for the SPA (default: current origin)           |
+| `scopes`          | Scopes requested at sign-in (optional)                                  |
+| `graphBaseUrl`    | Graph endpoint (default `https://graph.microsoft.com/`)                 |
+| `graphVersion`    | Graph API version (default `v1.0`)                                      |
+| `interactionType` | `redirect` (default) or `popup`                                         |
 
-## Status
+## Deployment
 
-- [Top Feature Requests](https://github.com/grommunio/grommunio-next/issues?q=label%3Aenhancement+is%3Aopen+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
-- [Top Bugs](https://github.com/grommunio/grommunio-next/issues?q=is%3Aissue+is%3Aopen+label%3Abug+sort%3Areactions-%2B1-desc) (Add your votes using the 👍 reaction)
-- [Newest Bugs](https://github.com/grommunio/grommunio-next/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
+`yarn build` writes the bundle to `build/`. Serve it with any web server, let
+unknown paths fall back to `index.html` and place a `config.json` next to it.
+`deploy/` contains an nginx server block example; the `Dockerfile` builds an
+image that serves the bundle with nginx:
 
-## Support
-
-- Support is available through [grommunio GmbH](https://grommunio.com) and its partners.
-- grommunio Next community is available here: [grommunio Community](https://community.grommunio.com)
-
-For direct contact to the maintainers (for example to supply information about a security-related responsible disclosure), you can contact grommunio directly at [dev@grommunio.com](mailto:dev@grommunio.com)
-
-## Project assistance
-
-If you want to say thank you or/and support active development of grommunio Next:
-
-- Add a [GitHub Star](https://github.com/grommunio/grommunio-next) to the project.
-- Tweet about grommunio Next.
-- Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/), your personal blog or any medium you feel comfortable with.
-
-Together, we can make grommunio Next better!
+```sh
+docker build -t grommunio-next .
+docker run -p 8080:80 -v $PWD/config.json:/usr/share/nginx/html/config.json grommunio-next
+```
 
 ## Development
 
-### Setup development environment
+```sh
+yarn dev          # development server on http://localhost:3000
+yarn typecheck    # tsc
+yarn lint         # eslint
+yarn test         # vitest
+yarn build        # typecheck + production build
+```
 
-1. Clone this repository
-2. Move to root folder
-3. `yarn install` (copies the TinyMCE distribution into `public/tinymce`)
-4. `cp public/config.example.json public/config.json`
-5. Register an application as described in https://learn.microsoft.com/en-us/graph/tutorials/typescript?tabs=aad&tutorial-step=1
-   and add `http://localhost:3000` as a *Single-page application* redirect URI
-6. Set `appId` in `public/config.json` to the client ID of your app registration
-7. `yarn start` to run the app
+Source layout: `src/api` (Graph access), `src/features/<module>` (Redux slice
+and components per module), `src/components` (shell and shared UI),
+`src/i18n` (translations). `scripts/extractTranslations.py` collects
+translation keys from the sources into the locale files.
 
-### Configuration
+## Support
 
-The build is a static bundle. All deployment specific settings are read from
-`config.json` next to `index.html` when the application starts:
-
-| Key               | Description                                                       |
-|-------------------|-------------------------------------------------------------------|
-| `appId`           | Client ID of the app registration                                 |
-| `authority`       | Sign-in authority (default `https://login.microsoftonline.com/common`) |
-| `redirectUri`     | Redirect URI registered for the SPA (default: current origin)     |
-| `scopes`          | Scopes requested at sign-in (optional, sensible defaults)         |
-| `graphBaseUrl`    | Graph endpoint (default `https://graph.microsoft.com/`)           |
-| `graphVersion`    | Graph API version (default `v1.0`)                                |
-| `interactionType` | `redirect` (default) or `popup`                                   |
-
-### Deployment
-
-`yarn build` creates the bundle in `build/`. Serve the folder with any web
-server, make sure unknown paths fall back to `index.html` (client side
-routing) and place a `config.json` next to it.
+- Commercial support: [grommunio GmbH](https://grommunio.com) and partners.
+- Community: [grommunio Community](https://community.grommunio.com)
+- Security contact: [dev@grommunio.com](mailto:dev@grommunio.com)
 
 ## Translators
 
-The translations are managed by [Weblate](https://hosted.weblate.org/projects/grommunio/grommunio-next/). Contributions are regularly monitored and integrated in the release cycles of grommunio Next.
+Translations are managed on
+[Weblate](https://hosted.weblate.org/projects/grommunio/grommunio-next/).
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.
-
-See [LICENSE](LICENSE) for more information.
-
-grommunio Next uses several components with different licensing and bundles them within the build process. Please see the respective [package-lock.json](package-lock.json) for detailed information.
+GNU Affero General Public License v3, see [LICENSE](LICENSE). Bundled third
+party components keep their own licenses; see `yarn.lock` for the list.
