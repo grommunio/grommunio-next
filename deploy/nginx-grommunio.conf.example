@@ -1,0 +1,33 @@
+# Example nginx server block for serving grommunio Next on its own host name.
+# Copy to /etc/nginx/conf.d/ and adjust server_name, certificates and the
+# document root. The bundle (output of `yarn build`) and a config.json go
+# into the document root.
+
+server {
+    server_name next.example.com;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    ssl_certificate     /etc/grommunio-common/ssl/server-bundle.pem;
+    ssl_certificate_key /etc/grommunio-common/ssl/server.key;
+
+    root /usr/share/grommunio-next;
+    index index.html;
+    server_tokens off;
+
+    # Runtime configuration must never be cached by the browser
+    location = /config.json {
+        add_header Cache-Control "no-store";
+    }
+
+    # Hashed assets can be cached forever
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Client side routing: unknown paths fall back to the app
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
