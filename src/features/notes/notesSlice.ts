@@ -47,7 +47,8 @@ export const loadNotes = createAsyncThunk<Message[], void, ThunkApi>("notes/load
 // First line goes into the subject so other clients show a title
 export function noteSubject(html: string): string {
   const doc = document.implementation.createHTMLDocument("");
-  doc.body.innerHTML = html;
+  // Block ends become line breaks so the first paragraph is the title
+  doc.body.innerHTML = html.replace(/<br\s*\/?>|<\/(p|div|li|h[1-6]|tr)>/gi, "\n");
   const text = (doc.body.textContent || "").trim();
   const first = text.split("\n").map(l => l.trim()).find(Boolean) || "";
   return first.length > 80 ? first.slice(0, 79) + "…" : first;
