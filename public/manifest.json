@@ -1,25 +1,22 @@
 {
-  "short_name": "grommunio-web-ng",
-  "name": "grommunio Web Next Generation",
+  "short_name": "grommunio Next",
+  "name": "grommunio Next",
+  "description": "Mail, calendar, contacts, tasks and notes",
   "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "logo192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
+    { "src": "favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon" },
+    { "src": "logo192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "logo512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
   ],
-  "start_url": ".",
+  "start_url": "/mail/inbox",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "any",
+  "theme_color": "#1d4b99",
+  "background_color": "#f3f5f8",
+  "shortcuts": [
+    { "name": "Mail", "url": "/mail/inbox", "icons": [{ "src": "logo192.png", "sizes": "192x192" }] },
+    { "name": "Calendar", "url": "/calendar", "icons": [{ "src": "logo192.png", "sizes": "192x192" }] },
+    { "name": "People", "url": "/contacts", "icons": [{ "src": "logo192.png", "sizes": "192x192" }] },
+    { "name": "Tasks", "url": "/tasks", "icons": [{ "src": "logo192.png", "sizes": "192x192" }] }
+  ]
 }
