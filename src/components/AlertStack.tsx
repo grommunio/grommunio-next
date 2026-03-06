@@ -62,6 +62,9 @@ const AutohideAlert = ({ alert }: { alert: AlertType }) => {
     <Alert
       variant="filled"
       severity={alert.severity}
+      role={alert.severity === "error" ? "alert" : "status"}
+      onFocus={() => clearTimeout(timer.current)}
+      onBlur={() => { timer.current = setTimeout(remove, 3000); }}
       onMouseEnter={() => clearTimeout(timer.current)}
       onMouseLeave={() => { timer.current = setTimeout(remove, 3000); }}
       action={<>
@@ -76,7 +79,7 @@ const AutohideAlert = ({ alert }: { alert: AlertType }) => {
         </IconButton>
       </>}
     >
-      {alert.message || ""}
+      {t(alert.message || "", alert.params)}
     </Alert>
   </Slide>
 }

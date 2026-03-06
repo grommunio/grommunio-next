@@ -89,14 +89,17 @@ const CalendarView = () => {
     return parsed && parsed.isValid() ? parsed.toDate() : new Date();
   }, [params.date]);
 
-  // dayjs locale follows the UI language
+  // Rebuild when App changes the dayjs locale
   useEffect(() => {
     setDayjsLocale(i18n.language).then(setLocaleReady);
   }, [i18n.language]);
 
   const localizer = useMemo(() => {
     dayjs.locale(localeReady);
-    return dayjsLocalizer(dayjs);
+    const l = dayjsLocalizer(dayjs);
+    // Week start follows the preference, not the locale
+    l.startOfWeek = () => prefs.weekStartsOn;
+    return l;
   }, [localeReady, prefs.weekStartsOn]);
 
   useEffect(() => {

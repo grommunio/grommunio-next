@@ -12,7 +12,9 @@ export type AlertUndo = {
 
 export type AlertType = {
   id: number,
+  // Translation key or plain text
   message: string;
+  params?: Record<string, string | number>;
   severity?: AlertColor;
   undo?: AlertUndo;
   duration?: number;

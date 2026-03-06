@@ -28,6 +28,8 @@ export default function useKeyboardShortcuts(shortcuts: Shortcut[], enabled = tr
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
+      // Menus, dialogs and pickers own the keyboard while they are open
+      if (document.querySelector(".MuiModal-root:not([aria-hidden='true']), .MuiPopover-root, [role='menu'], [role='dialog']")) return;
       const typing = isTyping(e.target);
       for (const shortcut of ref.current) {
         if (typing && !shortcut.allowInInput) continue;

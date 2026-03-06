@@ -18,7 +18,9 @@ const alertsSlice = createSlice({
       reducer(state, action: PayloadAction<AlertType>) {
         // Don't stack repeats
         const last = state.stack[state.stack.length - 1];
-        if (last && last.message === action.payload.message && last.severity === action.payload.severity && !action.payload.undo) return;
+        const same = last && last.message === action.payload.message && last.severity === action.payload.severity
+          && JSON.stringify(last.params || {}) === JSON.stringify(action.payload.params || {});
+        if (same && !action.payload.undo) return;
         state.stack.push(action.payload);
         if (state.stack.length > 5) state.stack.shift();
       },

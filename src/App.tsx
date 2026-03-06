@@ -13,6 +13,7 @@ import AppLoader from './components/AppLoader';
 import AlertStack from './components/AlertStack';
 import { useTypeDispatch, useTypeSelector } from './store';
 import { loadMailboxSettings, setLanguage } from './features/settings/settingsSlice';
+import { setDayjsLocale } from './features/calendar/dates';
 
 function AppFrame() {
   const { i18n } = useTranslation();
@@ -26,7 +27,8 @@ function AppFrame() {
       let lang = localStorage.getItem("lang");
       if (authenticated) {
         const result = await dispatch(loadMailboxSettings());
-        if (loadMailboxSettings.fulfilled.match(result) && result.payload.language?.locale) {
+        // The mailbox locale applies unless the user picked a language on the sign-in page
+        if (loadMailboxSettings.fulfilled.match(result) && result.payload.language?.locale && !lang) {
           lang = result.payload.language.locale;
         }
       }
@@ -37,6 +39,11 @@ function AppFrame() {
     };
     applyLanguage();
   }, [authenticated]);
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+    setDayjsLocale(i18n.language);
+  }, [i18n.language]);
 
   // Don't flash the sign-in page while the session is being restored
   if (loading) {

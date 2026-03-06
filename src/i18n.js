@@ -19,6 +19,10 @@ import nb from './i18n/nb-NO.json';
 import nl from './i18n/nl-NL.json';
 import pl from './i18n/pl-PL.json';
 import pt from './i18n/pt-PT.json';
+import ptBR from './i18n/pt-BR.json';
+import ar from './i18n/ar-SA.json';
+import arDZ from './i18n/ar-DZ.json';
+import is from './i18n/is-IS.json';
 import ru from './i18n/ru-RU.json';
 import sl from './i18n/sl-SL.json';
 import tr from './i18n/tr-TR.json';
@@ -76,6 +80,18 @@ const resources = {
   "pt-PT": {
     translation: pt,
   },
+  "pt-BR": {
+    translation: ptBR,
+  },
+  "ar-SA": {
+    translation: ar,
+  },
+  "ar-DZ": {
+    translation: arDZ,
+  },
+  "is-IS": {
+    translation: is,
+  },
   "ru-RU": {
     translation: ru,
   },
@@ -102,7 +118,13 @@ i18n
   .init({
     resources,
     lng: 'en-US',
-    fallbackLng: 'en-US',
+    // de-AT -> de-DE -> en-US
+    fallbackLng: (code) => {
+      const base = (code || '').split('-')[0];
+      const regional = Object.keys(resources).find(k => k.startsWith(base + '-'));
+      return regional && regional !== code ? [regional, 'en-US'] : ['en-US'];
+    },
+    load: 'currentOnly',
     debug: false,
     returnEmptyString: false,
     interpolation: {
