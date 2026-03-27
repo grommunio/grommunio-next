@@ -9,7 +9,7 @@ import { SearchProvider } from "./SearchContext";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => (
   <SearchProvider>
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", bgcolor: "background.default" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, width: "100%", minWidth: 0, height: "100%", overflow: "hidden", bgcolor: "background.default" }}>
       <TopBar />
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         <AppRail />

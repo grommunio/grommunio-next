@@ -23,7 +23,14 @@ pre {
 
 #root {
   height: 100%;
+  width: 100%;
   display: flex;
+}
+
+/* The single child of #root (app frame, sign-in page, loader) fills the window */
+#root > * {
+  flex: 1;
+  min-width: 0;
 }
 
 #loadingContainer {
