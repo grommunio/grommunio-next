@@ -20,6 +20,8 @@ export type CalendarState = {
   events: Record<string, Event[]>;
   loading: Record<string, boolean>;
   range?: { start: string; end: string };
+  // Older responses are ignored
+  requestedRange?: { start: string; end: string };
   details: Record<string, Event>;
   view: CalendarViewName;
   prefs: CalendarPrefs;

@@ -111,7 +111,7 @@ const CalendarSidebar = ({ date, onDateChange, events }: CalendarSidebarProps) =
             <Box
               key={calendar.id}
               onClick={() => !isEditing && dispatch(toggleCalendarVisible(calendar.id!))}
-              sx={{ display: "flex", alignItems: "center", pl: 1, pr: 0.5, height: 34, mx: 1, borderRadius: 1.5, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, "&:hover .cal-more": { opacity: 1 } }}
+              sx={{ display: "flex", alignItems: "center", pl: 1, pr: 0.5, height: 34, mx: 1, borderRadius: 1.5, cursor: "pointer", "&:hover": { bgcolor: "action.hover" }, "&:hover .cal-more, &:focus-within .cal-more": { opacity: 1 } }}
             >
               <Checkbox
                 size="small"
@@ -162,7 +162,7 @@ const CalendarSidebar = ({ date, onDateChange, events }: CalendarSidebarProps) =
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, p: 1.5 }}>
           {CALENDAR_COLORS.map(c => (
             <Tooltip key={c.name} title={t(c.label)}>
-              <Box component="button" type="button" aria-label={c.label} onClick={() => { dispatch(updateCalendar({ id: colorMenu!.calendar.id!, color: c.name })); setColorMenu(null); }}
+              <Box component="button" type="button" aria-label={t(c.label)} onClick={() => { dispatch(updateCalendar({ id: colorMenu!.calendar.id!, color: c.name })); setColorMenu(null); }}
                 sx={{ width: 28, height: 28, borderRadius: "50%", bgcolor: c.hex, border: "2px solid", borderColor: colorMenu?.calendar.color === c.name ? "text.primary" : "transparent", cursor: "pointer", p: 0 }} />
             </Tooltip>
           ))}

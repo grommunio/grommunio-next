@@ -28,3 +28,6 @@ yarn-error.log*
 
 # TinyMCE is copied from node_modules by postinstall.js
 /public/tinymce
+
+# Local agent worktrees
+/.claude/

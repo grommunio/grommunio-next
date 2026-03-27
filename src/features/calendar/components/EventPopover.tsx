@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Button, ButtonGroup, Chip, Divider, IconButton, Link, Menu, MenuItem, Popover, Tooltip, Typography } from "@mui/material";
-import { Check, Close, DeleteOutline, Edit, HelpOutline, LocationOnOutlined, LockOutlined, PeopleAltOutlined, Repeat, Schedule, Videocam } from "@mui/icons-material";
+import { Box, Button, ButtonGroup, Chip, Divider, IconButton, Link, ListItemIcon, ListItemText, Menu, MenuItem, Popover, TextField, Tooltip, Typography } from "@mui/material";
+import { ArrowDropDown, Check, CheckBox, CheckBoxOutlineBlank, Close, DeleteOutline, Edit, HelpOutline, LocationOnOutlined, LockOutlined, PeopleAltOutlined, Repeat, Schedule, Videocam } from "@mui/icons-material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { deleteEvent, respondToEvent } from "../calendarSlice";
+import { deleteEvent, refreshEvents, respondToEvent } from "../calendarSlice";
+import { safeHttpUrl } from "../eventUtils";
 import { EventReponseType } from "../../../types/calendar";
 import { formatEventRange } from "../dates";
 import type { CalendarEvent } from "../types";
@@ -27,12 +28,18 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
   const categories = useTypeSelector(state => state.mail.categories);
   const [scopeMenu, setScopeMenu] = useState<{ anchor: HTMLElement; action: "edit" | "delete" } | null>(null);
   const [confirm, setConfirm] = useState<"occurrence" | "series" | null>(null);
+  const [rsvpMenu, setRsvpMenu] = useState<HTMLElement | null>(null);
+  const [sendResponse, setSendResponse] = useState(true);
+  const [respondToSeries, setRespondToSeries] = useState(false);
+  const [showComment, setShowComment] = useState(false);
+  const [comment, setComment] = useState("");
 
   const recurring = event.type === "occurrence" || event.type === "exception" || event.type === "seriesMaster";
   const isOrganizer = event.isOrganizer !== false;
   const response = event.responseStatus?.response;
   const attendees = event.attendees || [];
   const hasAttendees = attendees.length > 0;
+  const joinUrl = safeHttpUrl(event.onlineMeeting?.joinUrl || event.onlineMeetingUrl);
 
   const withScope = (action: "edit" | "delete") => (e: React.MouseEvent<HTMLElement>) => {
     if (recurring) setScopeMenu({ anchor: e.currentTarget, action });
@@ -54,7 +61,10 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
   };
 
   const respond = async (type: EventReponseType) => {
-    await dispatch(respondToEvent({ id: event.id!, response: type }));
+    const series = respondToSeries && Boolean(event.seriesMasterId);
+    const result = await dispatch(respondToEvent({ id: series ? event.seriesMasterId! : event.id!, response: type, comment: comment.trim() || undefined, sendResponse }));
+    // Declines refresh on their own; series responses change every occurrence
+    if (respondToEvent.fulfilled.match(result) && series && type !== EventReponseType.decline) dispatch(refreshEvents());
   };
 
   return (
@@ -66,11 +76,9 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
             {event.sensitivity === "private" && <LockOutlined fontSize="small" sx={{ verticalAlign: "middle", mr: 0.5 }} />}
             {event.subject || t("(No title)")}
           </Typography>
-          {isOrganizer && <>
-            <Tooltip title={t("Edit")}><IconButton size="small" onClick={withScope("edit")} aria-label={t("Edit")}><Edit fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title={t("Delete")}><IconButton size="small" onClick={withScope("delete")} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
-          </>}
+          {isOrganizer && <Tooltip title={t("Edit")}><IconButton size="small" onClick={withScope("edit")} aria-label={t("Edit")}><Edit fontSize="small" /></IconButton></Tooltip>}
           {!isOrganizer && <Tooltip title={t("Details")}><IconButton size="small" onClick={() => onEdit("occurrence")} aria-label={t("Details")}><Edit fontSize="small" /></IconButton></Tooltip>}
+          <Tooltip title={t("Delete")}><IconButton size="small" onClick={withScope("delete")} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
           <IconButton size="small" onClick={onClose} aria-label={t("Close")}><Close fontSize="small" /></IconButton>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 1, color: "text.secondary" }}>
@@ -89,10 +97,10 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
             <Typography variant="body2">{event.location.displayName}</Typography>
           </Box>
         )}
-        {(event.onlineMeeting?.joinUrl || event.onlineMeetingUrl) && (
+        {joinUrl && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
             <Videocam fontSize="small" color="action" />
-            <Link href={event.onlineMeeting?.joinUrl || event.onlineMeetingUrl || "#"} target="_blank" rel="noopener" variant="body2">{t("Join online meeting")}</Link>
+            <Link href={joinUrl} target="_blank" rel="noopener noreferrer" variant="body2">{t("Join online meeting")}</Link>
           </Box>
         )}
         {hasAttendees && (
@@ -124,7 +132,30 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
               <Button color="warning" variant={response === "tentativelyAccepted" ? "contained" : "outlined"} startIcon={<HelpOutline />} onClick={() => respond(EventReponseType.tentatively)}>{t("Maybe")}</Button>
               <Button color="error" variant={response === "declined" ? "contained" : "outlined"} startIcon={<Close />} onClick={() => respond(EventReponseType.decline)}>{t("No")}</Button>
             </ButtonGroup>
+            <Tooltip title={t("Response options")}>
+              <IconButton size="small" onClick={e => setRsvpMenu(e.currentTarget)} aria-label={t("Response options")} aria-haspopup="menu"><ArrowDropDown fontSize="small" /></IconButton>
+            </Tooltip>
           </Box>
+          {showComment && (
+            <Box sx={{ px: 1.5, pb: 1.5 }}>
+              <TextField fullWidth size="small" multiline maxRows={4} autoFocus placeholder={t("Add a message")} value={comment} onChange={e => setComment(e.target.value)} inputProps={{ "aria-label": t("Add a message") }} />
+            </Box>
+          )}
+          <Menu anchorEl={rsvpMenu} open={Boolean(rsvpMenu)} onClose={() => setRsvpMenu(null)}>
+            <MenuItem onClick={() => { setShowComment(true); setRsvpMenu(null); }} disabled={!sendResponse}>
+              <ListItemText inset>{t("Add a message")}</ListItemText>
+            </MenuItem>
+            <MenuItem role="menuitemcheckbox" aria-checked={!sendResponse} onClick={() => setSendResponse(!sendResponse)}>
+              <ListItemIcon>{!sendResponse ? <CheckBox fontSize="small" /> : <CheckBoxOutlineBlank fontSize="small" />}</ListItemIcon>
+              <ListItemText>{t("Do not send a response")}</ListItemText>
+            </MenuItem>
+            {event.seriesMasterId && (
+              <MenuItem role="menuitemcheckbox" aria-checked={respondToSeries} onClick={() => setRespondToSeries(!respondToSeries)}>
+                <ListItemIcon>{respondToSeries ? <CheckBox fontSize="small" /> : <CheckBoxOutlineBlank fontSize="small" />}</ListItemIcon>
+                <ListItemText>{t("Respond to all events in the series")}</ListItemText>
+              </MenuItem>
+            )}
+          </Menu>
         </>
       )}
       <Menu anchorEl={scopeMenu?.anchor} open={Boolean(scopeMenu)} onClose={() => setScopeMenu(null)}>

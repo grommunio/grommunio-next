@@ -11,7 +11,8 @@ import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "./calendar.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import type { Recipient } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { useGlobalSearch } from "../../../components/layout/SearchContext";
 import useKeyboardShortcuts from "../../../hooks/useKeyboardShortcuts";
@@ -19,7 +20,8 @@ import CalendarSidebar from "./CalendarSidebar";
 import EventPopover from "./EventPopover";
 import EventEditor, { EventEditorTarget } from "./EventEditor";
 import { eventMoved, loadCalendars, loadEvents, makeSelectCalendarEvents, selectCalendarLoading, setView, updateCalendarPrefs, updateEvent } from "../calendarSlice";
-import { dateToGraphDate, dayjs, roundToStep, setDayjsLocale } from "../dates";
+import { applyWeekStart, dateToGraphDate, dayjs, roundToStep, setDayjsLocale } from "../dates";
+import { isAllDaySelection } from "../eventUtils";
 import { loadCategories } from "../../mail/mailSlice";
 import type { CalendarEvent, CalendarViewName } from "../types";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
@@ -70,6 +72,7 @@ const CalendarView = () => {
   const theme = useTheme();
   const dispatch = useTypeDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams<{ view?: string; date?: string }>();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -96,9 +99,19 @@ const CalendarView = () => {
 
   const localizer = useMemo(() => {
     dayjs.locale(localeReady);
+    // Week start comes from the preference, not the locale
+    applyWeekStart(prefs.weekStartsOn);
     const l = dayjsLocalizer(dayjs);
-    // Week start follows the preference, not the locale
     l.startOfWeek = () => prefs.weekStartsOn;
+    // The stock month grid forces Monday in leap years
+    l.firstVisibleDay = (d: Date) => dayjs(d).startOf("month").startOf("week").toDate();
+    l.lastVisibleDay = (d: Date) => dayjs(d).endOf("month").endOf("week").toDate();
+    l.visibleDays = (d: Date) => {
+      const days: Date[] = [];
+      const last = dayjs(d).endOf("month").endOf("week");
+      for (let day = dayjs(d).startOf("month").startOf("week"); !day.isAfter(last); day = day.add(1, "day")) days.push(day.toDate());
+      return days;
+    };
     return l;
   }, [localeReady, prefs.weekStartsOn]);
 
@@ -106,6 +119,15 @@ const CalendarView = () => {
     dispatch(loadCalendars());
     dispatch(loadCategories());
   }, []);
+
+  // "Schedule meeting" from contacts
+  useEffect(() => {
+    const newEvent = (location.state as { newEvent?: { attendees?: Recipient[] } } | null)?.newEvent;
+    if (!newEvent) return;
+    const start = roundToStep(dayjs());
+    setEditor({ mode: "create", start: start.toDate(), end: start.add(prefs.defaultDuration, "minute").toDate(), attendees: newEvent.attendees || [] });
+    navigate(`/calendar/${view}/${dayjs(date).format("YYYY-MM-DD")}`, { replace: true, state: null });
+  }, [location.state, navigate, view, date, prefs.defaultDuration]);
 
   useEffect(() => {
     if (!params.view || !params.date) {
@@ -146,11 +168,19 @@ const CalendarView = () => {
   }, [events, search]);
 
   const handleSelectSlot = (slot: SlotInfo) => {
-    const allDay = slot.action === "click" && view === "month" || slot.slots.length === 1 && view !== "day" && view !== "week" && view !== "work_week";
-    const start = view === "month" ? roundToStep(dayjs(slot.start).hour(dayjs().hour() + 1).minute(0)) : dayjs(slot.start);
-    const end = view === "month" ? start.add(prefs.defaultDuration, "minute") : dayjs(slot.end);
     setPopover(null);
-    setEditor({ mode: "create", start: start.toDate(), end: end.toDate(), allDay: view === "month" ? false : allDay && slot.slots.length === 1 && dayjs(slot.end).diff(slot.start, "hour") >= 24 });
+    // All-day row or multi-day month selection, end is exclusive
+    if (isAllDaySelection(view, slot)) {
+      setEditor({ mode: "create", start: slot.start, end: slot.end, allDay: true });
+      return;
+    }
+    if (view === "month") {
+      // Single day: next full hour
+      const start = dayjs(slot.start).hour(Math.min(dayjs().hour() + 1, 23)).minute(0).second(0).millisecond(0);
+      setEditor({ mode: "create", start: start.toDate(), end: start.add(prefs.defaultDuration, "minute").toDate() });
+      return;
+    }
+    setEditor({ mode: "create", start: slot.start, end: slot.end });
   };
 
   const handleSelectEvent = (event: CalendarEvent, e: React.SyntheticEvent) => {
@@ -163,10 +193,12 @@ const CalendarView = () => {
       dispatch(pushAlertStack({ message: t("Only the organizer can move this event"), severity: "warning" }));
       return;
     }
-    const allDay = isAllDay ?? Boolean(event.isAllDay);
+    // isAllDay is only set for the all-day row, undefined means a timed drop
+    const allDay = isAllDay ?? (view === "month" ? Boolean(event.isAllDay) : false);
     const s = dayjs(start);
     let e = dayjs(end);
     if (allDay && e.isSame(s, "day")) e = s.add(1, "day").startOf("day");
+    if (!allDay && event.isAllDay) e = s.add(prefs.defaultDuration, "minute");
     const startGraph = dateToGraphDate(s, allDay);
     const endGraph = dateToGraphDate(e, allDay);
     dispatch(eventMoved({ id: event.id!, start: startGraph, end: endGraph, isAllDay: allDay }));
@@ -174,7 +206,7 @@ const CalendarView = () => {
     if (updateEvent.rejected.match(result)) {
       dispatch(loadEvents({ start: range.start.toISOString(), end: range.end.toISOString() }));
     }
-  }, [range, dispatch]);
+  }, [range, dispatch, view, prefs.defaultDuration, t]);
 
   const eventPropGetter = useCallback((event: CalendarEvent) => {
     const classes: string[] = [];
@@ -184,9 +216,9 @@ const CalendarView = () => {
     if (event.isCancelled) classes.push("gn-event-cancelled");
     return {
       className: classes.join(" "),
-      style: { backgroundColor: event.color, borderLeftColor: "rgba(0,0,0,0.25)" },
+      style: { backgroundColor: event.color, color: theme.palette.getContrastText(event.color), borderLeftColor: "rgba(0,0,0,0.25)" },
     };
-  }, []);
+  }, [theme]);
 
   const slotPropGetter = useCallback((slotDate: Date) => {
     const d = dayjs(slotDate);

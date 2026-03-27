@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Recipient, ScheduleInformation } from "microsoft-graph";
 import { getSchedule } from "../../../api/calendar";
-import { browserTimeZone, Dayjs } from "../dates";
+import { browserTimeZone, dayjs, Dayjs } from "../dates";
+import { availabilityRanges } from "../eventUtils";
 import PersonAvatar from "../../../components/common/PersonAvatar";
 
 type SchedulingAssistantProps = {
@@ -18,6 +19,9 @@ type SchedulingAssistantProps = {
 
 const INTERVAL = 30;
 const COLORS: Record<string, string> = { "0": "transparent", "1": "#8fbcf0", "2": "#4f78c7", "3": "#8e2a9b", "4": "#9aa4b2" };
+// Tentative is hatched so it does not rely on color alone
+const PATTERNS: Record<string, string> = { "1": "repeating-linear-gradient(45deg, transparent 0 3px, rgba(0,0,0,0.35) 3px 5px)", "4": "repeating-linear-gradient(90deg, transparent 0 3px, rgba(255,255,255,0.6) 3px 5px)" };
+const slotSx = (code: string) => ({ bgcolor: COLORS[code] || COLORS["4"], backgroundImage: PATTERNS[code] || "none" });
 // Dynamic translation keys, picked up by scripts/extractTranslations.py:
 // t("Free")
 // t("Tentative")
@@ -51,6 +55,15 @@ const SchedulingAssistant = ({ attendees, ownAddress, start, end }: SchedulingAs
 
   const selStart = Math.max(0, start.diff(dayStart, "minute") / INTERVAL);
   const selEnd = Math.min(slots, end.diff(dayStart, "minute") / INTERVAL);
+  // Locale-aware short hour labels
+  const hourFormat = /a/i.test(dayjs.localeData().longDateFormat("LT")) ? "h A" : "H";
+  const slotTime = (i: number) => dayStart.add(i * INTERVAL, "minute").format("LT");
+  const describe = (view: string) => {
+    const ranges = availabilityRanges(view.slice(0, slots));
+    if (!view) return t("No information");
+    if (!ranges.length) return t("Free");
+    return ranges.map(r => `${t(LABELS[r.code] || "Unknown")} ${slotTime(r.from)} – ${slotTime(r.to)}`).join(", ");
+  };
 
   return (
     <Box sx={{ mt: 2 }}>
@@ -58,12 +71,20 @@ const SchedulingAssistant = ({ attendees, ownAddress, start, end }: SchedulingAs
         <Typography variant="subtitle2">{t("Availability")} · {start.format("dddd, LL")}</Typography>
         {loading && <CircularProgress size={14} />}
       </Box>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1 }}>
+        {["1", "2", "3", "4"].map(code => (
+          <Box key={code} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box sx={{ width: 14, height: 10, border: 1, borderColor: "divider", ...slotSx(code) }} />
+            <Typography variant="caption" color="text.secondary">{t(LABELS[code])}</Typography>
+          </Box>
+        ))}
+      </Box>
       <Box sx={{ display: "grid", gridTemplateColumns: "160px 1fr", rowGap: 0.5, alignItems: "center" }}>
         <Box />
         <Box sx={{ display: "flex", position: "relative", height: 16 }}>
           {Array.from({ length: slots }).map((_, i) => i % 2 === 0 && (
             <Typography key={i} variant="caption" sx={{ position: "absolute", left: `${(i / slots) * 100}%`, fontSize: 10, color: "text.secondary" }}>
-              {dayStart.add(i * INTERVAL, "minute").format("H")}
+              {dayStart.add(i * INTERVAL, "minute").format(hourFormat)}
             </Typography>
           ))}
         </Box>
@@ -76,12 +97,12 @@ const SchedulingAssistant = ({ attendees, ownAddress, start, end }: SchedulingAs
               <PersonAvatar name={name} email={address} size={24} />
               <Typography variant="body2" noWrap>{name}</Typography>
             </Box>,
-            <Box key={address + "-v"} sx={{ position: "relative", display: "flex", height: 22, border: 1, borderColor: "divider", borderRadius: 0.5, overflow: "hidden" }}>
+            <Box key={address + "-v"} role="img" aria-label={`${name}: ${loading && !info ? t("Loading") : describe(view)}`} sx={{ position: "relative", display: "flex", height: 22, border: 1, borderColor: "divider", borderRadius: 0.5, overflow: "hidden" }}>
               {Array.from({ length: slots }).map((_, i) => {
                 const code = view[i] || "0";
                 return (
                   <Tooltip key={i} title={`${dayStart.add(i * INTERVAL, "minute").format("LT")} – ${t(LABELS[code] || "Unknown")}`}>
-                    <Box sx={{ flex: 1, bgcolor: COLORS[code] || COLORS["4"], borderRight: i % 2 === 1 ? 1 : 0, borderColor: "divider" }} />
+                    <Box sx={{ flex: 1, ...slotSx(code), borderRight: i % 2 === 1 ? 1 : 0, borderColor: "divider" }} />
                   </Tooltip>
                 );
               })}

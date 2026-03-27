@@ -11,6 +11,7 @@ import isoWeek from "dayjs/plugin/isoWeek";
 import localeData from "dayjs/plugin/localeData";
 import minMax from "dayjs/plugin/minMax";
 import duration from "dayjs/plugin/duration";
+import updateLocale from "dayjs/plugin/updateLocale";
 import type { DateTimeTimeZone, NullableOption } from "microsoft-graph";
 
 dayjs.extend(utc);
@@ -22,6 +23,7 @@ dayjs.extend(isoWeek);
 dayjs.extend(localeData);
 dayjs.extend(minMax);
 dayjs.extend(duration);
+dayjs.extend(updateLocale);
 
 // Graph accepts IANA zones in Prefer: outlook.timezone
 export const browserTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -60,6 +62,10 @@ export async function setDayjsLocale(language: string): Promise<string> {
   await LOCALE_LOADERS[key]();
   dayjs.locale(key);
   return key;
+}
+
+export function applyWeekStart(weekStart: number): void {
+  dayjs.updateLocale(dayjs.locale(), { weekStart });
 }
 
 // Graph returns wall clock times without offset, in the zone from Prefer: outlook.timezone.

@@ -9,8 +9,9 @@ import type { Calendar, CalendarPermission, CalendarRoleType } from "microsoft-g
 import { createCalendarPermission, deleteCalendarPermission, getCalendarPermissions, updateCalendarPermission } from "../../../api/calendar";
 import PersonAvatar from "../../../components/common/PersonAvatar";
 import { isValidEmail } from "../../mail/utils";
-import { useTypeDispatch } from "../../../store";
+import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
+import { sameDomain } from "../eventUtils";
 
 // Dynamic translation keys, picked up by scripts/extractTranslations.py:
 // t("Can view when I'm busy")
@@ -34,6 +35,7 @@ type ShareCalendarDialogProps = {
 const ShareCalendarDialog = ({ calendar, onClose }: ShareCalendarDialogProps) => {
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
+  const ownAddress = useTypeSelector(state => state.session.me.mail);
   const [permissions, setPermissions] = useState<CalendarPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -51,10 +53,11 @@ const ShareCalendarDialog = ({ calendar, onClose }: ShareCalendarDialogProps) =>
   useEffect(load, [calendar.id]);
 
   const handleAdd = async () => {
-    if (!isValidEmail(email)) return;
+    if (busy || !isValidEmail(email)) return;
     setBusy(true);
     try {
-      await createCalendarPermission(calendar.id!, { emailAddress: { address: email.trim() }, role, isRemovable: true, isInsideOrganization: false });
+      const address = email.trim();
+      await createCalendarPermission(calendar.id!, { emailAddress: { address }, role, isRemovable: true, isInsideOrganization: sameDomain(address, ownAddress) });
       setEmail("");
       load();
       dispatch(pushAlertStack({ message: t("Sharing invitation sent"), severity: "success" }));

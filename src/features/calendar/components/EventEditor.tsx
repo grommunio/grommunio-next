@@ -15,11 +15,12 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Editor } from "@tinymce/tinymce-react";
 import { useTheme } from "@mui/material/styles";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Attachment, Attendee, Event, FileAttachment, PatternedRecurrence, Recipient, Sensitivity } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { createEvent, deleteEvent, loadEventDetails, updateEvent } from "../calendarSlice";
+import { createEvent, deleteEvent, loadEventDetails, refreshEvents, updateEvent } from "../calendarSlice";
+import { alignRecurrence, toExclusiveAllDayEnd, toInclusiveAllDayEnd } from "../eventUtils";
 import { dateToGraphDate, dayjs, Dayjs, graphDateToDate, roundToStep } from "../dates";
 import RecipientField from "../../mail/components/RecipientField";
 import AttachmentList from "../../mail/components/AttachmentList";
@@ -33,8 +34,9 @@ import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import type { CalendarEvent } from "../types";
 
+// All-day end is exclusive, like in Graph
 export type EventEditorTarget =
-  | { mode: "create"; start: Date; end: Date; allDay?: boolean; calendarId?: string }
+  | { mode: "create"; start: Date; end: Date; allDay?: boolean; calendarId?: string; attendees?: Recipient[] }
   | { mode: "edit"; event: CalendarEvent; scope: "occurrence" | "series" };
 
 type EventEditorProps = {
@@ -42,12 +44,12 @@ type EventEditorProps = {
   onClose: () => void;
 };
 
-function statusIcon(status?: string | null) {
+function statusIcon(status: string | null | undefined, t: (key: string) => string) {
   switch (status) {
-  case "accepted": return <Tooltip title="Accepted"><EventAvailable fontSize="small" color="success" /></Tooltip>;
-  case "tentativelyAccepted": return <Tooltip title="Tentative"><HelpOutline fontSize="small" color="warning" /></Tooltip>;
-  case "declined": return <Tooltip title="Declined"><EventBusy fontSize="small" color="error" /></Tooltip>;
-  default: return <Tooltip title="No response"><PendingOutlined fontSize="small" color="disabled" /></Tooltip>;
+  case "accepted": return <Tooltip title={t("Accepted")}><EventAvailable fontSize="small" color="success" aria-label={t("Accepted")} /></Tooltip>;
+  case "tentativelyAccepted": return <Tooltip title={t("Tentative")}><HelpOutline fontSize="small" color="warning" aria-label={t("Tentative")} /></Tooltip>;
+  case "declined": return <Tooltip title={t("Declined")}><EventBusy fontSize="small" color="error" aria-label={t("Declined")} /></Tooltip>;
+  default: return <Tooltip title={t("No response")}><PendingOutlined fontSize="small" color="disabled" aria-label={t("No response")} /></Tooltip>;
   }
 }
 
@@ -92,35 +94,72 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
   const [catAnchor, setCatAnchor] = useState<HTMLElement | null>(null);
   const [saveAnchor, setSaveAnchor] = useState<HTMLElement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [initialised, setInitialised] = useState(false);
+  const initRef = useRef(false);
+  const initialRecurrence = useRef<PatternedRecurrence | null>(null);
+  const initialLocation = useRef("");
+  const initialSnapshot = useRef<string | null>(null);
+  const titleId = useId();
 
-  // Load full details (body, attendees) when editing
-  useEffect(() => {
-    if (editing && editId) {
-      dispatch(loadEventDetails(editId));
-      eventAttachments({ id: editId }).then(setAttachments).catch(() => undefined);
-    }
-  }, [editId]);
+  // Single occurrences/exceptions cannot carry their own recurrence
+  const recurrenceEditable = target.mode === "create" || target.scope === "series" ||
+    (target.event.type !== "occurrence" && target.event.type !== "exception");
 
   useEffect(() => {
-    if (initialised && !details) return;
+    if (editing && editId) eventAttachments({ id: editId }).then(setAttachments).catch(() => undefined);
+  }, [editing, editId]);
+
+  // Init once: from the target when creating, from fresh details when editing
+  useEffect(() => {
+    if (initRef.current) return;
     if (target.mode === "create") {
+      initRef.current = true;
       const s = dayjs(target.start);
       const e = dayjs(target.end);
-      setStart(s);
-      setEnd(e.isAfter(s) ? e : s.add(prefs.defaultDuration, "minute"));
+      if (target.allDay) {
+        setStart(s.startOf("day"));
+        setEnd(toInclusiveAllDayEnd(s, e));
+      } else {
+        setStart(s);
+        setEnd(e.isAfter(s) ? e : s.add(prefs.defaultDuration, "minute"));
+      }
       setAllDay(Boolean(target.allDay));
+      setAttendees(target.attendees || []);
       setCalendarId(target.calendarId || calendars.find(c => c.isDefaultCalendar)?.id || calendars[0]?.id || "");
       setInitialised(true);
       return;
     }
-    const ev = source!;
+    if (!editId) return;
+    let cancelled = false;
+    const fallback = target.event;
+    dispatch(loadEventDetails(editId)).then(result => {
+      if (cancelled || initRef.current) return;
+      initRef.current = true;
+      applyEvent(loadEventDetails.fulfilled.match(result) ? result.payload : fallback);
+    });
+    return () => { cancelled = true; };
+  }, [target, editId, dispatch, prefs.defaultDuration, calendars]);
+
+  // Default calendar for new events, also when calendars arrive late
+  useEffect(() => {
+    if (target.mode === "create" && !calendarId && calendars.length) {
+      setCalendarId(calendars.find(c => c.isDefaultCalendar)?.id || calendars[0].id || "");
+    }
+  }, [target.mode, calendarId, calendars]);
+
+  const applyEvent = (ev: Event) => {
+    if (target.mode !== "edit") return;
+    const s = dayjs(graphDateToDate(ev.start));
+    const e = dayjs(graphDateToDate(ev.end));
     setSubject(ev.subject || "");
     setCalendarId(target.event.calendarId);
-    setStart(dayjs(graphDateToDate(ev.start)));
-    setEnd(dayjs(graphDateToDate(ev.end)));
+    setStart(s);
+    setEnd(ev.isAllDay ? toInclusiveAllDayEnd(s, e) : e);
     setAllDay(Boolean(ev.isAllDay));
     setLocation(ev.location?.displayName || "");
+    initialLocation.current = ev.location?.displayName || "";
+    initialRecurrence.current = ev.recurrence || null;
     const required = (ev.attendees || []).filter(a => a.type !== "optional").map(a => ({ emailAddress: a.emailAddress }));
     const opt = (ev.attendees || []).filter(a => a.type === "optional").map(a => ({ emailAddress: a.emailAddress }));
     setAttendees(required);
@@ -135,16 +174,30 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
     setHideAttendees(Boolean(ev.hideAttendees));
     setOnlineMeeting(Boolean(ev.isOnlineMeeting));
     setInitialised(true);
-  }, [details, target]);
+  };
 
   const isOrganizer = !editing || source?.isOrganizer !== false;
   const hasAttendees = attendees.length + optional.length > 0;
+  const cancelsMeeting = isOrganizer && hasAttendees;
 
   const handleStart = (value: Dayjs | null) => {
     if (!value) return;
     const duration = end.diff(start, "minute");
     setStart(value);
     setEnd(value.add(Math.max(duration, allDay ? 0 : 15), "minute"));
+    setRecurrence(r => r && alignRecurrence(r, value));
+  };
+
+  const handleAllDay = (checked: boolean) => {
+    setAllDay(checked);
+    if (checked) {
+      setStart(start.startOf("day"));
+      setEnd(toInclusiveAllDayEnd(start, end));
+    } else {
+      const s = roundToStep(start.hour(dayjs().hour()));
+      setStart(s);
+      setEnd(s.add(prefs.defaultDuration, "minute"));
+    }
   };
 
   const handleEnd = (value: Dayjs | null) => {
@@ -159,16 +212,18 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
       ...optional.map(a => ({ emailAddress: a.emailAddress, type: "optional" as const })),
     ];
     const s = allDay ? start.startOf("day") : start;
-    const e = allDay ? end.startOf("day").add(end.startOf("day").isSame(s, "day") ? 1 : 0, "day") : end;
+    const e = allDay ? toExclusiveAllDayEnd(end) : end;
+    const provider = source?.onlineMeetingProvider && source.onlineMeetingProvider !== "unknown" ? source.onlineMeetingProvider : "teamsForBusiness";
     return {
       subject,
       body: { contentType: "html", content: body },
       start: dateToGraphDate(s, allDay),
       end: dateToGraphDate(e, allDay),
       isAllDay: allDay,
-      location: location ? { displayName: location } : undefined,
+      // null clears a value on PATCH, undefined would be dropped
+      location: location ? { displayName: location } : (editing && initialLocation.current ? null : undefined),
       attendees: all,
-      recurrence: recurrence || undefined,
+      recurrence: recurrence ? alignRecurrence(recurrence, s) : (editing && initialRecurrence.current ? null : undefined),
       isReminderOn: reminder >= 0,
       reminderMinutesBeforeStart: reminder >= 0 ? reminder : 0,
       showAs: showAs as Event["showAs"],
@@ -176,8 +231,8 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
       categories: selectedCategories,
       responseRequested,
       hideAttendees,
-      isOnlineMeeting: onlineMeeting || undefined,
-      onlineMeetingProvider: onlineMeeting ? "teamsForBusiness" : undefined,
+      isOnlineMeeting: editing ? onlineMeeting : (onlineMeeting || undefined),
+      onlineMeetingProvider: onlineMeeting ? provider : undefined,
     };
   };
 
@@ -185,17 +240,22 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
     setSaveAnchor(null);
     setBusy(true);
     const event = buildEvent();
+    if (!recurrenceEditable) delete event.recurrence;
     const result = editing ?
-      await dispatch(updateEvent({ event: { ...event, id: editId, recurrence: target.mode === "edit" && target.scope === "occurrence" ? undefined : event.recurrence }, files })) :
-      await dispatch(createEvent({ event, calendarId, files }));
+      await dispatch(updateEvent({ event: { ...event, id: editId }, files })) :
+      await dispatch(createEvent({ event, calendarId: calendarId || undefined, files }));
     setBusy(false);
-    if (createEvent.fulfilled.match(result) || updateEvent.fulfilled.match(result)) onClose();
+    if (createEvent.fulfilled.match(result) || updateEvent.fulfilled.match(result)) {
+      // Occurrences of a series are only expanded by the server
+      if (event.recurrence !== undefined || (target.mode === "edit" && target.scope === "series")) dispatch(refreshEvents());
+      onClose();
+    }
   };
 
   const handleDelete = async () => {
     if (!editId) return;
     setBusy(true);
-    const result = await dispatch(deleteEvent({ id: editId, notify: isOrganizer && hasAttendees }));
+    const result = await dispatch(deleteEvent({ id: editId, notify: cancelsMeeting }));
     setBusy(false);
     if (deleteEvent.fulfilled.match(result)) onClose();
   };
@@ -219,20 +279,33 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
 
   const title = editing ? (target.scope === "series" ? t("Edit series") : t("Edit event")) : t("New event");
 
+  const snapshot = JSON.stringify([subject, start.valueOf(), end.valueOf(), allDay, location, attendees, optional, recurrence, reminder,
+    showAs, sensitivity, selectedCategories, responseRequested, hideAttendees, onlineMeeting, files.length]);
+  useEffect(() => {
+    if (initialised && initialSnapshot.current === null) initialSnapshot.current = snapshot;
+  }, [initialised, snapshot]);
+
+  // Confirm before discarding unsaved changes
+  const requestClose = () => {
+    const dirty = initialised && isOrganizer && (snapshot !== initialSnapshot.current || Boolean(editorRef.current?.isDirty?.()));
+    if (dirty) setConfirmDiscard(true);
+    else onClose();
+  };
+
   return (
-    <Dialog open onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { height: "min(860px, 95vh)" } }}>
+    <Dialog open onClose={requestClose} aria-labelledby={titleId} maxWidth="md" fullWidth PaperProps={{ sx: { height: "min(860px, 95vh)" } }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>{title}</Typography>
-        {isOrganizer && <>
-          <Button variant="contained" startIcon={busy ? <CircularProgress size={16} color="inherit" /> : <Check />} onClick={handleSave} disabled={busy || !subject.trim()}>
+        <Typography id={titleId} component="h2" variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>{title}</Typography>
+        {isOrganizer && (
+          <Button variant="contained" startIcon={busy ? <CircularProgress size={16} color="inherit" /> : <Check />} onClick={handleSave} disabled={busy || !initialised || !subject.trim()}>
             {hasAttendees ? t("Send") : t("Save")}
           </Button>
-          {editing && (
-            <Button color="error" startIcon={<EventBusy />} onClick={() => setConfirmDelete(true)} disabled={busy}>
-              {hasAttendees ? t("Cancel meeting") : t("Delete")}
-            </Button>
-          )}
-        </>}
+        )}
+        {editing && (
+          <Button color="error" startIcon={<EventBusy />} onClick={() => setConfirmDelete(true)} disabled={busy}>
+            {cancelsMeeting ? t("Cancel meeting") : t("Delete")}
+          </Button>
+        )}
         <Box sx={{ flex: 1 }} />
         <Button size="small" color="inherit" startIcon={<LabelOutlined />} endIcon={<KeyboardArrowDown />} onClick={e => setCatAnchor(e.currentTarget)}>{t("Categorize")}</Button>
         <Menu anchorEl={catAnchor} open={Boolean(catAnchor)} onClose={() => setCatAnchor(null)}>
@@ -250,7 +323,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
             <LockOutlined />
           </IconButton>
         </Tooltip>
-        <IconButton onClick={onClose} aria-label={t("Close")}><Close /></IconButton>
+        <IconButton onClick={requestClose} aria-label={t("Close")}><Close /></IconButton>
       </Box>
 
       <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column" }}>
@@ -304,7 +377,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
                       {showAssistant ? t("Hide availability") : t("Show availability")}
                     </Button>
                   )}
-                  {showAssistant && hasAttendees && <SchedulingAssistant attendees={[...attendees, ...optional]} ownAddress={me.mail || undefined} start={start} end={end} />}
+                  {showAssistant && hasAttendees && <SchedulingAssistant attendees={[...attendees, ...optional]} ownAddress={me.mail || undefined} start={start} end={allDay ? toExclusiveAllDayEnd(end) : end} />}
                 </Box>
               </Box>
 
@@ -316,13 +389,13 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
                   <Typography color="text.secondary">–</Typography>
                   <DatePicker value={end} onChange={handleEnd} minDate={start} disabled={!isOrganizer} slotProps={{ textField: { size: "small", sx: { width: 160 } } }} />
                   {!allDay && <TimePicker value={end} onChange={handleEnd} disabled={!isOrganizer} minutesStep={5} slotProps={{ textField: { size: "small", sx: { width: 130 } } }} />}
-                  <FormControlLabel control={<Switch size="small" checked={allDay} onChange={e => { setAllDay(e.target.checked); if (e.target.checked) { setStart(start.startOf("day")); setEnd(end.startOf("day")); } else { setStart(roundToStep(start.hour(dayjs().hour()))); setEnd(roundToStep(start.hour(dayjs().hour())).add(prefs.defaultDuration, "minute")); } }} disabled={!isOrganizer} />} label={t("All day")} />
+                  <FormControlLabel control={<Switch size="small" checked={allDay} onChange={e => handleAllDay(e.target.checked)} disabled={!isOrganizer} />} label={t("All day")} />
                 </Box>
               </LocalizationProvider>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                 <Repeat sx={{ color: "text.secondary" }} />
-                <Button variant="outlined" size="small" onClick={() => setRecurrenceOpen(true)} disabled={!isOrganizer || (editing && target.scope === "occurrence")}>
+                <Button variant="outlined" size="small" onClick={() => setRecurrenceOpen(true)} disabled={!isOrganizer || !recurrenceEditable}>
                   {describeRecurrence(recurrence, t)}
                 </Button>
                 {editing && target.scope === "occurrence" && target.event.type === "occurrence" && (
@@ -393,7 +466,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
                   <Typography variant="caption" color="text.secondary">{t("Attendees")}</Typography>
                   {source?.attendees?.map((a, i) => (
                     <Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.25 }}>
-                      {statusIcon(a.status?.response)}
+                      {statusIcon(a.status?.response, t)}
                       <Typography variant="body2" noWrap title={a.emailAddress?.address || ""}>{a.emailAddress?.name || a.emailAddress?.address}</Typography>
                     </Box>
                   ))}
@@ -407,10 +480,19 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
       <RecurrenceEditor open={recurrenceOpen} start={start} value={recurrence} onChange={setRecurrence} onClose={() => setRecurrenceOpen(false)} />
       <Menu anchorEl={saveAnchor} open={Boolean(saveAnchor)} onClose={() => setSaveAnchor(null)} />
       <ConfirmDialog
+        open={confirmDiscard}
+        title={t("Discard changes?")}
+        description={t("Your changes to this event have not been saved.")}
+        confirmLabel={t("Discard")}
+        destructive
+        onConfirm={onClose}
+        onClose={() => setConfirmDiscard(false)}
+      />
+      <ConfirmDialog
         open={confirmDelete}
-        title={hasAttendees ? t("Cancel meeting") : t("Delete event")}
-        description={hasAttendees ? t("A cancellation will be sent to all attendees.") : (editing && target.scope === "series" ? t("All occurrences of this series will be deleted.") : t("This event will be deleted."))}
-        confirmLabel={hasAttendees ? t("Cancel meeting") : t("Delete")}
+        title={cancelsMeeting ? t("Cancel meeting") : t("Delete event")}
+        description={cancelsMeeting ? t("A cancellation will be sent to all attendees.") : (editing && target.scope === "series" ? t("All occurrences of this series will be deleted.") : t("This event will be deleted."))}
+        confirmLabel={cancelsMeeting ? t("Cancel meeting") : t("Delete")}
         destructive
         onConfirm={handleDelete}
         onClose={() => setConfirmDelete(false)}

@@ -9,15 +9,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DayOfWeek, PatternedRecurrence, WeekIndex } from "microsoft-graph";
 import { dayjs, Dayjs } from "../dates";
+import { WEEKDAYS, weekdayOf, weekIndexOf } from "../eventUtils";
 
-const WEEKDAYS: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// Dynamic translation keys (WEEK_INDEX), picked up by scripts/extractTranslations.py:
 // t("first")
 // t("second")
 // t("third")
 // t("fourth")
 // t("last")
-const WEEK_INDEX: WeekIndex[] = ["first", "second", "third", "fourth", "last"];
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 
@@ -57,9 +56,8 @@ const RecurrenceEditor = ({ open, start, value, onChange, onClose }: RecurrenceE
   const [endDate, setEndDate] = useState<Dayjs>(start.add(6, "month"));
   const [occurrences, setOccurrences] = useState(10);
 
-  const startWeekday = WEEKDAYS[(start.day() + 6) % 7];
-  const nth = Math.ceil(start.date() / 7);
-  const weekIndex: WeekIndex = nth >= 5 ? "last" : WEEK_INDEX[nth - 1];
+  const startWeekday = weekdayOf(start);
+  const weekIndex: WeekIndex = weekIndexOf(start);
 
   useEffect(() => {
     if (!open) return;

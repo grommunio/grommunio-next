@@ -112,6 +112,15 @@ export const loadEvents = createAsyncThunk<{ start: string; end: string; byCalen
   },
 );
 
+// For series changes, only the server can expand the occurrences
+export const refreshEvents = createAsyncThunk<void, void, ThunkApi>(
+  "calendar/refreshEvents",
+  async (_arg, { dispatch, getState }) => {
+    const range = getState().calendar.requestedRange || getState().calendar.range;
+    if (range) await dispatch(loadEvents({ start: range.start, end: range.end }));
+  },
+);
+
 export const loadEventDetails = createAsyncThunk<Event, string, ThunkApi>(
   "calendar/loadEventDetails",
   async (id, { rejectWithValue }) => {
@@ -176,7 +185,10 @@ export const respondToEvent = createAsyncThunk<{ id: string; response: EventRepo
   async ({ id, response, comment, sendResponse }, { dispatch, rejectWithValue }) => {
     try {
       await api.respondToEvent(id, response, { comment, sendResponse });
-      dispatch(pushAlertStack({ message: "Response sent", severity: "success" }));
+      dispatch(pushAlertStack({ message: sendResponse === false ? "Response saved" : "Response sent", severity: "success" }));
+      // t("Response saved")
+      // Declined meetings are removed from the calendar by the server
+      if (response === EventReponseType.decline) dispatch(refreshEvents());
       return { id, response };
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
@@ -289,10 +301,13 @@ const calendarSlice = createSlice({
         saveVisibleCalendars(state.visibleCalendarIds);
       })
       .addCase(loadEvents.pending, (state, action) => {
+        state.requestedRange = { start: action.meta.arg.start, end: action.meta.arg.end };
         (action.meta.arg.calendarIds || state.visibleCalendarIds).forEach(id => { state.loading[id] = true; });
       })
       .addCase(loadEvents.fulfilled, (state, action) => {
         const { start, end, byCalendar } = action.payload;
+        // Stale response for a range the user already left
+        if (state.requestedRange && (state.requestedRange.start !== start || state.requestedRange.end !== end)) return;
         if (!state.range || state.range.start !== start || state.range.end !== end) {
           // New range, drop the old events
           state.events = {};
@@ -305,6 +320,8 @@ const calendarSlice = createSlice({
         state.error = undefined;
       })
       .addCase(loadEvents.rejected, (state, action) => {
+        const { start, end } = action.meta.arg;
+        if (state.requestedRange && (state.requestedRange.start !== start || state.requestedRange.end !== end)) return;
         state.loading = {};
         state.error = action.payload || action.error.message;
       })
