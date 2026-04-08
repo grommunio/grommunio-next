@@ -24,7 +24,7 @@ export function getLangs() {
     { key: 'pl-PL', value: 'pl_PL: Polski' },
     { key: 'pt-PT', value: 'pt_PT: Português europeu' },
     { key: 'ru-RU', value: 'ru_RU: русский' },
-    { key: 'sl-SL', value: 'sl_SL: slovenščina' },
+    { key: 'sl-SI', value: 'sl_SI: slovenščina' },
     { key: 'tr-TR', value: 'tr_TR: Türkçe' },
     { key: 'uk-UA', value: 'uk_UA: українська' },
     { key: 'zh-CN', value: 'zh_CN: 中文(简体)' },

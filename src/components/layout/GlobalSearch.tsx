@@ -4,9 +4,11 @@
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import { Close, Search } from "@mui/icons-material";
 import { KeyboardEvent, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchContext } from "./SearchContext";
 
 const GlobalSearch = () => {
+  const { t } = useTranslation();
   const { handler, query, setQuery } = useSearchContext();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,7 +67,7 @@ const GlobalSearch = () => {
         ),
         endAdornment: query ? (
           <InputAdornment position="end">
-            <IconButton size="small" onClick={clear} aria-label="Clear search">
+            <IconButton size="small" onClick={clear} aria-label={t("Clear search")}>
               <Close fontSize="small" />
             </IconButton>
           </InputAdornment>

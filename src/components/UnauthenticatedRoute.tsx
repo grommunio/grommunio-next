@@ -5,12 +5,23 @@ import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useTypeSelector } from "../store";
 
+// Same-origin paths only. Browsers treat "\" like "/"
+export function safeRedirectTarget(redirect: string | null, origin = window.location.origin): string {
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//") || redirect.includes("\\")) return "/";
+  try {
+    const url = new URL(redirect, origin);
+    if (url.origin !== origin || url.pathname.startsWith("/login")) return "/";
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return "/";
+  }
+}
+
 const UnauthenticatedRoute = ({ children }: { children: React.ReactNode }) => {
   const authenticated = useTypeSelector(state => state.session.authenticated);
   const location = useLocation();
   if (authenticated) {
-    const redirect = new URLSearchParams(location.search).get("redirect");
-    const target = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
+    const target = safeRedirectTarget(new URLSearchParams(location.search).get("redirect"));
     return <Navigate to={target} replace />;
   }
   return <>{children}</>;

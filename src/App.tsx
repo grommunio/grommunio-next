@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MsalProvider } from '@azure/msal-react';
 import { useTranslation } from 'react-i18next';
 import { CssBaseline } from '@mui/material';
@@ -20,6 +20,7 @@ function AppFrame() {
   const dispatch = useTypeDispatch();
   const { loading } = useAppContext();
   const authenticated = useTypeSelector(state => state.session.authenticated);
+  const [, setDayjsLocaleKey] = useState("en");
 
   useEffect(() => {
     const applyLanguage = async () => {
@@ -33,6 +34,8 @@ function AppFrame() {
         }
       }
       if (lang) {
+        // Load the dayjs locale first or dates render in the old language
+        await setDayjsLocale(lang);
         i18n.changeLanguage(lang);
         dispatch(setLanguage(lang));
       }
@@ -42,7 +45,8 @@ function AppFrame() {
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
-    setDayjsLocale(i18n.language);
+    // Dates are formatted during render, so re-render once the locale is in
+    setDayjsLocale(i18n.language).then(setDayjsLocaleKey);
   }, [i18n.language]);
 
   // Don't flash the sign-in page while the session is being restored

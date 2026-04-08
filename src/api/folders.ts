@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
 import { MailFolder } from "microsoft-graph";
-import { batch, del, get, getAll, patch, post } from "./graph";
+import { ApiError, batch, BatchRequest, del, get, getAll, patch, post } from "./graph";
 import { ExtendedMailFolder, WellKnownFolderName } from "../types/messages";
 
 // Order doubles as the folder pane order
@@ -99,23 +99,57 @@ async function collectMessageIds(folderId: string, filter?: string, limit = 2000
   return messages.map(m => m.id);
 }
 
+const RETRYABLE = new Set([429, 503, 504]);
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Retries throttled items once after Retry-After, returns the failure count
+async function runBatch(requests: BatchRequest[]): Promise<number> {
+  const responses = await batch(requests);
+  const retry = responses.filter(r => RETRYABLE.has(r.status));
+  // 404 means already gone
+  const isFailure = (status: number) => status >= 400 && status !== 404;
+  let failed = responses.filter(r => isFailure(r.status) && !RETRYABLE.has(r.status)).length;
+  if (retry.length) {
+    const after = Math.max(...retry.map(r => Number(r.headers?.["Retry-After"] ?? r.headers?.["retry-after"]) || 1));
+    await sleep(Math.min(after, 10) * 1000);
+    const ids = new Set(retry.map(r => r.id));
+    const second = await batch(requests.filter(r => ids.has(r.id)));
+    failed += second.filter(r => isFailure(r.status)).length;
+  }
+  return failed;
+}
+
+// t("Some messages could not be processed")
+// Rounds of 2000 ids. Each round has to shrink the match set or we give up.
+async function forAllMessages(folderId: string, filter: string | undefined, toRequest: (id: string, i: number) => BatchRequest): Promise<number> {
+  let done = 0;
+  let previous = new Set<string>();
+  for (let round = 0; round < 100; round++) {
+    const ids = await collectMessageIds(folderId, filter);
+    // Stop when nothing matches any more, or the same items keep coming back
+    if (ids.length === 0 || ids.every(id => previous.has(id))) return done;
+    previous = new Set(ids);
+    const failed = await runBatch(ids.map((id, i) => toRequest(id, i)));
+    done += ids.length - failed;
+    if (failed > 0) {
+      throw new ApiError("Some messages could not be processed", 0, "PartialFailure");
+    }
+  }
+  return done;
+}
+
 export async function markFolderAsRead(folderId: string): Promise<number> {
-  const ids = await collectMessageIds(folderId, "isRead eq false");
-  if (ids.length === 0) return 0;
-  await batch(ids.map((id, i) => ({
+  return forAllMessages(folderId, "isRead eq false", (id, i) => ({
     id: String(i),
     method: "PATCH",
     url: `/me/messages/${id}`,
     body: { isRead: true },
-  })));
-  return ids.length;
+  }));
 }
 
 // Deleted Items gets purged, anything else is moved there first
 export async function emptyFolder(folderId: string, permanent: boolean): Promise<number> {
-  const ids = await collectMessageIds(folderId);
-  if (ids.length === 0) return 0;
-  await batch(ids.map((id, i) => permanent ? ({
+  return forAllMessages(folderId, undefined, (id, i) => permanent ? ({
     id: String(i),
     method: "DELETE" as const,
     url: `/me/messages/${id}`,
@@ -124,6 +158,5 @@ export async function emptyFolder(folderId: string, permanent: boolean): Promise
     method: "POST" as const,
     url: `/me/messages/${id}/move`,
     body: { destinationId: "deleteditems" },
-  })));
-  return ids.length;
+  }));
 }

@@ -7,12 +7,22 @@ import getConfig from "../config";
 
 export let graphClient: Client | undefined = undefined;
 
+// SDK only sends the token to Graph hosts and customHosts, by bare hostname, https only
+export function customHostsFor(baseUrl: string): Set<string> | undefined {
+  try {
+    return new Set([new URL(baseUrl).hostname.toLowerCase()]);
+  } catch {
+    return undefined;
+  }
+}
+
 export function initGraphClient(authProvider: AuthenticationProvider): Client {
   const config = getConfig();
   graphClient = Client.initWithMiddleware({
     authProvider,
     baseUrl: config.graphBaseUrl,
     defaultVersion: config.graphVersion,
+    customHosts: customHostsFor(config.graphBaseUrl),
   });
   return graphClient;
 }

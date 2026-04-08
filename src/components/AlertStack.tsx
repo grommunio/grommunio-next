@@ -31,6 +31,8 @@ const AlertStack = () => {
   </Stack>;
 }
 
+// Default message of pushAlert:
+// t("Success")
 const AutohideAlert = ({ alert }: { alert: AlertType }) => {
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();

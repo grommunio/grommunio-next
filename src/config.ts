@@ -29,10 +29,17 @@ export const DEFAULT_SCOPES = [
   "People.Read",
 ];
 
+// Base path so sub-path deployments get the auth response.
+// Root deployments keep the bare origin existing registrations use.
+const defaultRedirectUri = (): string =>
+  import.meta.env.BASE_URL && import.meta.env.BASE_URL !== "/"
+    ? new URL(import.meta.env.BASE_URL, window.location.origin).href
+    : window.location.origin;
+
 const defaults: AppConfig = {
   appId: "",
   authority: "https://login.microsoftonline.com/common",
-  redirectUri: window.location.origin,
+  redirectUri: defaultRedirectUri(),
   scopes: DEFAULT_SCOPES,
   graphBaseUrl: "https://graph.microsoft.com/",
   graphVersion: "v1.0",
@@ -42,20 +49,36 @@ const defaults: AppConfig = {
 let config: AppConfig = defaults;
 let loaded = false;
 
+export function validateConfig(value: AppConfig): AppConfig {
+  const problems: string[] = [];
+  const isUrl = (s: unknown) => { try { return typeof s === "string" && Boolean(new URL(s)); } catch { return false; } };
+  if (typeof value.appId !== "string") problems.push("appId must be a string");
+  for (const key of ["authority", "redirectUri", "graphBaseUrl"] as const) {
+    if (!isUrl(value[key])) problems.push(`${key} must be an absolute URL`);
+  }
+  if (!Array.isArray(value.scopes) || value.scopes.some(s => typeof s !== "string")) problems.push("scopes must be an array of strings");
+  if (typeof value.graphVersion !== "string") problems.push("graphVersion must be a string");
+  if (value.interactionType !== "redirect" && value.interactionType !== "popup") problems.push('interactionType must be "redirect" or "popup"');
+  if (problems.length) throw new Error(`Invalid config.json: ${problems.join("; ")}`);
+  return value;
+}
+
 // Fall back to defaults so a broken deployment shows an error, not a blank page
 export async function loadConfig(): Promise<AppConfig> {
   if (loaded) return config;
+  let json: Partial<AppConfig> | undefined;
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}config.json`, { cache: "no-store" });
     if (response.ok) {
-      const json = await response.json();
-      config = { ...defaults, ...json };
+      json = await response.json();
     } else {
       console.warn(`config.json could not be loaded (${response.status}), using defaults`);
     }
   } catch (err) {
     console.warn("config.json could not be loaded, using defaults", err);
   }
+  // Invalid values are reported by the bootstrap error page
+  config = validateConfig({ ...defaults, ...(json || {}) });
   loaded = true;
   return config;
 }

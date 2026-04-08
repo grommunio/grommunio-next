@@ -54,6 +54,9 @@ function safeParse(s: string) {
 
 const joinList = (v?: string[] | string) => Array.isArray(v) ? v.join(",") : v;
 
+// Inner quotes and backslashes get a backslash
+export const quoteSearch = (text: string) => `"${text.replace(/[\\"]/g, "\\$&")}"`;
+
 export function request(path: string, options: QueryOptions = {}) {
   let req = client().api(path);
   const select = joinList(options.select);
@@ -63,7 +66,8 @@ export function request(path: string, options: QueryOptions = {}) {
   if (expand) req = req.expand(expand);
   if (options.filter) req = req.filter(options.filter);
   if (orderby) req = req.orderby(orderby);
-  if (options.search) req = req.search(options.search);
+  // The SDK does not encode query values, so &, # or + would break the URL
+  if (options.search) req = req.search(encodeURIComponent(options.search));
   if (options.top !== undefined) req = req.top(options.top);
   if (options.skip !== undefined) req = req.skip(options.skip);
   if (options.count) req = req.count(true);

@@ -27,6 +27,9 @@ export const loadMailboxSettings = createAsyncThunk<MailboxSettings, void, Thunk
   try { return await settingsApi.getMailboxSettings(); } catch (err) { return rejectWithValue(errorMessage(err)); }
 });
 
+// Toast keys, translated by AlertStack:
+// t("Settings saved")
+// t("Automatic replies updated")
 export const saveMailboxSettings = createAsyncThunk<MailboxSettings, MailboxSettings, ThunkApi>("settings/saveMailbox", async (settings, { dispatch, rejectWithValue }) => {
   try {
     const result = await settingsApi.patchMailboxSettings(settings);

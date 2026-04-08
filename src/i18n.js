@@ -95,7 +95,7 @@ const resources = {
   "ru-RU": {
     translation: ru,
   },
-  "sl-SL": {
+  "sl-SI": {
     translation: sl,
   },
   "tr-TR": {
@@ -117,7 +117,8 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en-US',
+    // Avoids an English flash before App applies the stored language
+    lng: localStorage.getItem("lang") || "en-US",
     // de-AT -> de-DE -> en-US
     fallbackLng: (code) => {
       const base = (code || '').split('-')[0];

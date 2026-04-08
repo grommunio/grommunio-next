@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { Box, Dialog, IconButton, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Typography, useMediaQuery } from "@mui/material";
-import { AccountCircleOutlined, CalendarMonthOutlined, Close, KeyboardOutlined, LabelOutlined, LanguageOutlined, MailOutline, NotificationsOutlined, PaletteOutlined, ReplyAllOutlined, RuleOutlined, ViewSidebarOutlined, DrawOutlined } from "@mui/icons-material";
+import { AccountCircleOutlined, ArrowBack, CalendarMonthOutlined, Close, KeyboardOutlined, LabelOutlined, LanguageOutlined, NotificationsOutlined, PaletteOutlined, ReplyAllOutlined, RuleOutlined, ViewSidebarOutlined, DrawOutlined } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -87,10 +87,9 @@ const SettingsDialog = ({ open, onClose, initialPage = "appearance" }: SettingsD
 
   const Page = PAGES[page];
   const current = NAV.flatMap(g => g.items).find(i => i.key === page);
-  const Icon = MailOutline;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile} PaperProps={{ sx: { height: isMobile ? "100%" : "min(760px, 92vh)", display: "flex", flexDirection: "row", overflow: "hidden" } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile} PaperProps={{ "aria-label": t("Settings"), sx: { height: isMobile ? "100%" : "min(760px, 92vh)", display: "flex", flexDirection: "row", overflow: "hidden" } }}>
       {(!isMobile || showNav) && (
         <Box sx={{ width: isMobile ? "100%" : 240, flexShrink: 0, borderRight: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.default", overflowY: "auto" }}>
           <Typography variant="h6" sx={{ px: 2, pt: 2, pb: 1 }}>{t("Settings")}</Typography>
@@ -112,7 +111,7 @@ const SettingsDialog = ({ open, onClose, initialPage = "appearance" }: SettingsD
       {(!isMobile || !showNav) && (
         <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <Box sx={{ display: "flex", alignItems: "center", px: 3, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
-            {isMobile && <IconButton onClick={() => setShowNav(true)} sx={{ mr: 1 }} aria-label={t("Back")}><Icon /></IconButton>}
+            {isMobile && <IconButton onClick={() => setShowNav(true)} sx={{ mr: 1 }} aria-label={t("Back")}><ArrowBack /></IconButton>}
             <Typography variant="h6" sx={{ flex: 1 }}>{current ? t(current.label) : ""}</Typography>
             <IconButton onClick={onClose} aria-label={t("Close")}><Close /></IconButton>
           </Box>

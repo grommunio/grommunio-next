@@ -9,15 +9,19 @@ import { Editor } from "@tinymce/tinymce-react";
 import { useTheme } from "@mui/material/styles";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { AutomaticRepliesSetting } from "microsoft-graph";
+import type { AutomaticRepliesSetting, DateTimeTimeZone, NullableOption } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { updatePrefs } from "../../mail/mailSlice";
 import { saveAutomaticReplies } from "../settingsSlice";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { purify } from "../../mail/utils-compose";
-import { browserTimeZone, dayjs, Dayjs } from "../../calendar/dates";
+import { browserTimeZone, dayjs, Dayjs, graphDateToDate } from "../../calendar/dates";
 import { Section } from "./GeneralSettings";
 import type { ReadingPanePosition } from "../../mail/types";
+
+// Honours the returned timeZone; values without one are UTC
+const fromGraphDate = (value: NullableOption<DateTimeTimeZone> | undefined): Dayjs =>
+  value?.timeZone ? dayjs(graphDateToDate(value)) : dayjs.utc(value?.dateTime || undefined).local();
 
 export const MailLayoutSettings = () => {
   const { t } = useTranslation();
@@ -69,6 +73,8 @@ export const SignatureSettings = () => {
   const save = () => {
     if (!editorRef.current) return;
     dispatch(updatePrefs({ signature: purify(editorRef.current.getContent()) }));
+    // Reset the editor's own flag too, otherwise onDirty never fires again
+    editorRef.current.setDirty(false);
     setDirty(false);
   };
 
@@ -120,13 +126,22 @@ export const AutoRepliesSettings = () => {
     if (!current) return;
     setEnabled(current.status !== "disabled");
     setScheduled(current.status === "scheduled");
-    if (current.scheduledStartDateTime?.dateTime) setStart(dayjs.utc(current.scheduledStartDateTime.dateTime).local());
-    if (current.scheduledEndDateTime?.dateTime) setEnd(dayjs.utc(current.scheduledEndDateTime.dateTime).local());
+    if (current.scheduledStartDateTime?.dateTime) setStart(fromGraphDate(current.scheduledStartDateTime));
+    if (current.scheduledEndDateTime?.dateTime) setEnd(fromGraphDate(current.scheduledEndDateTime));
     setExternal((current.externalAudience as typeof external) || "none");
     setSameExternal(!current.externalReplyMessage || current.externalReplyMessage === current.internalReplyMessage);
   }, [current]);
 
+  const validRange = !scheduled || end.isAfter(start);
+
+  const changeStart = (value: Dayjs) => {
+    setStart(value);
+    // Keep the end after the start
+    if (value.isValid() && !end.isAfter(value)) setEnd(value.add(1, "hour"));
+  };
+
   const save = async () => {
+    if (enabled && !validRange) return;
     const internal = internalRef.current ? purify(internalRef.current.getContent()) : current?.internalReplyMessage || "";
     const externalMsg = sameExternal ? internal : externalRef.current ? purify(externalRef.current.getContent()) : current?.externalReplyMessage || "";
     const setting: AutomaticRepliesSetting = {
@@ -134,7 +149,7 @@ export const AutoRepliesSettings = () => {
       externalAudience: external,
       internalReplyMessage: internal,
       externalReplyMessage: externalMsg,
-      ...(scheduled ? {
+      ...(enabled && scheduled ? {
         scheduledStartDateTime: { dateTime: start.utc().format("YYYY-MM-DDTHH:mm:ss"), timeZone: "UTC" },
         scheduledEndDateTime: { dateTime: end.utc().format("YYYY-MM-DDTHH:mm:ss"), timeZone: "UTC" },
       } : {}),
@@ -153,25 +168,27 @@ export const AutoRepliesSettings = () => {
     toolbar: "bold italic underline | bullist numlist | link | removeformat",
     content_style: 'body { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; }',
   };
+  const disabled = !enabled;
 
   return (
     <Section title={t("Automatic replies")} description={t("Let people know you are away. Replies are sent once per sender while automatic replies are on.")}>
       <FormControlLabel control={<Switch checked={enabled} onChange={e => setEnabled(e.target.checked)} />} label={t("Turn on automatic replies")} />
-      <Box sx={{ opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? "auto" : "none", display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
-        <FormControlLabel control={<Checkbox checked={scheduled} onChange={e => setScheduled(e.target.checked)} />} label={t("Send replies only during a time period")} />
+      <Box sx={{ opacity: enabled ? 1 : 0.5, display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
+        <FormControlLabel disabled={disabled} control={<Checkbox checked={scheduled} onChange={e => setScheduled(e.target.checked)} />} label={t("Send replies only during a time period")} />
         {scheduled && (
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={dayjs.locale()}>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              <DateTimePicker label={t("Start time")} value={start} onChange={v => v && setStart(v)} slotProps={{ textField: { size: "small" } }} />
-              <DateTimePicker label={t("End time")} value={end} onChange={v => v && setEnd(v)} minDateTime={start} slotProps={{ textField: { size: "small" } }} />
+              <DateTimePicker label={t("Start time")} value={start} onChange={v => v && changeStart(v)} disabled={disabled} slotProps={{ textField: { size: "small" } }} />
+              <DateTimePicker label={t("End time")} value={end} onChange={v => v && setEnd(v)} minDateTime={start} disabled={disabled}
+                slotProps={{ textField: { size: "small", error: !validRange, helperText: validRange ? undefined : t("The end time must be after the start time") } }} />
             </Box>
           </LocalizationProvider>
         )}
         <Typography variant="subtitle2">{t("Reply inside my organization")}</Typography>
         <Box sx={{ "& .tox-tinymce": { borderRadius: 1 } }}>
-          <Editor key={"i" + (current?.internalReplyMessage || "").length} tinymceScriptSrc={TINYMCE_SCRIPT_SRC} onInit={(_e, ed) => { internalRef.current = ed; }} initialValue={current?.internalReplyMessage || ""} init={editorInit} />
+          <Editor key={"i" + (current?.internalReplyMessage || "").length} tinymceScriptSrc={TINYMCE_SCRIPT_SRC} onInit={(_e, ed) => { internalRef.current = ed; }} initialValue={current?.internalReplyMessage || ""} init={editorInit} disabled={disabled} />
         </Box>
-        <FormControl>
+        <FormControl disabled={disabled}>
           <FormLabel sx={{ fontSize: 14, fontWeight: 600, color: "text.primary" }}>{t("Reply to people outside my organization")}</FormLabel>
           <RadioGroup value={external} onChange={e => setExternal(e.target.value as typeof external)}>
             <FormControlLabel value="none" control={<Radio size="small" />} label={t("Don't send replies outside my organization")} />
@@ -180,16 +197,16 @@ export const AutoRepliesSettings = () => {
           </RadioGroup>
         </FormControl>
         {external !== "none" && <>
-          <FormControlLabel control={<Checkbox checked={sameExternal} onChange={e => setSameExternal(e.target.checked)} />} label={t("Use the same message for people outside my organization")} />
+          <FormControlLabel disabled={disabled} control={<Checkbox checked={sameExternal} onChange={e => setSameExternal(e.target.checked)} />} label={t("Use the same message for people outside my organization")} />
           {!sameExternal && (
             <Box sx={{ "& .tox-tinymce": { borderRadius: 1 } }}>
-              <Editor key={"e" + (current?.externalReplyMessage || "").length} tinymceScriptSrc={TINYMCE_SCRIPT_SRC} onInit={(_e, ed) => { externalRef.current = ed; }} initialValue={current?.externalReplyMessage || ""} init={editorInit} />
+              <Editor key={"e" + (current?.externalReplyMessage || "").length} tinymceScriptSrc={TINYMCE_SCRIPT_SRC} onInit={(_e, ed) => { externalRef.current = ed; }} initialValue={current?.externalReplyMessage || ""} init={editorInit} disabled={disabled} />
             </Box>
           )}
         </>}
       </Box>
       <Box sx={{ mt: 2 }}>
-        <Button variant="contained" onClick={save} disabled={busy}>{t("Save")}</Button>
+        <Button variant="contained" onClick={save} disabled={busy || (enabled && !validRange)}>{t("Save")}</Button>
       </Box>
       <Box sx={{ display: "none" }}>{browserTimeZone()}</Box>
     </Section>

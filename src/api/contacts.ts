@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
 import { Contact, ContactFolder, Person } from "microsoft-graph";
-import { del, get, getAll, getBlobUrl, getPage, getNextPage, Page, patch, post, put, odataString } from "./graph";
+import { del, get, getAll, getBlobUrl, getPage, getNextPage, Page, patch, post, put, odataString, quoteSearch } from "./graph";
 
 const CONTACT_SELECT = [
   "id", "displayName", "givenName", "surname", "middleName", "nickName", "initials", "title", "emailAddresses",
@@ -83,7 +83,7 @@ export async function putContactPhoto(contactId: string, file: File): Promise<vo
 
 export async function searchPeople(search: string, top = 10): Promise<Person[]> {
   const response = await get<{ value: Person[] }>("/me/people", {
-    search: `"${search.replace(/"/g, "")}"`,
+    search: quoteSearch(search),
     top,
     select: ["id", "displayName", "givenName", "surname", "scoredEmailAddresses", "personType", "jobTitle", "companyName"],
   });

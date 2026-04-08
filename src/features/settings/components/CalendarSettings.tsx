@@ -33,15 +33,26 @@ export const CalendarSettings = () => {
     if (workingHours.endTime) setEnd(parseInt(workingHours.endTime.slice(0, 2), 10));
   }, [workingHours]);
 
+  const validHours = end > start;
+
+  const changeStart = (value: number) => {
+    setStart(value);
+    // The end must stay after the start
+    if (end <= value) setEnd(value + 1);
+  };
+
   const saveHours = async () => {
-    const workDays = days.map(d => DAY_INDEX[d]);
-    dispatch(updateCalendarPrefs({ workDays, workDayStart: start, workDayEnd: end }));
-    await dispatch(saveWorkingHours({
+    if (!validHours) return;
+    const result = await dispatch(saveWorkingHours({
       daysOfWeek: days,
       startTime: `${String(start).padStart(2, "0")}:00:00.0000000`,
       endTime: `${String(end).padStart(2, "0")}:00:00.0000000`,
       timeZone: { name: workingHours?.timeZone?.name || browserTimeZone() },
     }));
+    // Local prefs follow only once the server accepted the change
+    if (saveWorkingHours.fulfilled.match(result)) {
+      dispatch(updateCalendarPrefs({ workDays: days.map(d => DAY_INDEX[d]), workDayStart: start, workDayEnd: end }));
+    }
   };
 
   return <>
@@ -63,15 +74,15 @@ export const CalendarSettings = () => {
         {DAYS.map(d => <ToggleButton key={d} value={d} sx={{ width: 48 }}>{dayjs().day(DAY_INDEX[d]).format("dd")}</ToggleButton>)}
       </ToggleButtonGroup>
       <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
-        <TextField select label={t("Start time")} value={start} onChange={e => setStart(Number(e.target.value))} sx={{ width: 140 }}>
-          {HOURS.map(h => <MenuItem key={h} value={h}>{dayjs().hour(h).minute(0).format("LT")}</MenuItem>)}
+        <TextField select label={t("Start time")} value={start} onChange={e => changeStart(Number(e.target.value))} sx={{ width: 140 }}>
+          {HOURS.slice(0, -1).map(h => <MenuItem key={h} value={h}>{dayjs().hour(h).minute(0).format("LT")}</MenuItem>)}
         </TextField>
         <Typography color="text.secondary">–</Typography>
         <TextField select label={t("End time")} value={end} onChange={e => setEnd(Number(e.target.value))} sx={{ width: 140 }}>
           {HOURS.filter(h => h > start).map(h => <MenuItem key={h} value={h}>{dayjs().hour(h).minute(0).format("LT")}</MenuItem>)}
         </TextField>
       </Box>
-      <Button variant="contained" onClick={saveHours}>{t("Save")}</Button>
+      <Button variant="contained" onClick={saveHours} disabled={!validHours}>{t("Save")}</Button>
     </Section>
     <Section title={t("Events")}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 480 }}>

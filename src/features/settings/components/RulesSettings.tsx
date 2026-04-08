@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, IconButton, MenuItem, Switch, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, IconButton, MenuItem, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import { Add, ArrowDownward, ArrowUpward, DeleteOutline, Edit, RuleOutlined } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import { folderLabel } from "../../mail/components/FolderPane";
 import RecipientField from "../../mail/components/RecipientField";
 import { Section } from "./GeneralSettings";
 import EmptyState from "../../../components/common/EmptyState";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 type RuleDraft = {
   displayName: string;
@@ -149,10 +150,11 @@ const RuleEditor = ({ rule, sequence, onClose }: { rule?: MessageRule; sequence:
           <FormControlLabel control={<Checkbox checked={draft.stopProcessingRules} onChange={e => set("stopProcessingRules", e.target.checked)} />} label={t("Stop processing more rules")} />
         </Box>
         <FormControlLabel control={<Switch checked={draft.isEnabled} onChange={e => set("isEnabled", e.target.checked)} />} label={t("Rule is enabled")} />
+        {!hasCondition && <Alert severity="info">{t("Without conditions the rule applies to all incoming messages.")}</Alert>}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("Cancel")}</Button>
-        <Button variant="contained" onClick={save} disabled={busy || !draft.displayName.trim() || !hasCondition || !hasAction}>{t("Save")}</Button>
+        <Button variant="contained" onClick={save} disabled={busy || !draft.displayName.trim() || !hasAction}>{t("Save")}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -186,6 +188,8 @@ export const RulesSettings = () => {
   const { rules, rulesLoaded } = useTypeSelector(state => state.settings);
   const folders = useTypeSelector(selectFlatFolders);
   const [editor, setEditor] = useState<{ rule?: MessageRule } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<MessageRule | null>(null);
+  const [moving, setMoving] = useState(false);
 
   useEffect(() => {
     dispatch(loadRules());
@@ -195,12 +199,20 @@ export const RulesSettings = () => {
   const folderName = useMemo(() => (id: string) => { const f = folders.find(x => x.id === id); return f ? folderLabel(f, t) : t("a folder"); }, [folders, t]);
   const sorted = useMemo(() => [...rules].sort((a, b) => (a.sequence || 0) - (b.sequence || 0)), [rules]);
 
-  const move = (rule: MessageRule, direction: -1 | 1) => {
+  // Renumber from the new order one request at a time, then reload the server's numbering
+  const move = async (rule: MessageRule, direction: -1 | 1) => {
     const idx = sorted.findIndex(r => r.id === rule.id);
-    const other = sorted[idx + direction];
-    if (!other) return;
-    dispatch(updateRule({ id: rule.id!, rule: { sequence: other.sequence } }));
-    dispatch(updateRule({ id: other.id!, rule: { sequence: rule.sequence } }));
+    if (!sorted[idx + direction]) return;
+    const order = [...sorted];
+    [order[idx], order[idx + direction]] = [order[idx + direction], order[idx]];
+    setMoving(true);
+    for (const [i, r] of order.entries()) {
+      if (r.sequence === i + 1) continue;
+      const result = await dispatch(updateRule({ id: r.id!, rule: { sequence: i + 1 } }));
+      if (!updateRule.fulfilled.match(result)) break;
+    }
+    await dispatch(loadRules());
+    setMoving(false);
   };
 
   return (
@@ -209,17 +221,26 @@ export const RulesSettings = () => {
       {rulesLoaded && sorted.length === 0 && <EmptyState icon={<RuleOutlined />} title={t("No rules yet")} description={t("Create a rule to move, categorize or forward incoming mail automatically.")} />}
       {sorted.map((rule, idx) => (
         <Box key={rule.id} sx={{ display: "flex", alignItems: "center", gap: 1, py: 1, borderBottom: 1, borderColor: "divider" }}>
-          <Switch size="small" checked={rule.isEnabled !== false} onChange={e => dispatch(updateRule({ id: rule.id!, rule: { isEnabled: e.target.checked } }))} inputProps={{ "aria-label": t("Rule is enabled") }} />
+          <Switch size="small" checked={rule.isEnabled !== false} onChange={e => dispatch(updateRule({ id: rule.id!, rule: { isEnabled: e.target.checked } }))} inputProps={{ "aria-label": t("Enable rule {{name}}", { name: rule.displayName }) }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{rule.displayName}{rule.hasError && <Chip size="small" color="error" label={t("Error")} sx={{ ml: 1 }} />}</Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{describeRule(rule, folderName, t)}</Typography>
           </Box>
-          <Tooltip title={t("Move up")}><span><IconButton size="small" disabled={idx === 0} onClick={() => move(rule, -1)} aria-label={t("Move up")}><ArrowUpward fontSize="small" /></IconButton></span></Tooltip>
-          <Tooltip title={t("Move down")}><span><IconButton size="small" disabled={idx === sorted.length - 1} onClick={() => move(rule, 1)} aria-label={t("Move down")}><ArrowDownward fontSize="small" /></IconButton></span></Tooltip>
-          <Tooltip title={t("Edit")}><IconButton size="small" onClick={() => setEditor({ rule })} aria-label={t("Edit")}><Edit fontSize="small" /></IconButton></Tooltip>
-          <Tooltip title={t("Delete")}><IconButton size="small" onClick={() => dispatch(deleteRule(rule.id!))} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
+          <Tooltip title={t("Move up")}><span><IconButton size="small" disabled={moving || idx === 0} onClick={() => move(rule, -1)} aria-label={t("Move rule {{name}} up", { name: rule.displayName })}><ArrowUpward fontSize="small" /></IconButton></span></Tooltip>
+          <Tooltip title={t("Move down")}><span><IconButton size="small" disabled={moving || idx === sorted.length - 1} onClick={() => move(rule, 1)} aria-label={t("Move rule {{name}} down", { name: rule.displayName })}><ArrowDownward fontSize="small" /></IconButton></span></Tooltip>
+          <Tooltip title={t("Edit")}><IconButton size="small" onClick={() => setEditor({ rule })} aria-label={t("Edit rule {{name}}", { name: rule.displayName })}><Edit fontSize="small" /></IconButton></Tooltip>
+          <Tooltip title={t("Delete")}><IconButton size="small" onClick={() => setConfirmDelete(rule)} aria-label={t("Delete rule {{name}}", { name: rule.displayName })}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
         </Box>
       ))}
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title={t("Delete rule {{name}}?", { name: confirmDelete?.displayName || "" })}
+        description={t("The rule is removed from the server and cannot be restored.")}
+        confirmLabel={t("Delete")}
+        destructive
+        onConfirm={() => confirmDelete?.id && dispatch(deleteRule(confirmDelete.id))}
+        onClose={() => setConfirmDelete(null)}
+      />
       {editor && <RuleEditor rule={editor.rule} sequence={(sorted[sorted.length - 1]?.sequence || 0) + 1} onClose={() => setEditor(null)} />}
     </Section>
   );

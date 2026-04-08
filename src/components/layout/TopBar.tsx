@@ -5,7 +5,7 @@ import { AppBar, Box, IconButton, Toolbar, Tooltip } from "@mui/material";
 import { DarkModeOutlined, LightModeOutlined, SettingsOutlined } from "@mui/icons-material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import GrommunioLogo from "../logos/GrommunioLogo";
 import GlobalSearch from "./GlobalSearch";
 import UserMenu from "./UserMenu";
@@ -16,7 +16,7 @@ export const TOPBAR_HEIGHT = 48;
 
 const TopBar = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+
   const { mode, setPreference } = useThemeSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -24,9 +24,10 @@ const TopBar = () => {
     <AppBar position="static" sx={{ height: TOPBAR_HEIGHT, justifyContent: "center", zIndex: theme => theme.zIndex.drawer + 1 }}>
       <Toolbar variant="dense" disableGutters sx={{ minHeight: TOPBAR_HEIGHT, px: 1.5 }}>
         <Box
-          onClick={() => navigate("/")}
-          sx={{ display: "flex", alignItems: "center", cursor: "pointer", mr: 2, minWidth: { xs: 36, sm: 160 } }}
-          aria-label="grommunio Next"
+          component={RouterLink}
+          to="/"
+          sx={{ display: "flex", alignItems: "center", color: "inherit", mr: 2, minWidth: { xs: 36, sm: 160 }, borderRadius: 1, "&:focus-visible": { outline: "2px solid", outlineOffset: 2 } }}
+          aria-label={t("Go to mail")}
         >
           <Box sx={{ display: { xs: "none", sm: "block" } }}><GrommunioLogo height={26} /></Box>
           <Box sx={{ display: { xs: "block", sm: "none" } }}><GrommunioLogo height={26} iconOnly /></Box>

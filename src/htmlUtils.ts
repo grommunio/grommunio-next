@@ -3,61 +3,40 @@
 
 import { convertToDarkModeColor } from "./utils";
 
-// Keep mail bodies readable in dark mode
+const SKIP_TAGS = new Set(["IMG", "SVG", "VIDEO", "PICTURE", "CANVAS", "STYLE", "HEAD", "TITLE", "BR", "HR"]);
+
+// Recolors a mail body for dark mode. Elements with their own text and
+// background color keep it, along with their content.
 export function convertHtmlMailToDarkmode(htmlMail: HTMLElement): HTMLElement {
-  htmlMail.style.setProperty('color', 'white', 'important');
+  htmlMail.style.setProperty("color", "white", "important");
+  htmlMail.style.setProperty("background-color", "transparent", "important");
 
-  // Convert div elements
-  const divElements = htmlMail.getElementsByTagName("div");
-  for(let i = 0; i < divElements.length; i++) {
-    const el = divElements[i];
-    el.style.setProperty("color", "white");
-    el.style.setProperty("background", "none");
-  }
+  const elements = htmlMail.querySelectorAll<HTMLElement>("*");
+  const keep: HTMLElement[] = [];
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (el.namespaceURI !== "http://www.w3.org/1999/xhtml" || SKIP_TAGS.has(el.tagName) || !el.style) continue;
+    if (keep.some(k => k.contains(el))) continue;
 
-  // Convert p elements
-  const pElements = htmlMail.getElementsByTagName("p");
-  for(let i = 0; i < pElements.length; i++) {
-    const el = pElements[i];
-    el.style.setProperty("color", "white");
-    el.style.setProperty("background", "none");
-  }
-
-  // Convert span elements
-  const spanElements = htmlMail.getElementsByTagName("span");
-  for(let i = 0; i < spanElements.length; i++) {
-    const el = spanElements[i];
-    const currentStyle = el.getAttribute("style") || "";
-    
-    const styleTags = currentStyle.split(";").map(tag => tag.replace(/\s/g,''));
-
-    const colorStyle = styleTags.find(tag => tag.startsWith("color:"));
-    const backgroundStyle = styleTags.find(tag => tag.startsWith("background-color:"));
-
-    // If the colored font has a background, the darkmode font affect readablity
-    if(colorStyle && backgroundStyle) {
+    const color = el.style.getPropertyValue("color") || el.getAttribute("color") || "";
+    const background = el.style.getPropertyValue("background-color") || el.getAttribute("bgcolor") || "";
+    // Colored label on its own background is fine as is
+    if (color && background && el.tagName !== "BODY" && el.tagName !== "TABLE" && el.tagName !== "TD" && el.tagName !== "TH") {
+      keep.push(el);
       continue;
     }
 
-    el.style.setProperty("color", colorStyle ? safeInvert(colorStyle.slice(6)) : "white");
-    el.style.setProperty("background", "none");
-  }
+    // Drop light backgrounds, keep background images
+    el.removeAttribute("bgcolor");
+    el.style.setProperty("background-color", "transparent", "important");
 
-  // Convert a elements
-  const aElements = htmlMail.getElementsByTagName("a");
-  for(let i = 0; i < aElements.length; i++) {
-    const el = aElements[i];
-    el.style.setProperty("color", "#5cb3ff");
-    el.style.setProperty("background", "none");
-  }
-
-  // Convert font elements
-  const fontElements = htmlMail.getElementsByTagName("font");
-  for(let i = 0; i < fontElements.length; i++) {
-    const el = fontElements[i];
-    const currentColor = el.getAttribute("color");
-    el.style.setProperty("color", currentColor ? safeInvert(currentColor) : "white", "important");
-    el.style.setProperty("background", "none");
+    if (el.tagName === "A") {
+      el.style.setProperty("color", "#5cb3ff", "important");
+    } else if (color) {
+      el.style.setProperty("color", safeInvert(color), "important");
+    } else {
+      el.style.setProperty("color", "white");
+    }
   }
 
   return htmlMail;

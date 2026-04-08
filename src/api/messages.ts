@@ -6,7 +6,7 @@ import { Attachment, FileAttachment, Message, OutlookCategory } from "microsoft-
 import { fileToBase64 } from "../utils";
 import { MessageCategory, MessageListParams } from "../types/messages";
 import { SCROLL_ITEMS } from "../constants";
-import { batch, BatchResponse, client, del, get, getNextPage, getPage, normalizeError, Page, patch, post, request } from "./graph";
+import { ApiError, batch, BatchResponse, client, del, get, getNextPage, getPage, normalizeError, Page, patch, post, quoteSearch, request } from "./graph";
 
 // List view only, the body is loaded on demand
 export const MESSAGE_LIST_SELECT = [
@@ -30,7 +30,7 @@ export async function getMessagesPage(folderId = "inbox", params: MessageListPar
     // $search cannot be combined with $orderby, $skip or $count
     return getPage<Message>(`/me/mailFolders/${folderId}/messages`, {
       select: MESSAGE_LIST_SELECT,
-      search: search.includes('"') ? search : `"${search.replace(/"/g, "")}"`,
+      search: quoteSearch(search),
       top: top ?? SCROLL_ITEMS,
     });
   }
@@ -47,7 +47,7 @@ export async function getMessagesPage(folderId = "inbox", params: MessageListPar
 export async function searchMessages(search: string, top = SCROLL_ITEMS): Promise<Page<Message>> {
   return getPage<Message>("/me/messages", {
     select: MESSAGE_LIST_SELECT,
-    search: `"${search.replace(/"/g, "")}"`,
+    search: quoteSearch(search),
     top,
   });
 }
@@ -79,7 +79,13 @@ export type DeltaResult = {
   value: Message[];
   removed: string[];
   deltaLink?: string;
+  // Delta link expired and sync restarted, changes in between are unknown
+  reset?: boolean;
 };
+
+// Graph answers an expired sync state with 410 or 400 SyncStateInvalid
+const isExpiredSyncState = (err: unknown) =>
+  err instanceof ApiError && (err.status === 410 || err.code === "SyncStateNotFound" || err.code === "SyncStateInvalid");
 
 // Without a delta link the first call returns the whole folder
 export async function getMessagesDelta(folderId: string, deltaLink?: string, top = 50): Promise<DeltaResult> {
@@ -87,7 +93,14 @@ export async function getMessagesDelta(folderId: string, deltaLink?: string, top
   const removed: string[] = [];
   let page: Page<Message>;
   if (deltaLink) {
-    page = await getNextPage<Message>(deltaLink);
+    try {
+      page = await getNextPage<Message>(deltaLink);
+    } catch (err) {
+      if (!isExpiredSyncState(err)) throw err;
+      // Start over, the full folder content is not a change set
+      const fresh = await getMessagesDelta(folderId, undefined, top);
+      return { value: [], removed: [], deltaLink: fresh.deltaLink, reset: true };
+    }
   } else {
     page = await getPage<Message>(`/me/mailFolders/${folderId}/messages/delta`, {
       select: MESSAGE_LIST_SELECT,
@@ -273,25 +286,31 @@ export async function addFileAttachment(messageId: string, file: File, isInline 
 
   let offset = 0;
   let result: Attachment = { name: file.name, size: file.size };
-  while (offset < file.size) {
-    const end = Math.min(offset + UPLOAD_CHUNK, file.size);
-    const chunk = file.slice(offset, end);
-    const response = await fetch(session.uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Length": String(end - offset),
-        "Content-Range": `bytes ${offset}-${end - 1}/${file.size}`,
-      },
-      body: chunk,
-    });
-    if (!response.ok && response.status !== 201 && response.status !== 200) {
-      throw new Error(`Upload failed with status ${response.status}`);
+  try {
+    while (offset < file.size) {
+      const end = Math.min(offset + UPLOAD_CHUNK, file.size);
+      // uploadUrl is pre-authenticated, don't send Authorization
+      const response = await fetch(session.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Range": `bytes ${offset}-${end - 1}/${file.size}`,
+        },
+        body: file.slice(offset, end),
+      });
+      if (!response.ok) {
+        throw new Error(`Upload failed with status ${response.status}`);
+      }
+      if (response.status === 201) {
+        const location = response.headers.get("Location");
+        result = { ...result, id: location?.match(/Attachments\('([^']+)'\)/)?.[1] || location?.split("/").pop() };
+      }
+      offset = end;
     }
-    if (response.status === 201 || response.status === 200) {
-      const location = response.headers.get("Location");
-      result = { ...result, id: location?.split("/").pop() };
-    }
-    offset = end;
+  } catch (err) {
+    // don't leave a dangling upload session on the draft
+    await fetch(session.uploadUrl, { method: "DELETE" }).catch(() => undefined);
+    throw err;
   }
   return result;
 }

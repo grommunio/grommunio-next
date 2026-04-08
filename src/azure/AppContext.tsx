@@ -131,6 +131,8 @@ function useProvideAppContext(): AppContext {
     const account = instance.getActiveAccount() || undefined;
     if (config.interactionType === 'popup') {
       await instance.logoutPopup({ account });
+      // Reload like the redirect flow, to drop this user's data from memory
+      window.location.assign(import.meta.env.BASE_URL);
     } else {
       await instance.logoutRedirect({ account });
     }

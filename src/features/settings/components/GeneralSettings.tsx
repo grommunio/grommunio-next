@@ -10,6 +10,7 @@ import { ColorModePreference, THEME_COLORS } from "../../../theme";
 import { getLangs } from "../../../utils";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { loadTimeZones, saveMailboxSettings, setLanguage } from "../settingsSlice";
+import { setDayjsLocale } from "../../calendar/dates";
 import { updatePrefs } from "../../mail/mailSlice";
 import { useAppContext } from "../../../azure/AppContext";
 import PersonAvatar from "../../../components/common/PersonAvatar";
@@ -37,7 +38,7 @@ export const AppearanceSettings = () => {
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
         {Object.entries(THEME_COLORS).map(([name, color]) => (
           <Tooltip key={name} title={t(color.label)}>
-            <Box component="button" type="button" onClick={() => setColorTheme(name)} aria-label={color.label} aria-pressed={colorTheme === name}
+            <Box component="button" type="button" onClick={() => setColorTheme(name)} aria-label={t(color.label)} aria-pressed={colorTheme === name}
               sx={{ width: 36, height: 36, borderRadius: "50%", border: "none", cursor: "pointer", bgcolor: color.main, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", outline: colorTheme === name ? "2px solid" : "none", outlineColor: "text.primary", outlineOffset: 2 }}>
               {colorTheme === name && <Check fontSize="small" />}
             </Box>
@@ -66,13 +67,21 @@ export const LanguageTimeSettings = () => {
     setTimeFormat(mailboxSettings.timeFormat || "");
   }, [mailboxSettings.timeZone, mailboxSettings.dateFormat, mailboxSettings.timeFormat]);
 
-  const handleLanguage = (locale: string) => {
+  const handleLanguage = async (locale: string) => {
+    // Dates are formatted during render, so load the dayjs locale before switching
+    await setDayjsLocale(locale);
     i18n.changeLanguage(locale);
     dispatch(setLanguage(locale));
     dispatch(saveMailboxSettings({ language: { locale } }));
   };
 
-  const dirty = timeZone !== (mailboxSettings.timeZone || "") || dateFormat !== (mailboxSettings.dateFormat || "") || timeFormat !== (mailboxSettings.timeFormat || "");
+  // Only send what changed; empty values cannot be saved
+  const changes = {
+    ...(timeZone && timeZone !== mailboxSettings.timeZone ? { timeZone } : {}),
+    ...(dateFormat && dateFormat !== mailboxSettings.dateFormat ? { dateFormat } : {}),
+    ...(timeFormat && timeFormat !== mailboxSettings.timeFormat ? { timeFormat } : {}),
+  };
+  const dirty = Object.keys(changes).length > 0;
   const zoneOptions = timeZones.length ? timeZones : (timeZone ? [{ alias: timeZone, displayName: timeZone }] : []);
 
   return <>
@@ -87,23 +96,23 @@ export const LanguageTimeSettings = () => {
           options={zoneOptions}
           getOptionLabel={o => o.displayName}
           value={zoneOptions.find(z => z.alias === timeZone) || null}
-          onChange={(_e, v) => setTimeZone(v?.alias || "")}
+          onChange={(_e, v) => v && setTimeZone(v.alias)}
           renderInput={params => <TextField {...params} label={t("Time zone")} />}
           isOptionEqualToValue={(a, b) => a.alias === b.alias}
         />
         <Box sx={{ display: "flex", gap: 2 }}>
-          <TextField select label={t("Date format")} value={DATE_FORMATS.includes(dateFormat) ? dateFormat : ""} onChange={e => setDateFormat(e.target.value)} sx={{ flex: 1 }}>
-            {!DATE_FORMATS.includes(dateFormat) && dateFormat && <MenuItem value="">{dateFormat}</MenuItem>}
+          <TextField select label={t("Date format")} value={dateFormat} onChange={e => setDateFormat(e.target.value)} sx={{ flex: 1 }}>
+            {!DATE_FORMATS.includes(dateFormat) && dateFormat && <MenuItem value={dateFormat}>{dateFormat}</MenuItem>}
             {DATE_FORMATS.map(f => <MenuItem key={f} value={f}>{f}</MenuItem>)}
           </TextField>
-          <TextField select label={t("Time format")} value={TIME_FORMATS.includes(timeFormat) ? timeFormat : ""} onChange={e => setTimeFormat(e.target.value)} sx={{ flex: 1 }}>
-            {!TIME_FORMATS.includes(timeFormat) && timeFormat && <MenuItem value="">{timeFormat}</MenuItem>}
+          <TextField select label={t("Time format")} value={timeFormat} onChange={e => setTimeFormat(e.target.value)} sx={{ flex: 1 }}>
+            {!TIME_FORMATS.includes(timeFormat) && timeFormat && <MenuItem value={timeFormat}>{timeFormat}</MenuItem>}
             <MenuItem value="HH:mm">{t("24-hour")} (14:30)</MenuItem>
             <MenuItem value="h:mm tt">{t("12-hour")} (2:30 PM)</MenuItem>
           </TextField>
         </Box>
         <Box>
-          <Button variant="contained" disabled={!dirty} onClick={() => dispatch(saveMailboxSettings({ timeZone: timeZone || undefined, dateFormat: dateFormat || undefined, timeFormat: timeFormat || undefined }))}>{t("Save")}</Button>
+          <Button variant="contained" disabled={!dirty} onClick={() => dispatch(saveMailboxSettings(changes))}>{t("Save")}</Button>
         </Box>
       </Box>
     </Section>
