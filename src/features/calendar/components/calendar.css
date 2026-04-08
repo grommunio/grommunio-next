@@ -92,3 +92,13 @@
 .gn-event-tentative { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(255,255,255,0.45) 4px 8px); }
 .gn-event-declined { opacity: 0.45; text-decoration: line-through; }
 .gn-event-cancelled { text-decoration: line-through; opacity: 0.6; }
+
+/* rbc measures the scrollbar late and ignores our thin one, so reserve the gutter */
+.gn-calendar .rbc-time-content,
+.gn-calendar .rbc-time-header {
+  scrollbar-gutter: stable;
+}
+.gn-calendar .rbc-time-header {
+  overflow: hidden;
+  margin-right: 0 !important;
+}
