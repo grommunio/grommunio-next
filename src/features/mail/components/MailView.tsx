@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, useMediaQuery } from "@mui/material";
+import { Box, CircularProgress, Drawer, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { MailOutline } from "@mui/icons-material";
-import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useStore } from "react-redux";
 import type { Message } from "microsoft-graph";
-import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { useGlobalSearch } from "../../../components/layout/SearchContext";
+import { RootState, useTypeDispatch, useTypeSelector } from "../../../store";
+import { useGlobalSearch, useSearchContext } from "../../../components/layout/SearchContext";
 import useKeyboardShortcuts from "../../../hooks/useKeyboardShortcuts";
 import EmptyState from "../../../components/common/EmptyState";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import FolderPane from "./FolderPane";
 import MessageList from "./MessageList";
 import MessageView from "./MessageView";
@@ -22,15 +24,17 @@ import useMailActions from "../useMailActions";
 import useMailNotifications from "../useMailNotifications";
 import { makeSelectListMessages } from "../selectors";
 import {
-  clearSearchLists, clearSelection, deleteMessages, findFolder, findWellKnownFolder, listKey, loadCategories, loadFolders,
-  loadMessages, loadMoreMessages, moveMessages, setListFilter, setListSort, setSelection, startCompose, syncFolder,
-  toggleSelection, togglePinned, updateMessages, updatePrefs,
+  clearSearchLists, clearSelection, deleteConfirmClosed, deleteMessages, findFolder, findWellKnownFolder, listKey, loadCategories,
+  loadChildFolders, loadFolders, loadMessageDetails, loadMessages, loadMoreMessages, moveMessages, requestDelete, setListFilter,
+  setListSort, setSelection, startCompose, syncFolder, toggleSelection, togglePinned, updateMessages, updatePrefs,
 } from "../mailSlice";
+import { getMailFolder } from "../../../api/folders";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 import type { MailFilter, MailSort } from "../types";
 import type { ExtendedMailFolder, WellKnownFolderName } from "../../../types/messages";
 
 const SYNC_INTERVAL = 30000;
+const HIDDEN_SYNC_INTERVAL = 120000;
 const FOLDER_REFRESH_INTERVAL = 120000;
 
 const WELL_KNOWN: WellKnownFolderName[] = ["inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive", "outbox"];
@@ -40,22 +44,39 @@ export function folderSlug(folder: ExtendedMailFolder): string {
   return folder.wellKnownName !== "custom" ? folder.wellKnownName : encodeURIComponent(folder.id || "");
 }
 
+const isFocusFilter = (filter?: MailFilter) => filter === "focused" || filter === "other";
+
+// Plural forms used by the delete confirmation:
+// t("{{count}} messages will be deleted permanently_one")
+// t("{{count}} messages will be deleted permanently_other")
+// t("{{count}} messages will be moved to Deleted Items_one")
+// t("{{count}} messages will be moved to Deleted Items_other")
 const MailView = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const dispatch = useTypeDispatch();
+  const store = useStore<RootState>();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ folder?: string; messageId?: string }>();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { setQuery } = useSearchContext();
 
-  const { folders, foldersLoaded, prefs, selection, pinned, compose, lists } = useTypeSelector(state => state.mail);
+  // Narrow selectors, the whole slice would re-render on every change
+  const folders = useTypeSelector(state => state.mail.folders);
+  const foldersLoaded = useTypeSelector(state => state.mail.foldersLoaded);
+  const prefs = useTypeSelector(state => state.mail.prefs);
+  const selection = useTypeSelector(state => state.mail.selection);
+  const pinned = useTypeSelector(state => state.mail.pinned);
+  const compose = useTypeSelector(state => state.mail.compose);
+  const deleteConfirm = useTypeSelector(state => state.mail.deleteConfirm);
   const [search, setSearch] = useState("");
   const [focusedTab, setFocusedTab] = useState<"focused" | "other">("focused");
   const [contextMenu, setContextMenu] = useState<{ position: { top: number; left: number }; ids: string[] } | null>(null);
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
   const [bodyHtml, setBodyHtml] = useState("");
   const [composeFullscreen, setComposeFullscreen] = useState(false);
+  const [folderDrawer, setFolderDrawer] = useState(false);
   const readTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const folder = useMemo(() => {
@@ -64,13 +85,16 @@ const MailView = () => {
     if (WELL_KNOWN.includes(slug as WellKnownFolderName)) return folders.find(f => f.wellKnownName === slug);
     return findFolder(folders, decodeURIComponent(slug));
   }, [folders, params.folder]);
+  const inboxId = useMemo(() => findWellKnownFolder(folders, "inbox")?.id || undefined, [folders]);
 
   const messageId = params.messageId ? decodeURIComponent(params.messageId) : undefined;
   const key = listKey(folder?.id, search || undefined);
-  const list = lists[key];
+  const list = useTypeSelector(state => state.mail.lists[key]);
   const selectListMessages = useMemo(() => makeSelectListMessages(key), [key]);
   const messages = useTypeSelector(selectListMessages);
   const selectedMessage = useTypeSelector(state => messageId ? state.mail.messages[messageId] : undefined);
+  const selectedError = useTypeSelector(state => messageId ? state.mail.detailsError[messageId] : undefined);
+  const selectedLoading = useTypeSelector(state => messageId ? state.mail.loadingDetails[messageId] : false);
 
   useEffect(() => {
     dispatch(loadFolders());
@@ -83,6 +107,26 @@ const MailView = () => {
     }
   }, [foldersLoaded, params.folder]);
 
+  // Nested folder not loaded yet, or a deleted one
+  const resolving = useRef<string | null>(null);
+  useEffect(() => {
+    const slug = params.folder;
+    if (!foldersLoaded || !slug || folder || resolving.current === slug) return;
+    resolving.current = slug;
+    const fallback = () => navigate("/mail/inbox", { replace: true });
+    if (WELL_KNOWN.includes(slug as WellKnownFolderName)) return fallback();
+    const reveal = async (id: string, depth: number): Promise<void> => {
+      const info = await getMailFolder(id);
+      const parentId = info.parentFolderId;
+      if (!parentId || depth > 10) throw new Error("not found");
+      if (!findFolder(store.getState().mail.folders, parentId)) await reveal(parentId, depth + 1);
+      await dispatch(loadChildFolders(parentId)).unwrap();
+    };
+    reveal(decodeURIComponent(slug), 0)
+      .then(() => { if (!findFolder(store.getState().mail.folders, decodeURIComponent(slug))) fallback(); })
+      .catch(fallback);
+  }, [foldersLoaded, folder, params.folder]);
+
   // Navigated here with recipients, from contacts
   useEffect(() => {
     const state = location.state as { compose?: { to?: string; subject?: string } } | null;
@@ -94,57 +138,95 @@ const MailView = () => {
 
   // Load the list for the current folder / search
   const effectiveFilter: MailFilter | undefined = folder?.wellKnownName === "inbox" && prefs.focusedInbox && !search ? focusedTab : undefined;
+  const listFilter = useRef<MailFilter | undefined>();
+  listFilter.current = list?.filter;
   useEffect(() => {
     if (!folder?.id && !search) return;
-    dispatch(loadMessages({ folderId: folder?.id, search: search || undefined, filter: effectiveFilter }));
+    // Turning Focused Inbox off must not keep the inbox on "focused"/"other"
+    const filter = effectiveFilter ?? (isFocusFilter(listFilter.current) ? "all" : undefined);
+    dispatch(loadMessages({ folderId: folder?.id, search: search || undefined, filter }));
   }, [folder?.id, search, effectiveFilter]);
 
-  // Periodic sync of the open folder and refresh of folder counts
+  // Delta sync of the open folder and, always, of the inbox (new-mail notifications)
+  const syncIds = useMemo(() => Array.from(new Set([search ? undefined : folder?.id, inboxId].filter(Boolean) as string[])), [folder?.id, inboxId, search]);
   useEffect(() => {
-    if (!folder?.id || search) return;
-    const sync = () => {
-      if (document.visibilityState !== "visible") return;
-      dispatch(syncFolder(folder.id!));
+    if (syncIds.length === 0) return;
+    let last = 0;
+    const run = () => {
+      last = Date.now();
+      syncIds.forEach(id => dispatch(syncFolder(id)));
     };
-    sync();
-    const syncTimer = setInterval(sync, SYNC_INTERVAL);
-    const folderTimer = setInterval(() => document.visibilityState === "visible" && dispatch(loadFolders()), FOLDER_REFRESH_INTERVAL);
-    document.addEventListener("visibilitychange", sync);
+    // Hidden tabs sync slower so desktop notifications still arrive
+    const tick = () => {
+      if (document.visibilityState !== "visible" && Date.now() - last < HIDDEN_SYNC_INTERVAL) return;
+      run();
+    };
+    const onVisibility = () => { if (document.visibilityState === "visible") run(); };
+    run();
+    const timer = setInterval(tick, SYNC_INTERVAL);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      clearInterval(syncTimer);
-      clearInterval(folderTimer);
-      document.removeEventListener("visibilitychange", sync);
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [folder?.id, search, list?.loaded]);
+  }, [syncIds.join("|"), list?.loaded]);
 
-  // Mark as read when a message is opened
+  // Folder counts
+  useEffect(() => {
+    const timer = setInterval(() => document.visibilityState === "visible" && dispatch(loadFolders()), FOLDER_REFRESH_INTERVAL);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Only on selection change so "mark as unread" sticks
   useEffect(() => {
     clearTimeout(readTimer.current);
-    if (!selectedMessage || selectedMessage.isRead || prefs.markAsRead === "never") return;
-    const mark = () => dispatch(updateMessages({ ids: [selectedMessage.id!], props: { isRead: true } }));
+    const id = selectedMessage?.id;
+    if (!id || prefs.markAsRead === "never") return;
+    const mark = () => {
+      const current = store.getState().mail.messages[id];
+      if (current && !current.isRead) dispatch(updateMessages({ ids: [id], props: { isRead: true } }));
+    };
     if (prefs.markAsRead === "onSelect") mark();
     else readTimer.current = setTimeout(mark, prefs.markAsReadDelay * 1000);
     return () => clearTimeout(readTimer.current);
-  }, [selectedMessage?.id, selectedMessage?.isRead]);
+  }, [selectedMessage?.id, prefs.markAsRead, prefs.markAsReadDelay]);
+
+  const resetSearch = () => {
+    setSearch("");
+    setQuery("");
+  };
 
   useGlobalSearch(t("Search mail"), q => {
     dispatch(clearSearchLists());
     setSearch(q);
   }, () => setSearch(""));
 
-  const openMessage = useCallback((id: string) => {
-    if (folder) navigate(`/mail/${folderSlug(folder)}/${encodeURIComponent(id)}`);
+  const openMessage = useCallback((id: string, replace = false) => {
+    if (folder) navigate(`/mail/${folderSlug(folder)}/${encodeURIComponent(id)}`, { replace });
   }, [folder, navigate]);
 
-  useMailNotifications(openMessage);
+  // Arrivals may come from the inbox while another folder is open
+  const openArrival = useCallback((message: Message) => {
+    const target = findFolder(store.getState().mail.folders, message.parentFolderId || undefined);
+    if (target && message.id) navigate(`/mail/${folderSlug(target)}/${encodeURIComponent(message.id)}`);
+  }, [navigate]);
 
-  const handleSelectFolder = (next: ExtendedMailFolder) => {
+  useMailNotifications(openArrival);
+
+  const handleSelectFolder = useCallback((next: ExtendedMailFolder) => {
     dispatch(clearSelection());
     setSearch("");
+    setQuery("");
+    setFolderDrawer(false);
     navigate(`/mail/${folderSlug(next)}`);
-  };
+  }, [navigate, setQuery]);
 
-  const handleSelectMessage = (message: Message, e: MouseEvent) => {
+  // Refs keep the memoised list items stable
+  const latest = useRef({ messages, messageId, selection, folder, openMessage });
+  latest.current = { messages, messageId, selection, folder, openMessage };
+
+  const handleSelectMessage = useCallback((message: Message, e: MouseEvent | KeyboardEvent) => {
+    const { messages, messageId, selection, folder, openMessage } = latest.current;
     if (e.ctrlKey || e.metaKey) {
       dispatch(toggleSelection(message.id!));
       return;
@@ -164,16 +246,19 @@ const MailView = () => {
       return;
     }
     openMessage(message.id!);
-  };
+  }, []);
 
-  const handleCheck = (message: Message) => dispatch(toggleSelection(message.id!));
+  // Keyboard navigation replaces the history entry
+  const handleNavigate = useCallback((message: Message) => latest.current.openMessage(message.id!, true), []);
+
+  const handleCheck = useCallback((message: Message) => dispatch(toggleSelection(message.id!)), []);
   const handleCheckAll = (checked: boolean) => dispatch(checked ? setSelection(messages.map(m => m.id!)) : clearSelection());
 
-  const handleContextMenu = (message: Message, e: MouseEvent) => {
-    e.preventDefault();
+  const handleContextMenu = useCallback((message: Message, position: { top: number; left: number }) => {
+    const { selection } = latest.current;
     const ids = selection.includes(message.id!) ? selection : [message.id!];
-    setContextMenu({ position: { top: e.clientY, left: e.clientX }, ids });
-  };
+    setContextMenu({ position, ids });
+  }, []);
 
   const handleLoadMore = useCallback(() => dispatch(loadMoreMessages(key)), [key]);
   const handleRefresh = () => {
@@ -189,42 +274,52 @@ const MailView = () => {
     dispatch(loadMessages({ folderId: folder?.id, sort, force: true }));
   };
 
-  const handleDragStart = (message: Message, e: React.DragEvent) => {
+  const handleDragStart = useCallback((message: Message, e: React.DragEvent) => {
+    const { selection } = latest.current;
     const ids = selection.includes(message.id!) ? selection : [message.id!];
     e.dataTransfer.setData("application/x-message-ids", JSON.stringify(ids));
     e.dataTransfer.effectAllowed = "move";
-  };
+  }, []);
 
   // Actions for the current target: the checked messages or the open one
   const targetIds = useMemo(() => selection.length ? selection : messageId ? [messageId] : [], [selection, messageId]);
   const actions = useMailActions(targetIds);
 
   // Hover actions act on that one message, not the selection
-  const itemDelete = (m: Message) => dispatch(deleteMessages({ ids: [m.id!] }));
-  const itemArchive = (m: Message) => {
-    const archive = findWellKnownFolder(folders, "archive");
+  const itemDelete = useCallback((m: Message) => dispatch(requestDelete([m.id!])), []);
+  const itemArchive = useCallback((m: Message) => {
+    const archive = findWellKnownFolder(store.getState().mail.folders, "archive");
     if (archive?.id) dispatch(moveMessages({ ids: [m.id!], destinationId: archive.id }));
-    else dispatch(pushAlertStack({ message: t("This mailbox has no archive folder"), severity: "warning" }));
-  };
-  const itemToggleFlag = (m: Message) => dispatch(updateMessages({ ids: [m.id!], props: { flag: { flagStatus: m.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged" } } }));
-  const itemToggleRead = (m: Message) => dispatch(updateMessages({ ids: [m.id!], props: { isRead: !m.isRead } }));
+    // t("This mailbox has no archive folder")
+    else dispatch(pushAlertStack({ message: "This mailbox has no archive folder", severity: "warning" }));
+  }, []);
+  const itemToggleFlag = useCallback((m: Message) => dispatch(updateMessages({ ids: [m.id!], props: { flag: { flagStatus: m.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged" } } })), []);
+  const itemToggleRead = useCallback((m: Message) => dispatch(updateMessages({ ids: [m.id!], props: { isRead: !m.isRead } })), []);
+  const itemTogglePin = useCallback((m: Message) => dispatch(togglePinned(m.id!)), []);
 
-  // Move to the next message after the current one disappears
+  // Deep link to a message outside the loaded page
   const prevIds = useRef<string[]>([]);
   useEffect(() => {
-    if (messageId && list?.loaded && !messages.some(m => m.id === messageId) && !selectedMessage) {
+    if (!foldersLoaded || !messageId || selectedMessage || selectedError || prevIds.current.includes(messageId)) return;
+    dispatch(loadMessageDetails(messageId));
+  }, [foldersLoaded, messageId, Boolean(selectedMessage), selectedError]);
+
+  // Move on once the current message disappears or fails to load
+  useEffect(() => {
+    if (messageId && list?.loaded && !messages.some(m => m.id === messageId) && !selectedMessage &&
+      (prevIds.current.includes(messageId) || selectedError)) {
       const idx = prevIds.current.indexOf(messageId);
-      const next = messages[Math.min(idx, messages.length - 1)];
+      const next = idx === -1 ? undefined : messages[Math.min(idx, messages.length - 1)];
       if (folder) navigate(`/mail/${folderSlug(folder)}${next ? "/" + encodeURIComponent(next.id!) : ""}`, { replace: true });
     }
     prevIds.current = messages.map(m => m.id!);
-  }, [messages, messageId, selectedMessage, list?.loaded]);
+  }, [messages, messageId, selectedMessage, list?.loaded, selectedError]);
 
   const moveSelection = (delta: number) => {
     if (messages.length === 0) return;
     const idx = messageId ? messages.findIndex(m => m.id === messageId) : -1;
     const next = messages[Math.max(0, Math.min(messages.length - 1, idx + delta))];
-    if (next) openMessage(next.id!);
+    if (next) openMessage(next.id!, true);
   };
 
   useKeyboardShortcuts([
@@ -233,6 +328,7 @@ const MailView = () => {
     { key: "a", shift: true, handler: () => targetIds.length === 1 && actions.replyAll() },
     { key: "f", handler: () => targetIds.length === 1 && actions.forward() },
     { key: "Delete", handler: () => actions.remove() },
+    { key: "Delete", shift: true, handler: () => actions.remove(true) },
     { key: "e", handler: () => actions.archive() },
     { key: "u", handler: () => actions.toggleRead() },
     { key: "i", handler: () => actions.toggleFlag() },
@@ -241,13 +337,16 @@ const MailView = () => {
     { key: "ArrowDown", handler: () => moveSelection(1) },
     { key: "ArrowUp", handler: () => moveSelection(-1) },
     { key: "a", ctrl: true, handler: () => handleCheckAll(true) },
-    { key: "Escape", handler: () => { dispatch(clearSelection()); if (search) setSearch(""); } },
-  ], !compose);
+    { key: "Escape", handler: () => { dispatch(clearSelection()); if (search) resetSearch(); } },
+  ], !compose && !contextMenu && !moreAnchor && !deleteConfirm);
 
+  const paneOpen = Boolean(messageId || compose);
   const showFolderPane = prefs.folderPaneVisible && !isMobile;
-  const showList = !isMobile || (!messageId && !compose);
-  const showPane = prefs.readingPane !== "off" ? (!isMobile || messageId || compose) : (messageId || compose);
+  const showList = !isMobile || !paneOpen;
+  const showPane = prefs.readingPane !== "off" ? (!isMobile || paneOpen) : paneOpen;
   const paneVertical = prefs.readingPane === "bottom" && !isMobile;
+
+  const folderPane = <FolderPane selectedId={folder?.id} onSelect={handleSelectFolder} />;
 
   const readingPane = (
     <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", bgcolor: "background.paper" }}>
@@ -263,38 +362,48 @@ const MailView = () => {
           onBack={isMobile || prefs.readingPane === "off" ? () => folder && navigate(`/mail/${folderSlug(folder)}`) : undefined}
           onBodyHtml={setBodyHtml}
         />
+      ) : messageId && selectedLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress size={28} /></Box>
       ) : (
         <EmptyState icon={<MailOutline />} title={t("Select an item to read")} description={t("Nothing is selected")} />
       )}
     </Box>
   );
 
+  const deleteCount = deleteConfirm?.ids.length || 0;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <MailToolbar
         ids={targetIds}
         onNewMessage={() => dispatch(startCompose({ mode: "new" }))}
-        onToggleFolders={() => dispatch(updatePrefs({ folderPaneVisible: !prefs.folderPaneVisible }))}
+        onToggleFolders={() => isMobile ? setFolderDrawer(true) : dispatch(updatePrefs({ folderPaneVisible: !prefs.folderPaneVisible }))}
         bodyHtml={bodyHtml}
       />
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {showFolderPane && (
-          <Box sx={{ width: prefs.folderPaneWidth, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper" }}>
-            <FolderPane selectedId={folder?.id} onSelect={handleSelectFolder} />
+          <Box component="nav" aria-label={t("Folders")} sx={{ width: prefs.folderPaneWidth, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper" }}>
+            {folderPane}
           </Box>
+        )}
+        {isMobile && (
+          <Drawer open={folderDrawer} onClose={() => setFolderDrawer(false)} PaperProps={{ sx: { width: 280 } }}>
+            <Box component="nav" aria-label={t("Folders")} sx={{ height: "100%" }}>{folderPane}</Box>
+          </Drawer>
         )}
         {compose && composeFullscreen ? readingPane : (
           <Box sx={{ display: "flex", flex: 1, minWidth: 0, flexDirection: paneVertical ? "column" : "row" }}>
             {showList && (
               <Box sx={{
-                width: paneVertical || isMobile || prefs.readingPane === "off" && !messageId ? "100%" : prefs.listWidth,
+                width: paneVertical || isMobile || prefs.readingPane === "off" && !paneOpen ? "100%" : prefs.listWidth,
                 height: paneVertical ? "45%" : "100%",
                 flexShrink: 0,
                 borderRight: paneVertical ? 0 : 1,
                 borderBottom: paneVertical ? 1 : 0,
                 borderColor: "divider",
                 bgcolor: "background.paper",
-                display: prefs.readingPane === "off" && messageId && !isMobile ? "none" : "block",
+                // Without a reading pane an open message or compose takes the whole width
+                display: prefs.readingPane === "off" && paneOpen && !isMobile ? "none" : "block",
               }}>
                 <MessageList
                   folder={folder}
@@ -307,6 +416,7 @@ const MailView = () => {
                   focusedTab={focusedTab}
                   onFocusedTab={setFocusedTab}
                   onSelect={handleSelectMessage}
+                  onNavigate={handleNavigate}
                   onCheck={handleCheck}
                   onCheckAll={handleCheckAll}
                   onContextMenu={handleContextMenu}
@@ -318,7 +428,7 @@ const MailView = () => {
                   onArchive={itemArchive}
                   onToggleFlag={itemToggleFlag}
                   onToggleRead={itemToggleRead}
-                  onTogglePin={m => dispatch(togglePinned(m.id!))}
+                  onTogglePin={itemTogglePin}
                   onDragStart={handleDragStart}
                 />
               </Box>
@@ -341,6 +451,17 @@ const MailView = () => {
         onClose={() => setMoreAnchor(null)}
         bodyHtml={bodyHtml}
         compact
+      />
+      <ConfirmDialog
+        open={Boolean(deleteConfirm)}
+        title={deleteConfirm?.hard ? t("Delete permanently?") : t("Delete messages?")}
+        description={deleteConfirm?.hard ?
+          t("{{count}} messages will be deleted permanently", { count: deleteCount }) + " " + t("This cannot be undone.") :
+          t("{{count}} messages will be moved to Deleted Items", { count: deleteCount })}
+        confirmLabel={t("Delete")}
+        destructive
+        onConfirm={() => deleteConfirm && dispatch(deleteMessages({ ids: deleteConfirm.ids, permanent: deleteConfirm.permanent }))}
+        onClose={() => dispatch(deleteConfirmClosed())}
       />
     </Box>
   );

@@ -72,13 +72,13 @@ const MoveToMenu = ({ anchorEl, anchorPosition, open, onClose, onSelect, onNewFo
         ))}
         {filtered.length === 0 && <Typography variant="body2" sx={{ px: 2, py: 1, color: "text.secondary" }}>{t("No folders found")}</Typography>}
       </Box>
-      {onNewFolder && query.trim() && filtered.length === 0 && <>
-        <Divider />
-        <MenuItem onClick={() => { onNewFolder(query.trim()); handleClose(); }}>
+      {onNewFolder && query.trim() && filtered.length === 0 ? [
+        <Divider key="divider" />,
+        <MenuItem key="create" onClick={() => { onNewFolder(query.trim()); handleClose(); }}>
           <ListItemIcon><CreateNewFolderOutlined fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Create folder \"{{name}}\"", { name: query.trim() })}</ListItemText>
-        </MenuItem>
-      </>}
+        </MenuItem>,
+      ] : null}
     </Menu>
   );
 };

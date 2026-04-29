@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Link, Typography } from "@mui/material";
+import { Box, Button, Link, Typography } from "@mui/material";
+import { ImageNotSupportedOutlined } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Attachment, Message } from "microsoft-graph";
 import { prepareMailHtml } from "../utils";
+import { useTypeSelector } from "../../../store";
 
 type MessageBodyProps = {
   message: Message;
@@ -21,6 +23,8 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(200);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [showImages, setShowImages] = useState(false);
+  const blockImages = useTypeSelector(state => state.mail.prefs.blockRemoteImages) && !showImages;
   const dark = theme.palette.mode === "dark";
 
   const prepared = useMemo(() => prepareMailHtml(message.body?.content || "", {
@@ -28,14 +32,23 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
     dark,
     keepColors: showOriginal,
     inlineAttachments,
-  }), [message.id, message.body?.content, dark, showOriginal, inlineAttachments]);
+    blockRemote: blockImages,
+  }), [message.id, message.body?.content, dark, showOriginal, inlineAttachments, blockImages]);
+
+  // Printing always uses the light version, dark text would vanish on paper
+  const printable = useMemo(() => dark ? prepareMailHtml(message.body?.content || "", {
+    contentType: message.body?.contentType,
+    inlineAttachments,
+    blockRemote: blockImages,
+  }).html : prepared.html, [dark, prepared.html, blockImages]);
 
   useEffect(() => {
-    onHtml?.(prepared.html);
-  }, [prepared.html]);
+    onHtml?.(printable);
+  }, [printable]);
 
   useEffect(() => {
     setShowOriginal(false);
+    setShowImages(false);
   }, [message.id]);
 
   useEffect(() => {
@@ -72,6 +85,15 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
           {t("Colors were adjusted for dark mode.")}{" "}
           <Link component="button" variant="caption" onClick={() => setShowOriginal(true)}>{t("Show original")}</Link>
         </Typography>
+      )}
+      {prepared.blockedRemote > 0 && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, px: 1.5, py: 0.5, borderRadius: 1, bgcolor: "action.hover" }}>
+          <ImageNotSupportedOutlined fontSize="small" color="action" />
+          <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+            {t("Images from the internet were blocked to protect your privacy.")}
+          </Typography>
+          <Button size="small" onClick={() => setShowImages(true)}>{t("Show images")}</Button>
+        </Box>
       )}
       {prepared.missingInline > 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>

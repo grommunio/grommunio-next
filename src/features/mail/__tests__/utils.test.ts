@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { dateGroup, formatListDate, formatRecipient, isValidEmail, prepareMailHtml, previewText, recipientsSummary, toRecipient } from "../utils";
+import DOMPurify from "dompurify";
+import { dateGroup, formatListDate, formatRecipient, isValidEmail, normalizeCid, prepareMailHtml, previewText, recipientsSummary, splitAddresses, toRecipient } from "../utils";
+import { purify, replaceInlineImageSources, tinymceLanguage } from "../utils-compose";
 
 const now = new Date("2024-09-11T15:00:00"); // Wednesday
 
@@ -13,6 +15,12 @@ describe("dateGroup", () => {
     expect(dateGroup("2024-08-21T10:00:00", now)).toBe("Three weeks ago");
     expect(dateGroup("2024-08-05T10:00:00", now)).toBe("Last month");
     expect(dateGroup("2024-05-01T10:00:00", now)).toBe("Older");
+  });
+
+  it("has an earlier-this-month bucket before last month", () => {
+    const monday = new Date("2024-09-30T12:00:00");
+    expect(dateGroup("2024-09-02T10:00:00", monday)).toBe("Earlier this month");
+    expect(dateGroup("2024-08-30T10:00:00", monday)).toBe("Last month");
   });
 
   it("handles missing or invalid dates", () => {
@@ -43,6 +51,10 @@ describe("recipients", () => {
     expect(toRecipient("alice@example.com")).toEqual({ emailAddress: { address: "alice@example.com", name: "" } });
     expect(toRecipient("Alice Example <alice@example.com>")).toEqual({ emailAddress: { name: "Alice Example", address: "alice@example.com" } });
     expect(toRecipient('"Example, Alice" <alice@example.com>').emailAddress?.name).toBe("Example, Alice");
+  });
+  it("splits pasted address lists outside quotes", () => {
+    expect(splitAddresses("a@x.org, b@y.org;c@z.org\nd@w.org")).toEqual(["a@x.org", "b@y.org", "c@z.org", "d@w.org"]);
+    expect(splitAddresses('"Doe, John" <john@x.org>, b@y.org')).toEqual(['"Doe, John" <john@x.org>', "b@y.org"]);
   });
   it("formats recipients", () => {
     expect(formatRecipient({ emailAddress: { name: "Alice", address: "a@x.org" } })).toBe("Alice <a@x.org>");
@@ -95,5 +107,43 @@ describe("prepareMailHtml", () => {
   it("renders plain text bodies escaped", () => {
     const { html } = prepareMailHtml("a < b & c", { contentType: "text" });
     expect(html).toContain("<pre>a &lt; b &amp; c</pre>");
+  });
+});
+
+describe("reading pane safety", () => {
+  it("does not throw on malformed cid escapes", () => {
+    expect(normalizeCid("image001.png@01DA%AB")).toBe("image001.png@01DA%AB");
+    expect(normalizeCid("%3Cimg%40x%3E")).toBe("img@x");
+    expect(() => prepareMailHtml('<img src="cid:bad%ZZ">', {})).not.toThrow();
+  });
+
+  it("blocks remote images and backgrounds when asked", () => {
+    const body = '<img src="https://t.example/p.gif"><div style="background:url(http://x/y.png)">x</div><img src="data:image/png;base64,QUJD">';
+    const blocked = prepareMailHtml(body, { blockRemote: true });
+    expect(blocked.blockedRemote).toBe(2);
+    expect(blocked.html).not.toContain("t.example");
+    expect(blocked.html).not.toContain("http://x/y.png");
+    expect(blocked.html).toContain("data:image/png");
+    expect(prepareMailHtml(body, {}).html).toContain("https://t.example/p.gif");
+  });
+
+  it("does not leak reading pane link rewriting into compose sanitising", () => {
+    prepareMailHtml('<a href="https://example.com">x</a>', {});
+    expect(purify('<a href="https://example.com">x</a>')).not.toContain("_blank");
+    expect(DOMPurify.sanitize('<a href="https://example.com">x</a>')).not.toContain("noopener");
+  });
+});
+
+describe("compose helpers", () => {
+  it("maps app locales to TinyMCE language packs", () => {
+    expect(tinymceLanguage("de-DE")).toBe("de-DE");
+    expect(tinymceLanguage("en-US")).toBeUndefined();
+    expect(tinymceLanguage("is-IS")).toBeUndefined();
+  });
+
+  it("references uploaded inline images by cid", () => {
+    const html = '<p><img src="blob:http://app/123" alt=""><img src="https://x/y.png"></p>';
+    expect(replaceInlineImageSources(html, new Map([["blob:http://app/123", "cid:abc@grommunio"]])))
+      .toBe('<p><img src="cid:abc@grommunio" alt=""><img src="https://x/y.png"></p>');
   });
 });

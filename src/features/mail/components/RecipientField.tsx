@@ -9,7 +9,7 @@ import type { Contact, Person, Recipient } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { loadAllContacts, selectAllContacts } from "../../contacts/contactsSlice";
 import { searchPeople } from "../../../api/contacts";
-import { formatRecipient, isValidEmail, toRecipient } from "../utils";
+import { formatRecipient, isValidEmail, splitAddresses, toRecipient } from "../utils";
 import PersonAvatar from "../../../components/common/PersonAvatar";
 
 type RecipientFieldProps = {
@@ -99,14 +99,15 @@ const RecipientField = ({ label, value, onChange, autoFocus, endAdornment, onBlu
   }, [local, people, input, value]);
 
   const commitInput = (text: string) => {
-    const parts = text.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+    const parts = splitAddresses(text);
     if (parts.length === 0) return;
     onChange([...value, ...parts.map(toRecipient)]);
     setInput("");
   };
 
+  // Enter on pasted "a@x.org, b@y.org" yields one string: split it into several recipients
   const handleChange = (_e: SyntheticEvent, newValue: Array<string | Option>) => {
-    onChange(newValue.map(v => typeof v === "string" ? toRecipient(v) : ({ emailAddress: v.emailAddress })));
+    onChange(newValue.flatMap(v => typeof v === "string" ? splitAddresses(v).map(toRecipient) : [{ emailAddress: v.emailAddress }]));
     setInput("");
   };
 

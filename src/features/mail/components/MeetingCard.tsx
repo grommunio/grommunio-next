@@ -2,20 +2,42 @@
 // SPDX-FileCopyrightText: 2023-2024 grommunio GmbH
 
 import { Box, Button, ButtonGroup, CircularProgress, Collapse, Divider, Menu, MenuItem, TextField, Typography } from "@mui/material";
-import { ArrowDropDown, Check, Close, EventBusy, EventOutlined, HelpOutline, LocationOnOutlined, Schedule } from "@mui/icons-material";
+import { ArrowDropDown, Check, Close, EventAvailable, EventBusy, EventOutlined, HelpOutline, LocationOnOutlined, Schedule } from "@mui/icons-material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { EventMessage } from "microsoft-graph";
 import { useTypeDispatch } from "../../../store";
 import { deleteEvent, getEventFromEventMessage, respondToEvent } from "../../../api/calendar";
 import { EventReponseType } from "../../../types/calendar";
-import { toReadableTimeInTimezone } from "../../../utils";
+import { formatEventRange, graphDateToDate } from "../../calendar/dates";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
 import { deleteMessages } from "../mailSlice";
 
 type MeetingCardProps = {
   message: EventMessage;
 };
+
+type CardStyle = { title: string; icon: JSX.Element; color: string };
+
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Meeting invitation")
+// t("Meeting cancelled")
+// t("Accepted")
+// t("Tentatively accepted")
+// t("Declined")
+// t("Meeting")
+function cardStyle(type?: string | null): CardStyle {
+  switch (type) {
+  case "meetingRequest": return { title: "Meeting invitation", icon: <EventOutlined />, color: "primary.main" };
+  case "meetingCancelled": return { title: "Meeting cancelled", icon: <EventBusy />, color: "error.main" };
+  case "meetingAccepted": return { title: "Accepted", icon: <EventAvailable />, color: "success.main" };
+  // Graph spells the enum value this way
+  case "meetingTenativelyAccepted":
+  case "meetingTentativelyAccepted": return { title: "Tentatively accepted", icon: <HelpOutline />, color: "warning.main" };
+  case "meetingDeclined": return { title: "Declined", icon: <EventBusy />, color: "error.main" };
+  default: return { title: "Meeting", icon: <EventOutlined />, color: "primary.main" };
+  }
+}
 
 const MeetingCard = ({ message }: MeetingCardProps) => {
   const { t } = useTranslation();
@@ -25,8 +47,11 @@ const MeetingCard = ({ message }: MeetingCardProps) => {
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState<{ anchor: HTMLElement; type: EventReponseType } | null>(null);
 
-  const start = toReadableTimeInTimezone(message.startDateTime, message.isAllDay ? "ll" : "llll");
-  const end = toReadableTimeInTimezone(message.endDateTime, message.isAllDay ? "ll" : "LT");
+  const start = graphDateToDate(message.startDateTime);
+  const end = graphDateToDate(message.endDateTime);
+  // formatEventRange shows the inclusive last day of all-day meetings
+  const range = isNaN(start.getTime()) ? "" : formatEventRange(start, isNaN(end.getTime()) ? start : end, Boolean(message.isAllDay));
+  const style = cardStyle(message.meetingMessageType);
   const cancelled = message.meetingMessageType === "meetingCancelled";
   const isRequest = message.meetingMessageType === "meetingRequest";
 
@@ -70,15 +95,15 @@ const MeetingCard = ({ message }: MeetingCardProps) => {
   return (
     <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2, mb: 2, overflow: "hidden" }}>
       <Box sx={{ p: 1.5, display: "flex", gap: 1.5, alignItems: "flex-start" }}>
-        <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: cancelled ? "error.main" : "primary.main", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {cancelled ? <EventBusy /> : <EventOutlined />}
+        <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: style.color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {style.icon}
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle2">{cancelled ? t("Meeting cancelled") : t("Meeting invitation")}</Typography>
+          <Typography variant="subtitle2">{t(style.title)}</Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "text.secondary", mt: 0.5 }}>
             <Schedule fontSize="small" />
             <Typography variant="body2" sx={{ textDecoration: cancelled ? "line-through" : "none" }}>
-              {start}{end ? ` – ${end}` : ""}{message.isAllDay ? ` (${t("All day")})` : ""}
+              {range}{message.isAllDay ? ` (${t("All day")})` : ""}
             </Typography>
           </Box>
           {message.location?.displayName && (
@@ -90,8 +115,8 @@ const MeetingCard = ({ message }: MeetingCardProps) => {
         </Box>
         {busy && <CircularProgress size={20} />}
       </Box>
-      <Divider />
-      <Box sx={{ p: 1.5, bgcolor: "background.default", display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+      {(isRequest || cancelled) && <Divider />}
+      {(isRequest || cancelled) && <Box sx={{ p: 1.5, bgcolor: "background.default", display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
         {isRequest && <>
           {responseButton(EventReponseType.accept, t("Accept"), <Check />, "success")}
           {responseButton(EventReponseType.tentatively, t("Tentative"), <HelpOutline />, "warning")}
@@ -103,7 +128,7 @@ const MeetingCard = ({ message }: MeetingCardProps) => {
             {t("Remove from calendar")}
           </Button>
         )}
-      </Box>
+      </Box>}
       <Collapse in={showComment}>
         <Box sx={{ p: 1.5, pt: 0, bgcolor: "background.default" }}>
           <TextField fullWidth multiline minRows={2} placeholder={t("Message to the organizer")} value={comment} onChange={e => setComment(e.target.value)} />

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { Box, Checkbox, IconButton, Tooltip, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
   ArchiveOutlined, AttachFile, DeleteOutline, Event, EventAvailable, EventBusy, Flag, FlagOutlined,
   MailOutline, DraftsOutlined, PriorityHigh, PushPin, PushPinOutlined, QuestionMark,
@@ -16,6 +17,8 @@ import { categoryColor } from "../categories";
 export type MessageListItemProps = {
   message: Message;
   selected: boolean;
+  // Roving tabindex
+  tabStop?: boolean;
   checked: boolean;
   selectionMode: boolean;
   pinned: boolean;
@@ -47,7 +50,7 @@ function meetingIcon(message: Message) {
 }
 
 const MessageListItem = memo(function MessageListItem({
-  message, selected, checked, selectionMode, pinned, compact, showAvatar, showPreview, showRecipients, categories,
+  message, selected, tabStop, checked, selectionMode, pinned, compact, showAvatar, showPreview, showRecipients, categories,
   onClick, onCheck, onContextMenu, onDelete, onArchive, onToggleFlag, onToggleRead, onTogglePin, onDragStart,
 }: MessageListItemProps) {
   const { t } = useTranslation();
@@ -62,7 +65,7 @@ const MessageListItem = memo(function MessageListItem({
     <Box
       role="option"
       aria-selected={selected}
-      tabIndex={-1}
+      tabIndex={tabStop ? 0 : -1}
       data-message-id={message.id}
       draggable
       onDragStart={e => onDragStart?.(message, e)}
@@ -79,10 +82,12 @@ const MessageListItem = memo(function MessageListItem({
         cursor: "pointer",
         borderBottom: 1,
         borderColor: "divider",
-        bgcolor: selected ? (theme => theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "primary.main" + "14") : checked ? "action.selected" : "transparent",
+        bgcolor: selected ? (theme => theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : alpha(theme.palette.primary.main, 0.08)) : checked ? "action.selected" : "transparent",
         "&:hover": { bgcolor: selected ? undefined : "action.hover" },
-        "&:hover .hover-actions": { opacity: 1 },
-        "&:hover .list-date": { opacity: 0 },
+        // Keyboard users need the actions too
+        "&:hover .hover-actions, &:focus-within .hover-actions": { opacity: 1 },
+        "&:hover .list-date, &:focus-within .list-date": { opacity: 0 },
+        "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 },
         "&::before": unread ? {
           content: '""', position: "absolute", left: 0, top: 6, bottom: 6, width: 3, borderRadius: 2, bgcolor: "primary.main",
         } : undefined,
@@ -95,7 +100,7 @@ const MessageListItem = memo(function MessageListItem({
         {selectionMode ? (
           <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(message)} sx={{ p: 0.5 }} inputProps={{ "aria-label": t("Select message") }} />
         ) : showAvatar ? (
-          <Box sx={{ position: "relative", "&:hover .avatar": { opacity: 0 }, "&:hover .avatar-check": { opacity: 1 } }}>
+          <Box sx={{ position: "relative", "&:hover .avatar, &:focus-within .avatar": { opacity: 0 }, "&:hover .avatar-check, &:focus-within .avatar-check": { opacity: 1 } }}>
             <Box className="avatar" sx={{ transition: "opacity .1s" }}>
               <PersonAvatar name={name} email={address || name} size={compact ? 28 : 32} />
             </Box>

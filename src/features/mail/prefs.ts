@@ -21,6 +21,7 @@ export const DEFAULT_MAIL_PREFS: MailPrefs = {
   signatureOnReply: false,
   confirmDelete: false,
   desktopNotifications: false,
+  blockRemoteImages: false,
   listWidth: 380,
   folderPaneWidth: 248,
   folderPaneVisible: true,

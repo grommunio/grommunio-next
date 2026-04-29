@@ -28,6 +28,9 @@ type MessageActionsMenuProps = {
 const MessageActionsMenu = ({ ids, anchorEl, anchorPosition, open, onClose, bodyHtml, compact }: MessageActionsMenuProps) => {
   const { t } = useTranslation();
   const actions = useMailActions(ids);
+  // The main menu closes (and its ids may be cleared) before a sub menu opens
+  const [subIds, setSubIds] = useState<string[]>([]);
+  const subActions = useMailActions(subIds);
   const pinned = useTypeSelector(state => state.mail.pinned);
   const [sub, setSub] = useState<"move" | "copy" | "categories" | null>(null);
   const [subAnchor, setSubAnchor] = useState<{ top: number; left: number } | undefined>(undefined);
@@ -40,6 +43,7 @@ const MessageActionsMenu = ({ ids, anchorEl, anchorPosition, open, onClose, body
   const openSub = (type: "move" | "copy" | "categories") => (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setSubAnchor({ top: rect.top, left: rect.right });
+    setSubIds(ids);
     setSub(type);
     onClose();
   };
@@ -53,12 +57,13 @@ const MessageActionsMenu = ({ ids, anchorEl, anchorPosition, open, onClose, body
       onClose={onClose}
       MenuListProps={{ dense: true }}
     >
-      {single && !compact && <>
-        <MenuItem onClick={run(actions.reply)}><ListItemIcon><Reply fontSize="small" /></ListItemIcon><ListItemText>{t("Reply")}</ListItemText></MenuItem>
-        <MenuItem onClick={run(actions.replyAll)}><ListItemIcon><ReplyAll fontSize="small" /></ListItemIcon><ListItemText>{t("Reply all")}</ListItemText></MenuItem>
-        <MenuItem onClick={run(actions.forward)}><ListItemIcon><Forward fontSize="small" /></ListItemIcon><ListItemText>{t("Forward")}</ListItemText></MenuItem>
-        <Divider />
-      </>}
+      {/* Arrays instead of fragments: MenuList needs direct children for keyboard focus */}
+      {single && !compact ? [
+        <MenuItem key="reply" onClick={run(actions.reply)}><ListItemIcon><Reply fontSize="small" /></ListItemIcon><ListItemText>{t("Reply")}</ListItemText></MenuItem>,
+        <MenuItem key="replyAll" onClick={run(actions.replyAll)}><ListItemIcon><ReplyAll fontSize="small" /></ListItemIcon><ListItemText>{t("Reply all")}</ListItemText></MenuItem>,
+        <MenuItem key="forward" onClick={run(actions.forward)}><ListItemIcon><Forward fontSize="small" /></ListItemIcon><ListItemText>{t("Forward")}</ListItemText></MenuItem>,
+        <Divider key="d0" />,
+      ] : null}
       <MenuItem onClick={run(() => actions.remove())}>
         <ListItemIcon><DeleteOutline fontSize="small" /></ListItemIcon>
         <ListItemText>{actions.isDeletedFolder ? t("Delete permanently") : t("Delete")}</ListItemText>
@@ -96,11 +101,11 @@ const MessageActionsMenu = ({ ids, anchorEl, anchorPosition, open, onClose, body
         <ListItemIcon><PriorityHigh fontSize="small" /></ListItemIcon>
         <ListItemText>{actions.first?.importance === "high" ? t("Normal importance") : t("High importance")}</ListItemText>
       </MenuItem>
-      {single && <>
-        <Divider />
-        {bodyHtml !== undefined && <MenuItem onClick={run(() => actions.print(bodyHtml))}><ListItemIcon><Print fontSize="small" /></ListItemIcon><ListItemText>{t("Print")}</ListItemText></MenuItem>}
-        <MenuItem onClick={run(actions.viewSource)}><ListItemIcon><Code fontSize="small" /></ListItemIcon><ListItemText>{t("View message source")}</ListItemText></MenuItem>
-      </>}
+      {single ? [
+        <Divider key="d2" />,
+        bodyHtml !== undefined ? <MenuItem key="print" onClick={run(() => actions.print(bodyHtml))}><ListItemIcon><Print fontSize="small" /></ListItemIcon><ListItemText>{t("Print")}</ListItemText></MenuItem> : null,
+        <MenuItem key="source" onClick={run(actions.viewSource)}><ListItemIcon><Code fontSize="small" /></ListItemIcon><ListItemText>{t("View message source")}</ListItemText></MenuItem>,
+      ] : null}
     </Menu>
     <MoveToMenu
       anchorEl={null}
@@ -108,18 +113,18 @@ const MessageActionsMenu = ({ ids, anchorEl, anchorPosition, open, onClose, body
       open={sub === "move" || sub === "copy"}
       onClose={() => setSub(null)}
       title={sub === "copy" ? t("Copy to") : t("Move to")}
-      excludeId={actions.first?.parentFolderId || undefined}
-      onSelect={folder => sub === "copy" ? actions.copy(folder.id!) : actions.move(folder.id!)}
-      onNewFolder={sub === "move" ? actions.moveToNewFolder : undefined}
+      excludeId={subActions.first?.parentFolderId || undefined}
+      onSelect={folder => sub === "copy" ? subActions.copy(folder.id!) : subActions.move(folder.id!)}
+      onNewFolder={sub === "move" ? subActions.moveToNewFolder : undefined}
     />
     <CategoryMenu
       anchorEl={null}
       anchorPosition={subAnchor}
       open={sub === "categories"}
       onClose={() => setSub(null)}
-      applied={actions.appliedCategories}
-      onToggle={actions.toggleCategory}
-      onClear={actions.clearCategories}
+      applied={subActions.appliedCategories}
+      onToggle={subActions.toggleCategory}
+      onClear={subActions.clearCategories}
     />
   </>;
 };

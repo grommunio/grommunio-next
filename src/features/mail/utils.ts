@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import DOMPurify from "dompurify";
+import DOMPurify, { type DOMPurify as DOMPurifyInstance } from "dompurify";
 import type { Attachment, EventMessage, FileAttachment, Message, Recipient } from "microsoft-graph";
 import i18n from "../../i18n";
 import { convertHtmlMailToDarkmode } from "../../htmlUtils";
@@ -43,12 +43,14 @@ export function formatFullDate(iso?: string | null): string {
 // t("Last week")
 // t("Two weeks ago")
 // t("Three weeks ago")
+// t("Earlier this month")
 // t("Last month")
 // t("Older")
 // t("Pinned")
 // t("Unknown sender")
 export type DateGroup =
-  | "Today" | "Yesterday" | "This week" | "Last week" | "Two weeks ago" | "Three weeks ago" | "Last month" | "Older" | "Pinned";
+  | "Today" | "Yesterday" | "This week" | "Last week" | "Two weeks ago" | "Three weeks ago" | "Earlier this month" | "Last month"
+  | "Older" | "Pinned";
 
 // Same buckets as Outlook
 export function dateGroup(iso?: string | null, now: Date = new Date()): DateGroup {
@@ -67,6 +69,7 @@ export function dateGroup(iso?: string | null, now: Date = new Date()): DateGrou
   if (diffFromWeekStart <= 7) return "Last week";
   if (diffFromWeekStart <= 14) return "Two weeks ago";
   if (diffFromWeekStart <= 21) return "Three weeks ago";
+  if (date >= new Date(today.getFullYear(), today.getMonth(), 1)) return "Earlier this month";
   const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
   if (date >= lastMonth) return "Last month";
   return "Older";
@@ -107,6 +110,27 @@ export function isValidEmail(address: string): boolean {
   return /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(address.trim());
 }
 
+// Split at , ; and line breaks, but not inside quotes or <>
+export function splitAddresses(text: string): string[] {
+  const parts: string[] = [];
+  let current = "";
+  let quoted = false;
+  let angle = false;
+  for (const c of text) {
+    if (c === '"') quoted = !quoted;
+    else if (c === "<" && !quoted) angle = true;
+    else if (c === ">" && !quoted) angle = false;
+    if (!quoted && !angle && (c === "," || c === ";" || c === "\n" || c === "\r")) {
+      parts.push(current);
+      current = "";
+    } else {
+      current += c;
+    }
+  }
+  parts.push(current);
+  return parts.map(s => s.trim()).filter(Boolean);
+}
+
 export function toRecipient(input: string): Recipient {
   const match = input.trim().match(/^"?([^"<]*)"?\s*<([^>]+)>$/);
   if (match) return { emailAddress: { name: match[1].trim() || match[2].trim(), address: match[2].trim() } };
@@ -122,6 +146,7 @@ export function formatRecipient(recipient: Recipient): string {
 export type PreparedBody = {
   html: string;
   missingInline: number;
+  blockedRemote: number;
 };
 
 const BASE_STYLE = `
@@ -140,12 +165,13 @@ const DARK_STYLE = `
   blockquote { border-left-color: #555; }
 `;
 
-let hooksInstalled = false;
-function installHooks() {
-  if (hooksInstalled) return;
-  hooksInstalled = true;
+// Separate instance so the new-tab link hook doesn't leak into compose sanitizing
+let readPurifier: DOMPurifyInstance | null = null;
+function purifier(): DOMPurifyInstance {
+  if (readPurifier) return readPurifier;
+  readPurifier = DOMPurify(window);
   // New tab, no opener access
-  DOMPurify.addHook("afterSanitizeAttributes", node => {
+  readPurifier.addHook("afterSanitizeAttributes", node => {
     if (node.tagName === "A") {
       node.setAttribute("target", "_blank");
       node.setAttribute("rel", "noopener noreferrer");
@@ -155,11 +181,63 @@ function installHooks() {
       if (/^\s*javascript:/i.test(src)) node.removeAttribute("src");
     }
   });
+  return readPurifier;
+}
+
+const REMOTE_URL = /^\s*(https?:)?\/\//i;
+const CSS_REMOTE_URL = /url\(\s*(['"]?)\s*(https?:)?\/\/[^)]*\)/gi;
+
+// Strips remote images and CSS backgrounds, returns the count
+function blockRemoteContent(doc: Document): number {
+  let blocked = 0;
+  doc.querySelectorAll("img[src], image[href], video[poster], input[src]").forEach(el => {
+    ["src", "href", "poster"].forEach(attr => {
+      const value = el.getAttribute(attr);
+      if (value && REMOTE_URL.test(value)) {
+        el.removeAttribute(attr);
+        blocked++;
+      }
+    });
+  });
+  doc.querySelectorAll("[background]").forEach(el => {
+    if (REMOTE_URL.test(el.getAttribute("background") || "")) {
+      el.removeAttribute("background");
+      blocked++;
+    }
+  });
+  doc.querySelectorAll("[style]").forEach(el => {
+    const style = el.getAttribute("style") || "";
+    if (CSS_REMOTE_URL.test(style)) {
+      el.setAttribute("style", style.replace(CSS_REMOTE_URL, "none"));
+      blocked++;
+    }
+    CSS_REMOTE_URL.lastIndex = 0;
+  });
+  doc.querySelectorAll("style").forEach(el => {
+    const css = el.textContent || "";
+    if (CSS_REMOTE_URL.test(css)) {
+      el.textContent = css.replace(CSS_REMOTE_URL, "none").replace(/@import[^;]+;/gi, "");
+      blocked++;
+    }
+    CSS_REMOTE_URL.lastIndex = 0;
+  });
+  return blocked;
+}
+
+export function normalizeCid(cid: string): string {
+  let key = cid;
+  try {
+    key = decodeURIComponent(cid);
+  } catch {
+    // Not URL encoded, use as is
+  }
+  return key.replace(/[<>]/g, "");
 }
 
 // cid: images become data URLs once the attachment content is loaded
-export function prepareMailHtml(content: string, options: { contentType?: string | null; dark?: boolean; inlineAttachments?: Attachment[]; keepColors?: boolean }): PreparedBody {
-  installHooks();
+export function prepareMailHtml(content: string, options: {
+  contentType?: string | null; dark?: boolean; inlineAttachments?: Attachment[]; keepColors?: boolean; blockRemote?: boolean;
+}): PreparedBody {
   const isHtml = (options.contentType || "html").toLowerCase() === "html";
   let raw = isHtml ? content : `<pre>${escapeHtml(content)}</pre>`;
   let missingInline = 0;
@@ -168,10 +246,10 @@ export function prepareMailHtml(content: string, options: { contentType?: string
     const byCid = new Map<string, FileAttachment>();
     (options.inlineAttachments || []).forEach(a => {
       const file = a as FileAttachment;
-      if (file.contentId && file.contentBytes) byCid.set(file.contentId.replace(/[<>]/g, ""), file);
+      if (file.contentId && file.contentBytes) byCid.set(normalizeCid(file.contentId), file);
     });
     raw = raw.replace(/(src\s*=\s*["'])cid:([^"']+)(["'])/gi, (_m, pre, cid, post) => {
-      const file = byCid.get(decodeURIComponent(cid).replace(/[<>]/g, ""));
+      const file = byCid.get(normalizeCid(cid)) || byCid.get(cid.replace(/[<>]/g, ""));
       if (!file) {
         missingInline++;
         return `${pre}${post}`;
@@ -180,7 +258,7 @@ export function prepareMailHtml(content: string, options: { contentType?: string
     });
   }
 
-  const clean = DOMPurify.sanitize(raw, {
+  const clean = purifier().sanitize(raw, {
     WHOLE_DOCUMENT: true,
     FORBID_TAGS: ["script", "object", "embed", "link", "meta", "base", "form", "input", "button", "textarea", "select"],
     FORBID_ATTR: ["onerror", "onload", "srcset"],
@@ -189,13 +267,14 @@ export function prepareMailHtml(content: string, options: { contentType?: string
 
   let doc = document.implementation.createHTMLDocument("");
   doc.documentElement.innerHTML = clean;
+  const blockedRemote = options.blockRemote ? blockRemoteContent(doc) : 0;
   if (options.dark && !options.keepColors) {
     doc = convertHtmlMailToDarkmode(doc.documentElement).ownerDocument as Document;
   }
   const style = doc.createElement("style");
   style.textContent = BASE_STYLE + (options.dark ? DARK_STYLE : "");
   doc.head.appendChild(style);
-  return { html: "<!DOCTYPE html>" + doc.documentElement.outerHTML, missingInline };
+  return { html: "<!DOCTYPE html>" + doc.documentElement.outerHTML, missingInline, blockedRemote };
 }
 
 export function escapeHtml(text: string): string {
@@ -237,16 +316,23 @@ export function printHtml(html: string) {
   };
 }
 
-export function downloadAttachment(attachment: FileAttachment) {
-  if (!attachment.contentBytes) return;
-  const bytes = atob(attachment.contentBytes);
+export function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
+  const bytes = atob(base64);
   const buffer = new Uint8Array(bytes.length);
   for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
-  const blob = new Blob([buffer], { type: attachment.contentType || "application/octet-stream" });
+  return buffer;
+}
+
+export function downloadAttachment(attachment: FileAttachment) {
+  if (!attachment.contentBytes) return;
+  downloadBlob(new Blob([base64ToBytes(attachment.contentBytes)], { type: attachment.contentType || "application/octet-stream" }), attachment.name || "attachment");
+}
+
+export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = attachment.name || "attachment";
+  a.download = name;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

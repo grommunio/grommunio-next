@@ -21,8 +21,9 @@ export type MessageList = {
   sort: MailSort;
   ids: string[];
   nextLink?: string;
-  deltaLink?: string;
   total?: number;
+  // Results of older loads are dropped
+  requestId?: string;
   loading: boolean;
   loadingMore: boolean;
   loaded: boolean;
@@ -44,6 +45,7 @@ export type MailPrefs = {
   signatureOnReply: boolean;
   confirmDelete: boolean;
   desktopNotifications: boolean;
+  blockRemoteImages: boolean;
   listWidth: number;
   folderPaneWidth: number;
   folderPaneVisible: boolean;
@@ -71,8 +73,21 @@ export type ComposeState = {
   status: "creating" | "ready" | "saving" | "sending" | "error";
   initial: ComposeDraft;
   lastSaved?: number;
+  requestId?: string;
   error?: string;
   minimized: boolean;
+};
+
+export type DeleteRequest = {
+  ids: string[];
+  permanent: boolean;
+  hard: boolean;
+};
+
+export type FolderSyncState = {
+  deltaLink?: string;
+  since?: number;
+  syncing?: boolean;
 };
 
 export type MailState = {
@@ -85,6 +100,7 @@ export type MailState = {
   messages: Record<string, Message>;
   loadedDetails: Record<string, boolean>;
   loadingDetails: Record<string, boolean>;
+  detailsError: Record<string, string>;
   lists: Record<string, MessageList>;
   categories: OutlookCategory[];
   categoriesLoaded: boolean;
@@ -95,4 +111,7 @@ export type MailState = {
   lastSync: number;
   // Arrived through sync since the list was opened
   newArrivals: string[];
+  // Kept across list reloads
+  sync: Record<string, FolderSyncState>;
+  deleteConfirm: DeleteRequest | null;
 };

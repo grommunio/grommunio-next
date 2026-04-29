@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Button, Chip, CircularProgress, Dialog, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
+import { Box, Button, ButtonBase, CircularProgress, Dialog, DialogContent, IconButton, Tooltip, Typography } from "@mui/material";
 import {
   Close, Description, Download, Image as ImageIcon, InsertDriveFileOutlined, PictureAsPdf, Slideshow, TableChart,
   FolderZip, AudioFile, VideoFile, Event, ContactPage, DeleteOutline,
@@ -10,19 +10,32 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Attachment, FileAttachment, ItemAttachment } from "microsoft-graph";
 import { readableBytesFormat } from "../../../utils";
-import { downloadAttachment } from "../utils";
+import { base64ToBytes, downloadAttachment, downloadBlob } from "../utils";
+import { useTypeDispatch } from "../../../store";
+import { pushAlertStack } from "../../alerts/alertsSlice";
 
 type AttachmentListProps = {
   attachments: Attachment[];
   fetchContent: (attachment: Attachment) => Promise<FileAttachment>;
+  // MIME for attached messages, needed for item attachments
+  fetchRaw?: (attachment: Attachment) => Promise<Blob>;
   onRemove?: (attachment: Attachment) => void;
   dense?: boolean;
 };
 
+const odataType = (attachment: Attachment) => (attachment as any)["@odata.type"] as string | undefined;
+
+function itemExtension(attachment: Attachment): string {
+  const type = ((attachment as ItemAttachment).item as any)?.["@odata.type"] || "";
+  if (type.includes("event")) return ".ics";
+  if (type.includes("contact")) return ".vcf";
+  return ".eml";
+}
+
 export function attachmentIcon(attachment: Attachment) {
   const type = (attachment.contentType || "").toLowerCase();
   const name = (attachment.name || "").toLowerCase();
-  if ((attachment as any)["@odata.type"] === "#microsoft.graph.itemAttachment") {
+  if (odataType(attachment) === "#microsoft.graph.itemAttachment") {
     const item = (attachment as ItemAttachment).item as any;
     if (item?.["@odata.type"]?.includes("event")) return <Event color="action" />;
     if (item?.["@odata.type"]?.includes("contact")) return <ContactPage color="action" />;
@@ -39,10 +52,14 @@ export function attachmentIcon(attachment: Attachment) {
   return <InsertDriveFileOutlined color="action" />;
 }
 
-const AttachmentList = ({ attachments, fetchContent, onRemove, dense }: AttachmentListProps) => {
+// Plural forms of the attachment count:
+// t("{{count}} attachments_one")
+// t("{{count}} attachments_other")
+const AttachmentList = ({ attachments, fetchContent, fetchRaw, onRemove, dense }: AttachmentListProps) => {
   const { t } = useTranslation();
+  const dispatch = useTypeDispatch();
   const [busy, setBusy] = useState<string | null>(null);
-  const [preview, setPreview] = useState<{ name: string; url: string; type: string } | null>(null);
+  const [preview, setPreview] = useState<{ name: string; url: string; type: "image" | "pdf" | "text" } | null>(null);
 
   const visible = attachments.filter(a => !a.isInline);
   if (visible.length === 0) return null;
@@ -58,22 +75,48 @@ const AttachmentList = ({ attachments, fetchContent, onRemove, dense }: Attachme
     }
   };
 
+  const unsupported = () => {
+    // t("This attachment cannot be opened here")
+    dispatch(pushAlertStack({ message: "This attachment cannot be opened here", severity: "warning" }));
+  };
+
   const handleDownload = async (attachment: Attachment) => {
+    const type = odataType(attachment);
+    if (type === "#microsoft.graph.itemAttachment") {
+      // Attached messages, events and contacts are saved in their raw format
+      if (!fetchRaw) return unsupported();
+      setBusy(attachment.id || null);
+      try {
+        const blob = await fetchRaw(attachment);
+        const name = (attachment.name || "item").replace(/[\\/:*?"<>|]+/g, "_");
+        downloadBlob(blob, name + itemExtension(attachment));
+      } catch (err: any) {
+        dispatch(pushAlertStack({ message: err?.message || String(err), severity: "error" }));
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+    if (type === "#microsoft.graph.referenceAttachment") return unsupported();
     const file = await load(attachment);
-    if (file) downloadAttachment(file);
+    if (file?.contentBytes) downloadAttachment(file);
+    else unsupported();
   };
 
   const handleOpen = async (attachment: Attachment) => {
     const type = (attachment.contentType || "").toLowerCase();
-    const previewable = type.startsWith("image/") || type === "application/pdf" || type.startsWith("text/");
-    if (!previewable) return handleDownload(attachment);
+    // SVG can carry scripts, download only
+    let kind: "image" | "pdf" | "text" | null = null;
+    if (type.startsWith("image/") && type !== "image/svg+xml") kind = "image";
+    else if (type === "application/pdf") kind = "pdf";
+    else if (type.startsWith("text/")) kind = "text";
+    if (!kind || odataType(attachment) === "#microsoft.graph.itemAttachment") return handleDownload(attachment);
     const file = await load(attachment);
-    if (!file?.contentBytes) return;
-    const bytes = atob(file.contentBytes);
-    const buffer = new Uint8Array(bytes.length);
-    for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
-    const url = URL.createObjectURL(new Blob([buffer], { type: file.contentType || "application/octet-stream" }));
-    setPreview({ name: file.name || "", url, type });
+    if (!file?.contentBytes) return unsupported();
+    // Text (including HTML) is shown as plain text so it never runs in the app origin
+    const blobType = kind === "text" ? "text/plain;charset=utf-8" : kind === "pdf" ? "application/pdf" : type;
+    const url = URL.createObjectURL(new Blob([base64ToBytes(file.contentBytes)], { type: blobType }));
+    setPreview({ name: file.name || "", url, type: kind });
   };
 
   const closePreview = () => {
@@ -95,25 +138,29 @@ const AttachmentList = ({ attachments, fetchContent, onRemove, dense }: Attachme
         </Box>
       )}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-        {visible.map(attachment => (
-          <Chip
-            key={attachment.id}
-            variant="outlined"
-            icon={busy === attachment.id ? <CircularProgress size={16} /> : attachmentIcon(attachment)}
-            label={
-              <Box sx={{ display: "flex", flexDirection: "column", lineHeight: 1.2, py: 0.5 }}>
-                <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>{attachment.name}</Typography>
-                <Typography variant="caption" color="text.secondary">{readableBytesFormat(attachment.size || 0)}</Typography>
-              </Box>
-            }
-            onClick={() => handleOpen(attachment)}
-            onDelete={onRemove ? () => onRemove(attachment) : () => handleDownload(attachment)}
-            deleteIcon={onRemove ?
-              <Tooltip title={t("Remove")}><DeleteOutline /></Tooltip> :
-              <Tooltip title={t("Download")}><Download /></Tooltip>}
-            sx={{ height: "auto", borderRadius: 1.5, "& .MuiChip-label": { px: 1 } }}
-          />
-        ))}
+        {visible.map(attachment => {
+          const actionLabel = onRemove ? t("Remove {{name}}", { name: attachment.name }) : t("Download {{name}}", { name: attachment.name });
+          return (
+            <Box key={attachment.id} sx={{ display: "inline-flex", alignItems: "center", border: 1, borderColor: "divider", borderRadius: 1.5, overflow: "hidden" }}>
+              <ButtonBase
+                onClick={() => handleOpen(attachment)}
+                aria-label={t("Open {{name}}", { name: attachment.name })}
+                sx={{ display: "flex", alignItems: "center", gap: 1, pl: 1, pr: 0.5, py: 0.5, textAlign: "left", "&:hover, &.Mui-focusVisible": { bgcolor: "action.hover" } }}
+              >
+                {busy === attachment.id ? <CircularProgress size={16} /> : attachmentIcon(attachment)}
+                <Box sx={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+                  <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>{attachment.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{readableBytesFormat(attachment.size || 0)}</Typography>
+                </Box>
+              </ButtonBase>
+              <Tooltip title={onRemove ? t("Remove") : t("Download")}>
+                <IconButton size="small" aria-label={actionLabel} onClick={() => onRemove ? onRemove(attachment) : handleDownload(attachment)}>
+                  {onRemove ? <DeleteOutline fontSize="small" /> : <Download fontSize="small" />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          );
+        })}
       </Box>
       <Dialog open={Boolean(preview)} onClose={closePreview} maxWidth="lg" fullWidth PaperProps={{ sx: { height: "90vh" } }}>
         <Box sx={{ display: "flex", alignItems: "center", px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}>
@@ -122,9 +169,15 @@ const AttachmentList = ({ attachments, fetchContent, onRemove, dense }: Attachme
           <IconButton onClick={closePreview} aria-label={t("Close")}><Close /></IconButton>
         </Box>
         <DialogContent sx={{ p: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "background.default" }}>
-          {preview?.type.startsWith("image/") ?
+          {preview?.type === "image" ?
             <img src={preview.url} alt={preview.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> :
-            preview && <iframe title={preview.name} src={preview.url} style={{ width: "100%", height: "100%", border: "none" }} />}
+            preview && <iframe
+              title={preview.name}
+              src={preview.url}
+              // Text runs in an opaque origin; the PDF viewer needs an unsandboxed frame
+              sandbox={preview.type === "text" ? "" : undefined}
+              style={{ width: "100%", height: "100%", border: "none", background: "#fff" }}
+            />}
         </DialogContent>
       </Dialog>
     </Box>

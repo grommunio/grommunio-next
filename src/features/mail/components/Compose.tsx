@@ -12,14 +12,17 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@mui/material/styles";
 import type { Attachment, FileAttachment, Recipient } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { addDraftAttachments, composeClosed, discardCompose, removeDraftAttachment, saveDraft, sendCompose } from "../mailSlice";
+import {
+  addDraftAttachments, addInlineImage, composeClosed, discardCompose, registerComposeFlusher, removeDraftAttachment, saveDraft, sendCompose,
+} from "../mailSlice";
 import RecipientField from "./RecipientField";
 import AttachmentList from "./AttachmentList";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
-import { isValidEmail, purify } from "../utils-compose";
+import { isValidEmail, purify, replaceInlineImageSources, tinymceLanguage } from "../utils-compose";
 import { getAttachment } from "../../../api/messages";
+import { getAttachmentRaw } from "../attachments";
 
 type ComposeProps = {
   fullscreen?: boolean;
@@ -51,8 +54,12 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
   const [dragging, setDragging] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout>>();
   const dirtyRef = useRef(false);
+  // editor blob:/data: URL -> cid: of uploaded inline images
+  const inlineImages = useRef(new Map<string, string>());
 
   const key = compose?.key;
+  const composeRef = useRef(compose);
+  composeRef.current = compose;
 
   useEffect(() => {
     if (!compose || compose.status === "creating") return;
@@ -67,6 +74,8 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
     setReadReceipt(init.isReadReceiptRequested);
     setDirty(false);
     dirtyRef.current = false;
+    clearTimeout(autosaveTimer.current);
+    inlineImages.current = new Map();
   }, [key, compose?.status === "creating"]);
 
   const currentPatch = useCallback(() => ({
@@ -74,7 +83,7 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
     ccRecipients: cc,
     bccRecipients: bcc,
     subject,
-    body: editorRef.current ? purify(editorRef.current.getContent()) : compose?.initial.body || "",
+    body: editorRef.current ? purify(replaceInlineImageSources(editorRef.current.getContent(), inlineImages.current)) : compose?.initial.body || "",
     importance,
     isReadReceiptRequested: readReceipt,
   }), [to, cc, bcc, subject, importance, readReceipt, compose?.initial.body]);
@@ -86,12 +95,18 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
     }
     clearTimeout(autosaveTimer.current);
     autosaveTimer.current = setTimeout(() => {
-      if (dirtyRef.current) {
-        dispatch(saveDraft({ patch: currentPatchRef.current(), silent: true }));
-        dirtyRef.current = false;
-        setDirty(false);
-      }
+      if (dirtyRef.current) dispatch(saveDraft({ patch: takePatch(), silent: true }));
     }, AUTOSAVE_DELAY);
+  };
+
+  // later edits mark the form dirty again
+  const takePatch = () => {
+    const patch = currentPatchRef.current();
+    dirtyRef.current = false;
+    setDirty(false);
+    // TinyMCE only fires "dirty" again after its flag was reset
+    editorRef.current?.setDirty(false);
+    return patch;
   };
 
   const currentPatchRef = useRef(currentPatch);
@@ -121,24 +136,53 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
       return;
     }
     clearTimeout(autosaveTimer.current);
-    dispatch(sendCompose({ patch: currentPatch() }));
+    dispatch(sendCompose({ patch: takePatch() }));
   };
 
   const handleSave = () => {
     clearTimeout(autosaveTimer.current);
-    dirtyRef.current = false;
-    setDirty(false);
-    dispatch(saveDraft({ patch: currentPatch() }));
+    dispatch(saveDraft({ patch: takePatch() }));
   };
 
-  const handleClose = () => {
+  // Outlook keeps closed messages as drafts, untouched replies/forwards get dropped
+  const flush = async (): Promise<boolean> => {
     clearTimeout(autosaveTimer.current);
-    if (dirtyRef.current || (!compose?.draftId && (subject || recipients.length || editorRef.current?.getContent({ format: "text" })?.trim()))) {
-      // Keep the draft like Outlook does
-      dispatch(saveDraft({ patch: currentPatch(), silent: false })).finally(() => dispatch(composeClosed()));
-    } else {
-      dispatch(composeClosed());
+    const current = composeRef.current;
+    if (!current || current.status === "creating" || current.status === "sending") return true;
+    const untouched = !dirtyRef.current && !current.lastSaved;
+    if (untouched && current.draftId && (current.mode === "reply" || current.mode === "replyAll" || current.mode === "forward")) {
+      await dispatch(discardCompose());
+      return true;
     }
+    const hasText = subject || recipients.length || editorRef.current?.getContent({ format: "text" })?.trim();
+    if (dirtyRef.current || (!current.draftId && hasText)) {
+      const result = await dispatch(saveDraft({ patch: takePatch(), silent: false }));
+      return saveDraft.fulfilled.match(result);
+    }
+    return true;
+  };
+  const flushRef = useRef(flush);
+  flushRef.current = flush;
+
+  // Lets startCompose save this draft before another compose replaces it
+  useEffect(() => {
+    registerComposeFlusher(() => flushRef.current());
+    return () => registerComposeFlusher(null);
+  }, []);
+
+  const handleClose = async () => {
+    if (await flush()) dispatch(composeClosed());
+  };
+
+  // Pasted images become inline attachments referenced by cid:
+  const uploadImage = async (blobInfo: { blob: () => Blob; filename: () => string; base64: () => string; blobUri: () => string }) => {
+    const blob = blobInfo.blob();
+    const file = new File([blob], blobInfo.filename(), { type: blob.type || "image/png" });
+    const cid = await dispatch(addInlineImage({ file, patch: currentPatchRef.current() })).unwrap();
+    // The editor keeps showing the local image, the saved body references the attachment
+    inlineImages.current.set(blobInfo.blobUri(), cid);
+    inlineImages.current.set(`data:${blob.type || "image/png"};base64,${blobInfo.base64()}`, cid);
+    return blobInfo.blobUri();
   };
 
   const handleDiscard = () => {
@@ -168,10 +212,16 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
     return getAttachment(compose.draftId, attachment.id!);
   };
 
+  const fetchRaw = async (attachment: Attachment) => {
+    if (!compose?.draftId) throw new Error(t("The draft has not been saved yet"));
+    return getAttachmentRaw(compose.draftId, attachment.id!);
+  };
+
   if (!compose) return null;
 
   const busy = compose.status === "creating" || compose.status === "sending";
-  const hasContent = to.length > 0 || subject.length > 0;
+  // Cc/Bcc only messages are valid too
+  const hasContent = recipients.length > 0 || subject.length > 0;
 
   return (
     <Box
@@ -179,6 +229,8 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
       onDragOver={e => { e.preventDefault(); if (!dragging) setDragging(true); }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
+      component="section"
+      role="region"
       aria-label={t("Compose")}
     >
       {dragging && (
@@ -233,7 +285,7 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
           </Tooltip>
         )}
         <Tooltip title={t("Close")}>
-          <IconButton onClick={handleClose} disabled={compose.status === "sending"} aria-label={t("Close")}><Close /></IconButton>
+          <IconButton onClick={handleClose} disabled={busy} aria-label={t("Close")}><Close /></IconButton>
         </Tooltip>
       </Box>
 
@@ -281,6 +333,7 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
                   dense
                   attachments={compose.initial.attachments}
                   fetchContent={fetchContent}
+                  fetchRaw={fetchRaw}
                   onRemove={attachment => dispatch(removeDraftAttachment(attachment.id!))}
                 />
               </Box>
@@ -296,7 +349,7 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
               onDirty={markDirty}
               onKeyDown={(e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); handleSend(); } }}
               init={{
-                language: i18n.language.replace("-", "_") === "en_US" ? undefined : i18n.language.replace("-", "_"),
+                language: tinymceLanguage(i18n.language),
                 menubar: false,
                 statusbar: false,
                 branding: false,
@@ -309,7 +362,8 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
                 autoresize_bottom_margin: 16,
                 min_height: 280,
                 paste_data_images: true,
-                automatic_uploads: false,
+                automatic_uploads: true,
+                images_upload_handler: uploadImage,
                 convert_urls: false,
                 browser_spellcheck: true,
                 content_style: 'body { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; }',

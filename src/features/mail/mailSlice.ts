@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction, ThunkAction, UnknownAction } from "@reduxjs/toolkit";
 import type { Attachment, Message, OutlookCategory, Recipient } from "microsoft-graph";
 import type { RootState } from "../../store";
 import type { ExtendedMailFolder, WellKnownFolderName } from "../../types/messages";
@@ -11,7 +11,7 @@ import { ApiError } from "../../api/graph";
 import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { COMMON_FOLDER_ORDER, SCROLL_ITEMS } from "../../constants";
 import {
-  ComposeDraft, ComposeMode, ComposeState, MailFilter, MailPrefs, MailSort, MailState, MessageList,
+  ComposeDraft, ComposeMode, ComposeState, DeleteRequest, MailFilter, MailPrefs, MailSort, MailState, MessageList,
 } from "./types";
 import {
   loadExpanded, loadFavorites, loadPinned, loadPrefs, saveExpanded, saveFavorites, savePinned, savePrefs,
@@ -96,6 +96,19 @@ function buildListParams(list: Pick<MessageList, "filter" | "sort" | "search">, 
 }
 
 const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof Error ? err.message : String(err);
+
+// Status 0 means no response
+const isFailed = (r?: { status: number }) => !r || r.status === 0 || r.status >= 400;
+
+class MailError extends Error {
+  constructor(public key: string, public params: Record<string, string | number>) {
+    super(key);
+  }
+}
+
+const alertError = (err: unknown) => pushAlertStack(err instanceof MailError ?
+  { message: err.key, params: err.params, severity: "error" } :
+  { message: errorMessage(err), severity: "error" });
 
 type ThunkApi = { state: RootState; rejectValue: string };
 
@@ -232,21 +245,22 @@ export const loadMessages = createAsyncThunk<{ key: string; messages: Message[];
     condition: (arg, { getState }) => {
       const list = getState().mail.lists[listKey(arg.folderId, arg.search)];
       if (!list) return true;
-      if (list.loading) return false;
       const sameParams = (arg.filter ?? list.filter) === list.filter && (arg.sort ?? list.sort) === list.sort;
+      // A newer request wins, the old result is dropped via requestId
+      if (list.loading) return Boolean(arg.force) || !sameParams;
       return arg.force || !list.loaded || !sameParams;
     },
   },
 );
 
-export const loadMoreMessages = createAsyncThunk<{ key: string; messages: Message[]; nextLink?: string }, string, ThunkApi>(
+export const loadMoreMessages = createAsyncThunk<{ key: string; messages: Message[]; nextLink?: string; requestId?: string }, string, ThunkApi>(
   "mail/loadMoreMessages",
   async (key, { getState, rejectWithValue }) => {
     const list = getState().mail.lists[key];
-    if (!list?.nextLink) return { key, messages: [], nextLink: undefined };
+    if (!list?.nextLink) return { key, messages: [], nextLink: undefined, requestId: list?.requestId };
     try {
       const page = await messagesApi.getMessagesNextPage(list.nextLink);
-      return { key, messages: page.value, nextLink: page.nextLink };
+      return { key, messages: page.value, nextLink: page.nextLink, requestId: list.requestId };
     } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
@@ -259,30 +273,51 @@ export const loadMoreMessages = createAsyncThunk<{ key: string; messages: Messag
   },
 );
 
-// First sync only stores the delta link
-export const syncFolder = createAsyncThunk<{ key: string; folderId: string; added: Message[]; changed: Message[]; removed: string[]; deltaLink?: string; initial: boolean }, string, ThunkApi>(
+// Don't announce unread mail older than the last sync minus this
+const ARRIVAL_MARGIN = 5 * 60 * 1000;
+
+export type SyncResult = {
+  folderId: string;
+  added: Message[];
+  changed: Message[];
+  removed: string[];
+  arrivals: string[];
+  deltaLink?: string;
+  initial: boolean;
+};
+
+// First sync only stores the delta link. It survives list reloads, and folders
+// without an open list, like the background inbox, are synced too.
+export const syncFolder = createAsyncThunk<SyncResult, string, ThunkApi>(
   "mail/syncFolder",
-  async (folderId, { getState, rejectWithValue }) => {
-    const key = listKey(folderId);
-    const list = getState().mail.lists[key];
-    const initial = !list?.deltaLink;
+  async (folderId, { dispatch, getState, rejectWithValue }) => {
+    const state = getState();
+    const sync = state.mail.sync[folderId];
     try {
-      const result = await messagesApi.getMessagesDelta(folderId, list?.deltaLink);
-      if (initial) {
-        return { key, folderId, added: [], changed: [], removed: [], deltaLink: result.deltaLink, initial: true };
+      const result = await messagesApi.getMessagesDelta(folderId, sync?.deltaLink);
+      // Expired delta link: start over, nothing to apply
+      if (!sync?.deltaLink || result.reset) {
+        return { folderId, added: [], changed: [], removed: [], arrivals: [], deltaLink: result.deltaLink, initial: true };
       }
-      const known = new Set(list?.ids || []);
-      const added = result.value.filter(m => m.id && !known.has(m.id));
-      const changed = result.value.filter(m => m.id && known.has(m.id));
-      return { key, folderId, added, changed, removed: result.removed, deltaLink: result.deltaLink, initial: false };
+      const known = getState().mail.messages;
+      const added = result.value.filter(m => m.id && !known[m.id]);
+      const changed = result.value.filter(m => m.id && known[m.id]);
+      const threshold = (sync.since || 0) - ARRIVAL_MARGIN;
+      const arrivals = added
+        .filter(m => !m.isRead && !m.isDraft && new Date(m.receivedDateTime || 0).getTime() >= threshold)
+        .map(m => m.id!);
+      if (result.value.length || result.removed.length) dispatch(loadFolders());
+      return { folderId, added, changed, removed: result.removed, arrivals, deltaLink: result.deltaLink, initial: false };
     } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
   },
   {
     condition: (folderId, { getState }) => {
-      const list = getState().mail.lists[listKey(folderId)];
-      return Boolean(list && list.loaded && !list.loading && list.filter === "all" && !list.search);
+      const { lists, sync } = getState().mail;
+      if (sync[folderId]?.syncing) return false;
+      // A running list load would overwrite the applied changes
+      return !lists[listKey(folderId)]?.loading;
     },
   },
 );
@@ -301,48 +336,97 @@ export const loadMessageDetails = createAsyncThunk<Message, string, ThunkApi>(
   },
 );
 
+function unreadDeltas(messages: Message[], isRead: boolean): Array<{ folderId: string; delta: number }> {
+  const deltas = new Map<string, number>();
+  messages.forEach(m => {
+    if (!m.parentFolderId || Boolean(m.isRead) === isRead) return;
+    deltas.set(m.parentFolderId, (deltas.get(m.parentFolderId) || 0) + (isRead ? -1 : 1));
+  });
+  return Array.from(deltas, ([folderId, delta]) => ({ folderId, delta }));
+}
+
 export const updateMessages = createAsyncThunk<void, { ids: string[]; props: Partial<Message> }, ThunkApi>(
   "mail/updateMessages",
   async ({ ids, props }, { dispatch, getState, rejectWithValue }) => {
     const previous = ids.map(id => getState().mail.messages[id]).filter(Boolean);
+    const deltas = props.isRead !== undefined && props.isRead !== null ? unreadDeltas(previous, props.isRead) : [];
     dispatch(mailSlice.actions.messagesPatched({ ids, props }));
+    deltas.forEach(d => dispatch(mailSlice.actions.adjustUnreadCount(d)));
     try {
       const responses = ids.length === 1 ?
         [{ id: "0", status: 200, body: await messagesApi.patchMessage({ id: ids[0] }, props) }] :
         await messagesApi.patchMessages(ids, props);
-      const failed = responses.filter(r => r.status >= 400);
-      if (failed.length) throw new Error(`${failed.length} of ${ids.length} messages could not be updated`);
+      const failedIds = ids.filter((_id, i) => isFailed(responses[i]));
       // Server values win, it fills in flag due dates
-      dispatch(mailSlice.actions.messagesReceived(responses.map(r => r.body).filter(Boolean) as Message[]));
+      dispatch(mailSlice.actions.messagesReceived(responses.filter(r => !isFailed(r)).map(r => r.body).filter(Boolean) as Message[]));
+      if (failedIds.length) {
+        const failed = previous.filter(m => failedIds.includes(m.id!));
+        dispatch(mailSlice.actions.messagesReceived(failed));
+        if (props.isRead !== undefined && props.isRead !== null) {
+          unreadDeltas(failed, props.isRead).forEach(d => dispatch(mailSlice.actions.adjustUnreadCount({ ...d, delta: -d.delta })));
+        }
+        // t("{{failed}} of {{count}} messages could not be updated")
+        throw new MailError("{{failed}} of {{count}} messages could not be updated", { failed: failedIds.length, count: ids.length });
+      }
     } catch (err) {
-      dispatch(mailSlice.actions.messagesReceived(previous));
-      dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
+      if (!(err instanceof MailError)) {
+        dispatch(mailSlice.actions.messagesReceived(previous));
+        deltas.forEach(d => dispatch(mailSlice.actions.adjustUnreadCount({ ...d, delta: -d.delta })));
+      }
+      dispatch(alertError(err));
       return rejectWithValue(errorMessage(err));
     }
   },
 );
 
+type ListSnapshot = { key: string; ids: string[]; requestId?: string };
+
+function snapshotLists(state: RootState, ids: string[]): ListSnapshot[] {
+  const set = new Set(ids);
+  return Object.values(state.mail.lists)
+    .filter(list => list.ids.some(id => set.has(id)))
+    .map(list => ({ key: list.key, ids: [...list.ids], requestId: list.requestId }));
+}
+
+const sourceFolders = (messages: Message[]) => Array.from(new Set(messages.map(m => m.parentFolderId).filter(Boolean) as string[]));
+
 export const moveMessages = createAsyncThunk<{ ids: string[]; destinationId: string }, { ids: string[]; destinationId: string; silent?: boolean }, ThunkApi>(
   "mail/moveMessages",
   async ({ ids, destinationId, silent }, { dispatch, getState, rejectWithValue }) => {
-    const folderName = findFolder(getState().mail.folders, destinationId)?.displayName || destinationId;
+    const state = getState();
+    const folderName = findFolder(state.mail.folders, destinationId)?.displayName || destinationId;
+    // Snapshot for undo/rollback before the optimistic removal
+    const originals = ids.map(id => state.mail.messages[id]).filter(Boolean);
+    const sources = sourceFolders(originals);
+    const lists = snapshotLists(state, ids);
     dispatch(mailSlice.actions.messagesRemoved(ids));
     try {
       const responses = await messagesApi.moveMessages(ids, destinationId);
-      const failed = responses.filter(r => r.status >= 400);
-      if (failed.length) throw new Error(`${failed.length} of ${ids.length} messages could not be moved`);
+      const failedIds = ids.filter((_id, i) => isFailed(responses[i]));
+      if (failedIds.length) {
+        dispatch(mailSlice.actions.messagesRestored({ messages: originals.filter(m => failedIds.includes(m.id!)), lists }));
+        dispatch(loadFolders());
+        // t("{{failed}} of {{count}} messages could not be moved")
+        throw new MailError("{{failed}} of {{count}} messages could not be moved", { failed: failedIds.length, count: ids.length });
+      }
       if (!silent) {
+        // t("{{count}} messages moved to {{folder}}_one")
+        // t("{{count}} messages moved to {{folder}}_other")
         dispatch(pushAlertStack({
-          message: ids.length === 1 ? `Message moved to ${folderName}` : `${ids.length} messages moved to ${folderName}`,
+          message: "{{count}} messages moved to {{folder}}",
+          params: { count: ids.length, folder: folderName },
           severity: "success",
-          undo: { ids: responses.map(r => r.body?.id).filter(Boolean) as string[], destinationId: getState().mail.messages[ids[0]]?.parentFolderId },
+          // Undo needs a single source folder
+          undo: sources.length === 1 ? { ids: responses.map(r => r.body?.id).filter(Boolean) as string[], destinationId: sources[0] } : undefined,
         }));
       }
       dispatch(loadFolders());
       return { ids, destinationId };
     } catch (err) {
-      dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
-      ids.forEach(id => dispatch(loadMessageDetails(id)));
+      if (!(err instanceof MailError)) {
+        dispatch(mailSlice.actions.messagesRestored({ messages: originals, lists }));
+      }
+      dispatch(alertError(err));
       return rejectWithValue(errorMessage(err));
     }
   },
@@ -353,45 +437,87 @@ export const copyMessages = createAsyncThunk<void, { ids: string[]; destinationI
   async ({ ids, destinationId }, { dispatch, getState, rejectWithValue }) => {
     try {
       const responses = await messagesApi.copyMessages(ids, destinationId);
-      const failed = responses.filter(r => r.status >= 400);
-      if (failed.length) throw new Error(`${failed.length} of ${ids.length} messages could not be copied`);
+      const failed = responses.filter(isFailed);
+      // t("{{failed}} of {{count}} messages could not be copied")
+      if (failed.length) throw new MailError("{{failed}} of {{count}} messages could not be copied", { failed: failed.length, count: ids.length });
       const folderName = findFolder(getState().mail.folders, destinationId)?.displayName || destinationId;
-      dispatch(pushAlertStack({ message: `Copied to ${folderName}`, severity: "success" }));
+      // t("Copied to {{folder}}")
+      dispatch(pushAlertStack({ message: "Copied to {{folder}}", params: { folder: folderName }, severity: "success" }));
       dispatch(loadFolders());
     } catch (err) {
-      dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
+      dispatch(alertError(err));
       return rejectWithValue(errorMessage(err));
     }
   },
 );
 
+// Explicitly requested or already in Deleted Items
+function permanentIds(state: RootState, ids: string[], permanent?: boolean): string[] {
+  if (permanent) return ids;
+  const deletedItems = findWellKnownFolder(state.mail.folders, "deleteditems")?.id;
+  return deletedItems ? ids.filter(id => state.mail.messages[id]?.parentFolderId === deletedItems) : [];
+}
+
 export const deleteMessages = createAsyncThunk<string[], { ids: string[]; permanent?: boolean }, ThunkApi>(
   "mail/deleteMessages",
   async ({ ids, permanent }, { dispatch, getState, rejectWithValue }) => {
     const state = getState();
-    const first = state.mail.messages[ids[0]];
-    const folder = findFolder(state.mail.folders, first?.parentFolderId || undefined);
-    const hard = permanent || folder?.wellKnownName === "deleteditems";
+    // Search results can span folders
+    const hardIds = permanentIds(state, ids, permanent);
+    const hardSet = new Set(hardIds);
+    const softIds = ids.filter(id => !hardSet.has(id));
+    const originals = ids.map(id => state.mail.messages[id]).filter(Boolean);
+    const softSources = sourceFolders(originals.filter(m => !hardSet.has(m.id!)));
+    const lists = snapshotLists(state, ids);
     dispatch(mailSlice.actions.messagesRemoved(ids));
     try {
-      const responses = await messagesApi.deleteMessages(ids, Boolean(hard));
-      const failed = responses.filter(r => r.status >= 400);
-      if (failed.length) throw new Error(`${failed.length} of ${ids.length} messages could not be deleted`);
-      if (!hard) {
+      const [hardResponses, softResponses] = await Promise.all([
+        hardIds.length ? messagesApi.deleteMessages(hardIds, true) : Promise.resolve([]),
+        softIds.length ? messagesApi.deleteMessages(softIds, false) : Promise.resolve([]),
+      ]);
+      const failedIds = [
+        ...hardIds.filter((_id, i) => isFailed(hardResponses[i])),
+        ...softIds.filter((_id, i) => isFailed(softResponses[i])),
+      ];
+      if (failedIds.length) {
+        dispatch(mailSlice.actions.messagesRestored({ messages: originals.filter(m => failedIds.includes(m.id!)), lists }));
+        dispatch(loadFolders());
+        // t("{{failed}} of {{count}} messages could not be deleted")
+        throw new MailError("{{failed}} of {{count}} messages could not be deleted", { failed: failedIds.length, count: ids.length });
+      }
+      if (softIds.length) {
+        // t("{{count}} messages deleted_one")
+        // t("{{count}} messages deleted_other")
         dispatch(pushAlertStack({
-          message: ids.length === 1 ? "Message deleted" : `${ids.length} messages deleted`,
+          message: "{{count}} messages deleted",
+          params: { count: softIds.length },
           severity: "success",
-          undo: { ids: responses.map(r => r.body?.id).filter(Boolean) as string[], destinationId: first?.parentFolderId },
+          undo: softSources.length === 1 ? { ids: softResponses.map(r => r.body?.id).filter(Boolean) as string[], destinationId: softSources[0] } : undefined,
         }));
       }
       dispatch(loadFolders());
       return ids;
     } catch (err) {
-      dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
+      if (!(err instanceof MailError)) {
+        dispatch(mailSlice.actions.messagesRestored({ messages: originals, lists }));
+      }
+      dispatch(alertError(err));
       return rejectWithValue(errorMessage(err));
     }
   },
 );
+
+// Asks first if the user wants that or the delete is permanent. MailView renders the dialog.
+export const requestDelete = (ids: string[], permanent = false): ThunkAction<void, RootState, unknown, UnknownAction> => (dispatch, getState) => {
+  if (ids.length === 0) return;
+  const state = getState();
+  const hard = permanentIds(state, ids, permanent).length > 0;
+  if (hard || state.mail.prefs.confirmDelete) {
+    dispatch(mailSlice.actions.deleteConfirmRequested({ ids, permanent, hard }));
+  } else {
+    dispatch(deleteMessages({ ids, permanent }));
+  }
+};
 
 export const loadCategories = createAsyncThunk<OutlookCategory[], void, ThunkApi>(
   "mail/loadCategories",
@@ -468,9 +594,16 @@ type StartComposeArg = {
   body?: string;
 };
 
-export const startCompose = createAsyncThunk<ComposeState, StartComposeArg, ThunkApi>(
+// The open compose registers a save-or-drop function so opening another one
+// never loses typed text. Returns false to abort.
+let composeFlusher: (() => Promise<boolean>) | null = null;
+export function registerComposeFlusher(fn: (() => Promise<boolean>) | null) {
+  composeFlusher = fn;
+}
+
+export const createComposeState = createAsyncThunk<ComposeState, StartComposeArg, ThunkApi>(
   "mail/startCompose",
-  async (arg, { dispatch, getState, rejectWithValue }) => {
+  async (arg, { dispatch, getState, rejectWithValue, requestId }) => {
     const key = Date.now();
     const prefs = getState().mail.prefs;
     try {
@@ -489,6 +622,11 @@ export const startCompose = createAsyncThunk<ComposeState, StartComposeArg, Thun
       const draft = arg.mode === "forward" ?
         await messagesApi.createForward(arg.originalId!) :
         await messagesApi.createReply(arg.originalId!, arg.mode === "replyAll");
+      if (getState().mail.compose?.requestId !== requestId) {
+        // Closed while the draft was being created, don't leave it behind
+        await messagesApi.deleteMessage(draft.id!, true).catch(() => undefined);
+        return rejectWithValue("Compose closed");
+      }
       const attachments = draft.hasAttachments ? await messagesApi.getAttachments(draft.id!) : [];
       const initial = draftFromMessage(draft, attachments);
       if (prefs.signatureOnReply && prefs.signature) {
@@ -501,6 +639,15 @@ export const startCompose = createAsyncThunk<ComposeState, StartComposeArg, Thun
     }
   },
 );
+
+export const startCompose = (arg: StartComposeArg): ThunkAction<Promise<void>, RootState, unknown, UnknownAction> => async (dispatch, getState) => {
+  if (getState().mail.compose?.status === "creating") return;
+  if (getState().mail.compose && composeFlusher) {
+    const ok = await composeFlusher();
+    if (!ok) return;
+  }
+  await dispatch(createComposeState(arg));
+};
 
 type DraftPatch = Partial<Omit<ComposeDraft, "attachments">>;
 
@@ -517,21 +664,36 @@ function toMessagePatch(patch: DraftPatch): Partial<Message> {
   return result;
 }
 
+// Serialized so a second save waits for the draft the first one creates
+let saveQueue: Promise<unknown> = Promise.resolve();
+// Available before the fulfilled action is reduced
+const createdDrafts = new Map<number, string>();
+
+export const draftSavesSettled = () => saveQueue.then(() => undefined, () => undefined);
+
 export const saveDraft = createAsyncThunk<{ draftId: string; key: number }, { patch: DraftPatch; silent?: boolean }, ThunkApi>(
   "mail/saveDraft",
   async ({ patch, silent }, { dispatch, getState, rejectWithValue }) => {
-    const compose = getState().mail.compose;
-    if (!compose) return rejectWithValue("No open draft");
-    try {
-      let draftId = compose.draftId;
+    const run = async () => {
+      const compose = getState().mail.compose;
+      if (!compose) throw new Error("No open draft");
+      let draftId = compose.draftId || createdDrafts.get(compose.key);
       if (draftId) {
         await messagesApi.updateDraft(draftId, toMessagePatch(patch));
       } else {
         const created = await messagesApi.createDraft(toMessagePatch({ ...compose.initial, ...patch }));
         draftId = created.id!;
+        createdDrafts.set(compose.key, draftId);
       }
-      if (!silent) dispatch(pushAlertStack({ message: "Draft saved", severity: "success" }));
       return { draftId, key: compose.key };
+    };
+    const job = saveQueue.then(run, run);
+    saveQueue = job.catch(() => undefined);
+    try {
+      const result = await job;
+      // t("Draft saved")
+      if (!silent) dispatch(pushAlertStack({ message: "Draft saved", severity: "success" }));
+      return result;
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
       return rejectWithValue(errorMessage(err));
@@ -543,21 +705,41 @@ export const addDraftAttachments = createAsyncThunk<{ key: number; attachments: 
   "mail/addDraftAttachments",
   async ({ files, patch }, { dispatch, getState, rejectWithValue }) => {
     try {
-      let compose = getState().mail.compose;
+      const compose = getState().mail.compose;
       if (!compose) return rejectWithValue("No open draft");
-      if (!compose.draftId) {
-        await dispatch(saveDraft({ patch, silent: true })).unwrap();
-        compose = getState().mail.compose!;
+      await draftSavesSettled();
+      let draftId = getState().mail.compose?.draftId || createdDrafts.get(compose.key);
+      if (!draftId) {
+        draftId = (await dispatch(saveDraft({ patch, silent: true })).unwrap()).draftId;
       }
-      const attachments: Attachment[] = [];
       for (const file of files) {
-        attachments.push(await messagesApi.addFileAttachment(compose.draftId!, file));
+        await messagesApi.addFileAttachment(draftId, file);
       }
       // Reload to get ids/sizes for attachments created through upload sessions
-      const all = await messagesApi.getAttachments(compose.draftId!);
+      const all = await messagesApi.getAttachments(draftId);
       return { key: compose.key, attachments: all };
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
+      return rejectWithValue(errorMessage(err));
+    }
+  },
+);
+
+export const addInlineImage = createAsyncThunk<string, { file: File; patch: DraftPatch }, ThunkApi>(
+  "mail/addInlineImage",
+  async ({ file, patch }, { dispatch, getState, rejectWithValue }) => {
+    try {
+      const compose = getState().mail.compose;
+      if (!compose) return rejectWithValue("No open draft");
+      await draftSavesSettled();
+      let draftId = getState().mail.compose?.draftId || createdDrafts.get(compose.key);
+      if (!draftId) {
+        draftId = (await dispatch(saveDraft({ patch, silent: true })).unwrap()).draftId;
+      }
+      const contentId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@grommunio`;
+      await messagesApi.addFileAttachment(draftId, file, true, contentId);
+      return `cid:${contentId}`;
+    } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
   },
@@ -584,13 +766,18 @@ export const sendCompose = createAsyncThunk<number, { patch: DraftPatch }, Thunk
     const compose = getState().mail.compose;
     if (!compose) return rejectWithValue("No open draft");
     try {
-      if (compose.draftId || compose.initial.attachments.length) {
-        const { draftId } = await dispatch(saveDraft({ patch, silent: true })).unwrap();
-        await messagesApi.sendDraft(draftId);
-        dispatch(mailSlice.actions.messagesRemoved([draftId]));
+      // A running autosave may be creating the draft right now
+      await draftSavesSettled();
+      const draftId = getState().mail.compose?.draftId || createdDrafts.get(compose.key);
+      if (draftId || compose.initial.attachments.length) {
+        const saved = await dispatch(saveDraft({ patch, silent: true })).unwrap();
+        await messagesApi.sendDraft(saved.draftId);
+        dispatch(mailSlice.actions.messagesRemoved([saved.draftId]));
       } else {
         await messagesApi.sendMail(toMessagePatch({ ...compose.initial, ...patch }) as Message);
       }
+      createdDrafts.delete(compose.key);
+      // t("Message sent")
       dispatch(pushAlertStack({ message: "Message sent", severity: "success" }));
       dispatch(loadFolders());
       return compose.key;
@@ -606,10 +793,13 @@ export const discardCompose = createAsyncThunk<number, void, ThunkApi>(
   async (_arg, { dispatch, getState }) => {
     const compose = getState().mail.compose;
     if (!compose) return -1;
-    if (compose.draftId) {
+    await draftSavesSettled();
+    const draftId = getState().mail.compose?.draftId || createdDrafts.get(compose.key);
+    createdDrafts.delete(compose.key);
+    if (draftId) {
       try {
-        await messagesApi.deleteMessage(compose.draftId, true);
-        dispatch(mailSlice.actions.messagesRemoved([compose.draftId]));
+        await messagesApi.deleteMessage(draftId, true);
+        dispatch(mailSlice.actions.messagesRemoved([draftId]));
         dispatch(loadFolders());
       } catch (err) {
         dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
@@ -628,6 +818,7 @@ const initialState: MailState = {
   messages: {},
   loadedDetails: {},
   loadingDetails: {},
+  detailsError: {},
   lists: {},
   categories: [],
   categoriesLoaded: false,
@@ -637,6 +828,8 @@ const initialState: MailState = {
   prefs: loadPrefs(),
   lastSync: 0,
   newArrivals: [],
+  sync: {},
+  deleteConfirm: null,
 };
 
 function mergeMessages(state: MailState, messages: Message[]) {
@@ -658,6 +851,52 @@ function removeFromLists(state: MailState, ids: string[]) {
   state.selection = state.selection.filter(id => !set.has(id));
 }
 
+function forgetMessages(state: MailState, ids: string[]) {
+  removeFromLists(state, ids);
+  ids.forEach(id => {
+    delete state.messages[id];
+    delete state.loadedDetails[id];
+    delete state.detailsError[id];
+  });
+}
+
+const time = (m?: Message) => new Date(m?.receivedDateTime || 0).getTime();
+
+// Inserts matches that fall into the loaded window, drops ones that no longer
+// match, like mail moved between Focused and Other.
+function applySyncToList(state: MailState, list: MessageList, added: Message[], changed: Message[]): number {
+  const syncable = list.filter === "all" || list.filter === "focused" || list.filter === "other";
+  if (!syncable) return 0;
+  const matches = (m: Message) => list.filter === "all" || m.inferenceClassification === list.filter;
+  const byDate = list.sort.field === "receivedDateTime";
+  const desc = list.sort.direction === "desc";
+  let inserted = 0;
+
+  // Changed messages whose classification no longer matches leave the list
+  const leaving = new Set(changed.filter(m => !matches(m)).map(m => m.id!));
+  if (leaving.size) list.ids = list.ids.filter(id => !leaving.has(id));
+
+  const candidates = [...added, ...(byDate ? changed : [])].filter(m => m.id && matches(m) && !list.ids.includes(m.id));
+  candidates.forEach(m => {
+    if (!byDate) {
+      // Other sorts: append new messages only
+      if (added.includes(m) && !list.nextLink) { list.ids.push(m.id!); inserted++; }
+      return;
+    }
+    const t = time(m);
+    const idx = list.ids.findIndex(id => desc ? time(state.messages[id]) < t : time(state.messages[id]) > t);
+    if (idx === -1) {
+      // Beyond the loaded window, it arrives with the next page
+      if (list.nextLink) return;
+      list.ids.push(m.id!);
+    } else {
+      list.ids.splice(idx, 0, m.id!);
+    }
+    inserted++;
+  });
+  return inserted - leaving.size;
+}
+
 const mailSlice = createSlice({
   name: "mail",
   initialState,
@@ -671,10 +910,21 @@ const mailSlice = createSlice({
       });
     },
     messagesRemoved(state, action: PayloadAction<string[]>) {
-      removeFromLists(state, action.payload);
-      action.payload.forEach(id => {
-        delete state.messages[id];
-        delete state.loadedDetails[id];
+      forgetMessages(state, action.payload);
+    },
+    messagesRestored(state, action: PayloadAction<{ messages: Message[]; lists: ListSnapshot[] }>) {
+      mergeMessages(state, action.payload.messages);
+      const restore = new Set(action.payload.messages.map(m => m.id));
+      action.payload.lists.forEach(snapshot => {
+        const list = state.lists[snapshot.key];
+        // A reload in between already shows the server state
+        if (!list || list.requestId !== snapshot.requestId) return;
+        const current = new Set(list.ids);
+        const before = new Set(snapshot.ids);
+        const kept = snapshot.ids.filter(id => current.has(id) || restore.has(id));
+        const restored = kept.filter(id => !current.has(id)).length;
+        list.ids = [...list.ids.filter(id => !before.has(id)), ...kept];
+        if (list.total !== undefined) list.total += restored;
       });
     },
     setSelection(state, action: PayloadAction<string[]>) {
@@ -731,6 +981,7 @@ const mailSlice = createSlice({
       if (state.compose) state.compose.minimized = action.payload;
     },
     composeClosed(state) {
+      if (state.compose) createdDrafts.delete(state.compose.key);
       state.compose = null;
     },
     clearNewArrivals(state) {
@@ -740,6 +991,12 @@ const mailSlice = createSlice({
     adjustUnreadCount(state, action: PayloadAction<{ folderId: string; delta: number }>) {
       state.folders = mapFolders(state.folders, f => f.id === action.payload.folderId ?
         { ...f, unreadItemCount: Math.max(0, (f.unreadItemCount || 0) + action.payload.delta) } : f);
+    },
+    deleteConfirmRequested(state, action: PayloadAction<DeleteRequest>) {
+      state.deleteConfirm = action.payload;
+    },
+    deleteConfirmClosed(state) {
+      state.deleteConfirm = null;
     },
   },
   extraReducers: builder => {
@@ -774,7 +1031,7 @@ const mailSlice = createSlice({
         const { folder, parentId } = action.payload;
         if (parentId) {
           state.folders = mapFolders(state.folders, f => f.id === parentId ?
-            { ...f, childFolderCount: (f.childFolderCount || 0) + 1, childFolders: sortFolders([...(f.childFolders || []), folder]) } : f);
+            { ...f, childFolderCount: (f.childFolderCount || 0) + 1, childFolders: sortFolders([...(f.childFolders || []).filter(c => c.id !== folder.id), folder]) } : f);
           if (!state.expandedFolders.includes(parentId)) {
             state.expandedFolders.push(parentId);
             saveExpanded(state.expandedFolders);
@@ -789,6 +1046,7 @@ const mailSlice = createSlice({
       .addCase(deleteFolder.fulfilled, (state, action) => {
         state.folders = removeFolder(state.folders, action.payload);
         delete state.lists[listKey(action.payload)];
+        delete state.sync[action.payload];
         state.favoriteFolders = state.favoriteFolders.filter(id => id !== action.payload);
       })
       .addCase(markFolderRead.fulfilled, (state, action) => {
@@ -799,7 +1057,7 @@ const mailSlice = createSlice({
       .addCase(emptyFolder.fulfilled, (state, action) => {
         const list = state.lists[listKey(action.payload)];
         if (list) {
-          list.ids.forEach(id => delete state.messages[id]);
+          forgetMessages(state, [...list.ids]);
           list.ids = [];
           list.total = 0;
           list.nextLink = undefined;
@@ -814,23 +1072,25 @@ const mailSlice = createSlice({
         if (action.meta.arg.sort) list.sort = action.meta.arg.sort;
         list.loading = true;
         list.error = undefined;
+        list.requestId = action.meta.requestId;
         state.lists[key] = list;
       })
       .addCase(loadMessages.fulfilled, (state, action) => {
         const list = state.lists[action.payload.key];
-        if (!list) return;
+        // Drop results of a superseded request
+        if (!list || list.requestId !== action.meta.requestId) return;
         mergeMessages(state, action.payload.messages);
         list.ids = action.payload.messages.map(m => m.id!).filter(Boolean);
         list.nextLink = action.payload.nextLink;
         list.total = action.payload.total;
         list.loading = false;
+        list.loadingMore = false;
         list.loaded = true;
-        list.deltaLink = undefined;
         state.selection = [];
       })
       .addCase(loadMessages.rejected, (state, action) => {
         const list = state.lists[listKey(action.meta.arg.folderId, action.meta.arg.search)];
-        if (list) {
+        if (list && list.requestId === action.meta.requestId) {
           list.loading = false;
           list.loaded = true;
           list.error = action.payload || action.error.message;
@@ -843,44 +1103,41 @@ const mailSlice = createSlice({
       .addCase(loadMoreMessages.fulfilled, (state, action) => {
         const list = state.lists[action.payload.key];
         if (!list) return;
+        list.loadingMore = false;
+        if (list.requestId !== action.payload.requestId) return;
         mergeMessages(state, action.payload.messages);
         const known = new Set(list.ids);
         action.payload.messages.forEach(m => { if (m.id && !known.has(m.id)) list.ids.push(m.id); });
         list.nextLink = action.payload.nextLink;
-        list.loadingMore = false;
       })
       .addCase(loadMoreMessages.rejected, (state, action) => {
         const list = state.lists[action.meta.arg];
         if (list) list.loadingMore = false;
       })
+      .addCase(syncFolder.pending, (state, action) => {
+        state.sync[action.meta.arg] = { ...state.sync[action.meta.arg], syncing: true };
+      })
+      .addCase(syncFolder.rejected, (state, action) => {
+        if (state.sync[action.meta.arg]) state.sync[action.meta.arg].syncing = false;
+      })
       .addCase(syncFolder.fulfilled, (state, action) => {
-        const { key, added, changed, removed, deltaLink, initial } = action.payload;
-        const list = state.lists[key];
-        if (!list) return;
-        list.deltaLink = deltaLink;
+        const { folderId, added, changed, removed, arrivals, deltaLink, initial } = action.payload;
+        state.sync[folderId] = { deltaLink, since: Date.now(), syncing: false };
         state.lastSync = Date.now();
         if (initial) return;
         mergeMessages(state, [...added, ...changed]);
-        if (removed.length) {
-          removeFromLists(state, removed);
-          removed.forEach(id => delete state.messages[id]);
+        if (removed.length) forgetMessages(state, removed);
+        const list = state.lists[listKey(folderId)];
+        if (list?.loaded && !list.loading) {
+          const delta = applySyncToList(state, list, added, changed);
+          if (list.total !== undefined) list.total = Math.max(0, list.total + delta);
         }
-        if (added.length) {
-          const sortDesc = list.sort.field === "receivedDateTime" && list.sort.direction === "desc";
-          const ids = added.map(m => m.id!).filter(id => !list.ids.includes(id));
-          list.ids = sortDesc ? [...ids, ...list.ids] : [...list.ids, ...ids];
-          if (list.total !== undefined) list.total += ids.length;
-          const folderId = action.payload.folderId;
-          const unreadNew = added.filter(m => !m.isRead && !m.isDraft).map(m => m.id!);
-          state.newArrivals.push(...unreadNew);
-          const folder = findFolder(state.folders, folderId);
-          if (folder && unreadNew.length) {
-            state.folders = mapFolders(state.folders, f => f.id === folderId ?
-              { ...f, unreadItemCount: (f.unreadItemCount || 0) + unreadNew.length, totalItemCount: (f.totalItemCount || 0) + ids.length } : f);
-          }
-        }
+        state.newArrivals.push(...arrivals.filter(id => !state.newArrivals.includes(id)));
       })
-      .addCase(loadMessageDetails.pending, (state, action) => { state.loadingDetails[action.meta.arg] = true; })
+      .addCase(loadMessageDetails.pending, (state, action) => {
+        state.loadingDetails[action.meta.arg] = true;
+        delete state.detailsError[action.meta.arg];
+      })
       .addCase(loadMessageDetails.fulfilled, (state, action) => {
         delete state.loadingDetails[action.meta.arg];
         if (action.payload.id) {
@@ -888,7 +1145,10 @@ const mailSlice = createSlice({
           state.loadedDetails[action.payload.id] = true;
         }
       })
-      .addCase(loadMessageDetails.rejected, (state, action) => { delete state.loadingDetails[action.meta.arg]; })
+      .addCase(loadMessageDetails.rejected, (state, action) => {
+        delete state.loadingDetails[action.meta.arg];
+        state.detailsError[action.meta.arg] = action.payload || action.error.message || "Error";
+      })
       .addCase(loadCategories.fulfilled, (state, action) => {
         state.categories = action.payload;
         state.categoriesLoaded = true;
@@ -902,25 +1162,33 @@ const mailSlice = createSlice({
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter(c => c.id !== action.payload);
       })
-      .addCase(startCompose.pending, state => {
-        state.compose = { key: Date.now(), mode: "new", status: "creating", initial: emptyDraft(), minimized: false };
+      .addCase(createComposeState.pending, (state, action) => {
+        state.compose = { key: Date.now(), mode: action.meta.arg.mode, status: "creating", initial: emptyDraft(), minimized: false, requestId: action.meta.requestId };
       })
-      .addCase(startCompose.fulfilled, (state, action) => {
-        state.compose = action.payload;
+      .addCase(createComposeState.fulfilled, (state, action) => {
+        // Ignore the result when the compose was closed or replaced meanwhile
+        if (state.compose?.requestId !== action.meta.requestId) return;
+        state.compose = { ...action.payload, requestId: action.meta.requestId };
       })
-      .addCase(startCompose.rejected, state => {
-        state.compose = null;
+      .addCase(createComposeState.rejected, (state, action) => {
+        if (state.compose?.requestId === action.meta.requestId) state.compose = null;
       })
-      .addCase(saveDraft.pending, state => { if (state.compose) state.compose.status = "saving"; })
+      .addCase(saveDraft.pending, state => {
+        // Saving as part of sending must keep the compose busy
+        if (state.compose && state.compose.status !== "sending") state.compose.status = "saving";
+      })
       .addCase(saveDraft.fulfilled, (state, action) => {
         if (state.compose && state.compose.key === action.payload.key) {
           state.compose.draftId = action.payload.draftId;
-          state.compose.status = "ready";
+          if (state.compose.status === "saving") state.compose.status = "ready";
           state.compose.lastSaved = Date.now();
         }
       })
       .addCase(saveDraft.rejected, (state, action) => {
-        if (state.compose) { state.compose.status = "ready"; state.compose.error = action.payload; }
+        if (state.compose) {
+          if (state.compose.status === "saving") state.compose.status = "ready";
+          state.compose.error = action.payload;
+        }
       })
       .addCase(addDraftAttachments.fulfilled, (state, action) => {
         if (state.compose && state.compose.key === action.payload.key) {
@@ -946,9 +1214,9 @@ const mailSlice = createSlice({
 });
 
 export const {
-  messagesReceived, messagesPatched, messagesRemoved, setSelection, toggleSelection, clearSelection,
+  messagesReceived, messagesPatched, messagesRemoved, messagesRestored, setSelection, toggleSelection, clearSelection,
   setListFilter, setListSort, clearSearchLists, togglePinned, toggleFolderExpanded, toggleFavoriteFolder,
-  updatePrefs, composeMinimized, composeClosed, clearNewArrivals, adjustUnreadCount,
+  updatePrefs, composeMinimized, composeClosed, clearNewArrivals, adjustUnreadCount, deleteConfirmRequested, deleteConfirmClosed,
 } = mailSlice.actions;
 
 export default mailSlice.reducer;

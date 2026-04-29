@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Chip, CircularProgress, Collapse, IconButton, Link, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, Collapse, IconButton, Link, Tooltip, Typography } from "@mui/material";
 import { ArrowBack, ExpandLess, ExpandMore, Flag, Forward, MoreHoriz, PriorityHigh, Reply, ReplyAll } from "@mui/icons-material";
 import { MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import MeetingCard from "./MeetingCard";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { loadMessageDetails } from "../mailSlice";
 import { getAttachment, getAttachments } from "../../../api/messages";
+import { getAttachmentRaw } from "../attachments";
 import { formatFullDate, formatRecipient, isMeetingMessage, recipientName, senderAddress, senderName } from "../utils";
 import { categoryColor } from "../categories";
 
@@ -45,27 +46,36 @@ const MessageView = ({ message, onReply, onReplyAll, onForward, onMore, onBack, 
   const dispatch = useTypeDispatch();
   const loaded = useTypeSelector(state => state.mail.loadedDetails[message.id!]);
   const loading = useTypeSelector(state => state.mail.loadingDetails[message.id!]);
+  const error = useTypeSelector(state => state.mail.detailsError[message.id!]);
   const categories = useTypeSelector(state => state.mail.categories);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [showDetails, setShowDetails] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!loaded) dispatch(loadMessageDetails(message.id!));
+    if (!loaded && !error) dispatch(loadMessageDetails(message.id!));
     setShowDetails(false);
     scrollRef.current?.scrollTo({ top: 0 });
   }, [message.id, loaded]);
 
-  // Attachments: inline ones are needed with content to resolve cid: images
+  // Metadata first, content only for inline cid: attachments
   useEffect(() => {
     let cancelled = false;
     setAttachments([]);
-    if (!message.hasAttachments && !/cid:/i.test(message.body?.content || "")) return;
-    if (!loaded) return;
     const needsInline = /cid:/i.test(message.body?.content || "");
-    getAttachments(message.id!, needsInline)
-      .then(list => { if (!cancelled) setAttachments(list); })
-      .catch(() => undefined);
+    if (!message.hasAttachments && !needsInline) return;
+    if (!loaded) return;
+    (async () => {
+      const list = await getAttachments(message.id!);
+      if (cancelled) return;
+      setAttachments(list);
+      if (!needsInline) return;
+      const inline = list.filter(a => a.isInline || (a as FileAttachment).contentId);
+      const withContent = await Promise.all(inline.map(a => getAttachment(message.id!, a.id!).catch(() => a)));
+      if (cancelled) return;
+      const byId = new Map(withContent.map(a => [a.id, a]));
+      setAttachments(list.map(a => byId.get(a.id) || a));
+    })().catch(() => undefined);
     return () => { cancelled = true; };
   }, [message.id, loaded]);
 
@@ -77,13 +87,15 @@ const MessageView = ({ message, onReply, onReplyAll, onForward, onMore, onBack, 
     return getAttachment(message.id!, attachment.id!);
   };
 
+  const fetchRaw = (attachment: Attachment) => getAttachmentRaw(message.id!, attachment.id!);
+
   const name = senderName(message);
   const address = senderAddress(message);
   const date = formatFullDate(message.receivedDateTime || message.sentDateTime);
   const flagged = message.flag?.flagStatus === "flagged";
 
   return (
-    <Box ref={scrollRef} sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }} aria-label={t("Reading pane")}>
+    <Box ref={scrollRef} component="section" role="region" sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }} aria-label={t("Reading pane")}>
       <Box sx={{ px: { xs: 2, md: 3 }, pt: 2 }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
           {onBack && <IconButton onClick={onBack} aria-label={t("Back")} sx={{ ml: -1 }}><ArrowBack /></IconButton>}
@@ -142,9 +154,13 @@ const MessageView = ({ message, onReply, onReplyAll, onForward, onMore, onBack, 
 
       <Box sx={{ px: { xs: 2, md: 3 }, py: 2, flex: 1 }}>
         {isMeetingMessage(message) && <MeetingCard message={message as EventMessage} />}
-        {attachments.length > 0 && <Box sx={{ mb: 2 }}><AttachmentList attachments={attachments} fetchContent={fetchContent} /></Box>}
+        {attachments.length > 0 && <Box sx={{ mb: 2 }}><AttachmentList attachments={attachments} fetchContent={fetchContent} fetchRaw={fetchRaw} /></Box>}
         {!loaded && loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress size={28} /></Box>
+        ) : !loaded && error ? (
+          <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => dispatch(loadMessageDetails(message.id!))}>{t("Try again")}</Button>}>
+            {t("The message could not be loaded.")} {error}
+          </Alert>
         ) : (
           <MessageBody message={message} inlineAttachments={inlineAttachments} onHtml={onBodyHtml} />
         )}

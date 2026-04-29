@@ -2,18 +2,20 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { Box, Button, Divider, IconButton, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
   Add, ArchiveOutlined, ChevronRight, CreateNewFolderOutlined, DeleteOutline, DeleteSweepOutlined, DraftsOutlined,
   DriveFileRenameOutline, ExpandMore, FolderOutlined, InboxOutlined, MarkEmailReadOutlined, OutboxOutlined,
   ReportGmailerrorredOutlined, SendOutlined, StarBorder, Star,
 } from "@mui/icons-material";
 import { KeyboardEvent, MouseEvent, useState } from "react";
+import { useStore } from "react-redux";
 import { useTranslation } from "react-i18next";
 import type { ExtendedMailFolder, WellKnownFolderName } from "../../../types/messages";
-import { useTypeDispatch, useTypeSelector } from "../../../store";
+import { RootState, useTypeDispatch, useTypeSelector } from "../../../store";
 import {
   createFolder, deleteFolder, emptyFolder, loadChildFolders, markFolderRead, renameFolder, toggleFavoriteFolder,
-  toggleFolderExpanded, moveMessages,
+  toggleFolderExpanded, moveMessages, findWellKnownFolder,
 } from "../mailSlice";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
@@ -61,11 +63,17 @@ type MenuState = { anchor: { top: number; left: number }; folder: ExtendedMailFo
 const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
-  const { folders, expandedFolders, favoriteFolders, foldersLoaded } = useTypeSelector(state => state.mail);
+  const store = useStore<RootState>();
+  const folders = useTypeSelector(state => state.mail.folders);
+  const expandedFolders = useTypeSelector(state => state.mail.expandedFolders);
+  const favoriteFolders = useTypeSelector(state => state.mail.favoriteFolders);
+  const foldersLoaded = useTypeSelector(state => state.mail.foldersLoaded);
   const [menu, setMenu] = useState<MenuState>(null);
   const [editing, setEditing] = useState<{ type: "rename" | "create"; folderId?: string; parentId?: string; value: string } | null>(null);
   const [confirm, setConfirm] = useState<{ type: "delete" | "empty"; folder: ExtendedMailFolder } | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  // roving tabindex
+  const [focusKey, setFocusKey] = useState<string | null>(null);
 
   const handleContextMenu = (folder: ExtendedMailFolder) => (e: MouseEvent) => {
     e.preventDefault();
@@ -75,12 +83,58 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
 
   const closeMenu = () => setMenu(null);
 
+  // Graph doesn't always expand children
+  const ensureChildren = (folder: ExtendedMailFolder) => {
+    if (folder.childFolderCount && !folder.childFolders?.length) dispatch(loadChildFolders(folder.id!));
+  };
+
+  const toggle = (folder: ExtendedMailFolder) => {
+    if (!expandedFolders.includes(folder.id!)) ensureChildren(folder);
+    dispatch(toggleFolderExpanded(folder.id!));
+  };
+
   const handleToggle = (folder: ExtendedMailFolder) => (e: MouseEvent) => {
     e.stopPropagation();
-    if (!expandedFolders.includes(folder.id!) && folder.childFolderCount && !folder.childFolders?.length) {
-      dispatch(loadChildFolders(folder.id!));
+    toggle(folder);
+  };
+
+  // WAI-ARIA tree pattern, items are found in DOM order
+  const handleTreeKey = (folder: ExtendedMailFolder, itemKey: string, hasChildren: boolean, expanded: boolean) => (e: KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const tree = e.currentTarget.closest("[role='tree']");
+    const items = Array.from(tree?.querySelectorAll<HTMLElement>("[role='treeitem']") || []);
+    const index = items.indexOf(e.currentTarget);
+    const focusItem = (el?: HTMLElement | null) => { if (el) el.focus(); };
+    switch (e.key) {
+    case "ArrowDown": focusItem(items[index + 1]); break;
+    case "ArrowUp": focusItem(items[index - 1]); break;
+    case "Home": focusItem(items[0]); break;
+    case "End": focusItem(items[items.length - 1]); break;
+    case "ArrowRight":
+      if (hasChildren && !expanded) toggle(folder);
+      else if (hasChildren) focusItem(items[index + 1]);
+      break;
+    case "ArrowLeft":
+      if (hasChildren && expanded) toggle(folder);
+      else focusItem(e.currentTarget.parentElement?.closest<HTMLElement>("[role='treeitem']"));
+      break;
+    case "Enter":
+    case " ":
+      onSelect(folder);
+      break;
+    case "ContextMenu":
+    case "F10": {
+      if (e.key === "F10" && !e.shiftKey) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      setMenu({ anchor: { top: rect.top + 16, left: rect.left + 48 }, folder });
+      break;
     }
-    dispatch(toggleFolderExpanded(folder.id!));
+    default:
+      return;
+    }
+    setFocusKey(itemKey);
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const commitEdit = () => {
@@ -105,18 +159,40 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
   const menuFolder = menu?.folder;
   const isWellKnown = menuFolder && menuFolder.wellKnownName !== "custom";
 
+  const isMessageDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("application/x-message-ids");
+
   const handleDrop = (folder: ExtendedMailFolder) => (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(null);
     const data = e.dataTransfer.getData("application/x-message-ids");
     if (!data) return;
     try {
-      const ids: string[] = JSON.parse(data);
+      const messages = store.getState().mail.messages;
+      // Messages dropped on their own folder stay where they are
+      const ids = (JSON.parse(data) as string[]).filter(id => messages[id]?.parentFolderId !== folder.id);
       if (ids.length) dispatch(moveMessages({ ids, destinationId: folder.id! }));
     } catch { /* ignore */ }
   };
 
-  const renderFolder = (folder: ExtendedMailFolder, depth: number) => {
+  const handleDeleteFolder = async (folder: ExtendedMailFolder) => {
+    const result = await dispatch(deleteFolder(folder.id!));
+    // The open folder is gone: show the inbox instead of an empty view
+    const inbox = findWellKnownFolder(store.getState().mail.folders, "inbox");
+    if (deleteFolder.fulfilled.match(result) && folder.id === selectedId && inbox) onSelect(inbox);
+  };
+
+  // Keeps exactly one tree item in the tab order
+  const visibleKeys = new Set<string>();
+  const collect = (list: ExtendedMailFolder[], prefix: string) => list.forEach(f => {
+    visibleKeys.add(prefix + f.id);
+    if (expandedFolders.includes(f.id!)) collect(f.childFolders || [], prefix);
+  });
+  collect(folders, "tree:");
+  favoriteFolders.forEach(id => visibleKeys.add("fav:" + id));
+  const tabKey = focusKey && visibleKeys.has(focusKey) ? focusKey :
+    visibleKeys.has("tree:" + selectedId) ? "tree:" + selectedId : "tree:" + (folders[0]?.id || "");
+
+  const renderFolder = (folder: ExtendedMailFolder, depth: number, prefix: string) => {
     const Icon = FOLDER_ICONS[folder.wellKnownName] || FolderOutlined;
     const expanded = expandedFolders.includes(folder.id!);
     const hasChildren = Boolean(folder.childFolderCount) || Boolean(folder.childFolders?.length);
@@ -124,16 +200,30 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
     const count = folder.wellKnownName === "drafts" || folder.wellKnownName === "junkemail" || folder.wellKnownName === "outbox" ?
       folder.totalItemCount : folder.unreadItemCount;
     const isEditing = editing?.type === "rename" && editing.folderId === folder.id;
+    const itemKey = prefix + folder.id;
+    const tabStop = itemKey === tabKey;
 
     return (
-      <Box key={folder.id}>
+      <Box
+        key={itemKey}
+        role="treeitem"
+        aria-selected={selected}
+        aria-expanded={hasChildren ? expanded : undefined}
+        aria-label={folderLabel(folder, t) + (count ? ` (${count})` : "")}
+        tabIndex={tabStop ? 0 : -1}
+        onFocus={e => { if (e.target === e.currentTarget) setFocusKey(itemKey); }}
+        onKeyDown={handleTreeKey(folder, itemKey, hasChildren, expanded)}
+        sx={{ outline: "none", "&:focus-visible > .folder-row": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 } }}
+      >
         <Box
-          role="treeitem"
-          aria-selected={selected}
-          aria-expanded={hasChildren ? expanded : undefined}
+          className="folder-row"
           onClick={() => onSelect(folder)}
           onContextMenu={handleContextMenu(folder)}
-          onDragOver={e => { e.preventDefault(); if (dragOver !== folder.id) setDragOver(folder.id!); }}
+          onDragOver={e => {
+            if (!isMessageDrag(e)) return;
+            e.preventDefault();
+            if (dragOver !== folder.id) setDragOver(folder.id!);
+          }}
           onDragLeave={() => setDragOver(null)}
           onDrop={handleDrop(folder)}
           sx={{
@@ -147,7 +237,7 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
             cursor: "pointer",
             userSelect: "none",
             color: selected ? "primary.main" : "text.primary",
-            bgcolor: selected ? (theme => theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : dragOver === folder.id ? "action.selected" : "transparent",
+            bgcolor: selected ? (theme => theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : alpha(theme.palette.primary.main, 0.1)) : dragOver === folder.id ? "action.selected" : "transparent",
             outline: dragOver === folder.id ? "1px dashed" : "none",
             outlineColor: "primary.main",
             "&:hover": { bgcolor: selected ? undefined : "action.hover" },
@@ -199,7 +289,9 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
             />
           </Box>
         )}
-        {expanded && folder.childFolders?.map(child => renderFolder(child, depth + 1))}
+        {expanded && Boolean(folder.childFolders?.length) && (
+          <Box role="group">{folder.childFolders!.map(child => renderFolder(child, depth + 1, prefix))}</Box>
+        )}
       </Box>
     );
   };
@@ -209,15 +301,19 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
     .filter((f): f is ExtendedMailFolder => Boolean(f));
 
   return (
-    <Box role="tree" aria-label={t("Folders")} sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <Box sx={{ flex: 1, overflowY: "auto", py: 1 }}>
         {favorites.length > 0 && <>
-          <Typography variant="overline" sx={{ px: 2, color: "text.secondary", display: "block", lineHeight: 2 }}>{t("Favorites")}</Typography>
-          {favorites.map(folder => renderFolder(folder, 0))}
+          <Typography id="mail-favorites-label" variant="overline" sx={{ px: 2, color: "text.secondary", display: "block", lineHeight: 2 }}>{t("Favorites")}</Typography>
+          <Box role="tree" aria-labelledby="mail-favorites-label">
+            {favorites.map(folder => renderFolder(folder, 0, "fav:"))}
+          </Box>
           <Divider sx={{ my: 1, mx: 2 }} />
         </>}
-        <Typography variant="overline" sx={{ px: 2, color: "text.secondary", display: "block", lineHeight: 2 }}>{t("Folders")}</Typography>
-        {folders.map(folder => renderFolder(folder, 0))}
+        <Typography id="mail-folders-label" variant="overline" sx={{ px: 2, color: "text.secondary", display: "block", lineHeight: 2 }}>{t("Folders")}</Typography>
+        <Box role="tree" aria-labelledby="mail-folders-label">
+          {folders.map(folder => renderFolder(folder, 0, "tree:"))}
+        </Box>
         {editing?.type === "create" && !editing.parentId && (
           <Box sx={{ display: "flex", alignItems: "center", height: 32, pl: 0.5, pr: 1, mx: 1 }}>
             <Box sx={{ width: 20, mr: 0.25 }} />
@@ -247,7 +343,11 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
       </Button>
 
       <Menu open={Boolean(menu)} onClose={closeMenu} anchorReference="anchorPosition" anchorPosition={menu?.anchor}>
-        <MenuItem onClick={() => { closeMenu(); setEditing({ type: "create", parentId: menuFolder?.id, value: "" }); if (menuFolder && !expandedFolders.includes(menuFolder.id!)) dispatch(toggleFolderExpanded(menuFolder.id!)); }}>
+        <MenuItem onClick={() => {
+          closeMenu();
+          setEditing({ type: "create", parentId: menuFolder?.id, value: "" });
+          if (menuFolder && !expandedFolders.includes(menuFolder.id!)) toggle(menuFolder);
+        }}>
           <ListItemIcon><CreateNewFolderOutlined fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Create new subfolder")}</ListItemText>
         </MenuItem>
@@ -285,7 +385,7 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
         destructive
         onConfirm={() => {
           if (!confirm) return;
-          if (confirm.type === "delete") dispatch(deleteFolder(confirm.folder.id!));
+          if (confirm.type === "delete") handleDeleteFolder(confirm.folder);
           else dispatch(emptyFolder(confirm.folder.id!));
         }}
         onClose={() => setConfirm(null)}

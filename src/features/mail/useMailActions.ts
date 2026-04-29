@@ -2,10 +2,11 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { useCallback, useMemo } from "react";
+import { shallowEqual } from "react-redux";
 import type { Message, OutlookCategory } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../store";
 import {
-  copyMessages, createFolder, deleteMessages, moveMessages, startCompose, togglePinned, updateMessages, findWellKnownFolder,
+  copyMessages, createFolder, moveMessages, requestDelete, startCompose, togglePinned, updateMessages, findWellKnownFolder,
 } from "./mailSlice";
 import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { getMessageSource } from "../../api/messages";
@@ -15,9 +16,8 @@ import { buildPrintDocument, printHtml } from "./utils";
 export default function useMailActions(ids: string[]) {
   const dispatch = useTypeDispatch();
   const folders = useTypeSelector(state => state.mail.folders);
-  const messages = useTypeSelector(state => state.mail.messages);
-
-  const targets = useMemo(() => ids.map(id => messages[id]).filter(Boolean) as Message[], [ids, messages]);
+  // Select only the targets, the whole map changes on every message update
+  const targets = useTypeSelector(state => ids.map(id => state.mail.messages[id]).filter(Boolean) as Message[], shallowEqual);
   const first = targets[0];
 
   const allRead = targets.length > 0 && targets.every(m => m.isRead);
@@ -30,12 +30,13 @@ export default function useMailActions(ids: string[]) {
   const wellKnown = (name: Parameters<typeof findWellKnownFolder>[1]) => findWellKnownFolder(folders, name)?.id;
 
   const remove = useCallback((permanent = false) => {
-    if (ids.length) dispatch(deleteMessages({ ids, permanent }));
+    if (ids.length) dispatch(requestDelete(ids, permanent));
   }, [dispatch, ids]);
 
   const archive = useCallback(() => {
     const archiveId = wellKnown("archive");
     if (!archiveId) {
+      // t("This mailbox has no archive folder")
       dispatch(pushAlertStack({ message: "This mailbox has no archive folder", severity: "warning" }));
       return;
     }

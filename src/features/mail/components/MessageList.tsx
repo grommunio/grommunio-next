@@ -3,7 +3,7 @@
 
 import { Box, Button, Checkbox, CircularProgress, Divider, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Skeleton, Tab, Tabs, Tooltip, Typography } from "@mui/material";
 import { ArrowDownward, ArrowUpward, Check, FilterList, Refresh, SwapVert, InboxOutlined, SearchOff } from "@mui/icons-material";
-import { Fragment, MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Message } from "microsoft-graph";
 import type { ExtendedMailFolder } from "../../../types/messages";
@@ -23,10 +23,11 @@ type MessageListProps = {
   isSearch: boolean;
   focusedTab?: "focused" | "other";
   onFocusedTab?: (tab: "focused" | "other") => void;
-  onSelect: (message: Message, e: MouseEvent) => void;
+  onSelect: (message: Message, e: MouseEvent | KeyboardEvent) => void;
+  onNavigate: (message: Message) => void;
   onCheck: (message: Message) => void;
   onCheckAll: (checked: boolean) => void;
-  onContextMenu: (message: Message, e: MouseEvent) => void;
+  onContextMenu: (message: Message, position: { top: number; left: number }) => void;
   onLoadMore: () => void;
   onRefresh: () => void;
   onFilter: (filter: MailFilter) => void;
@@ -68,7 +69,7 @@ const SORTS: Array<{ value: MailSortField; label: string }> = [
 
 const MessageList = ({
   folder, list, messages, selectedId, selection, pinned, isSearch, focusedTab, onFocusedTab,
-  onSelect, onCheck, onCheckAll, onContextMenu, onLoadMore, onRefresh, onFilter, onSort,
+  onSelect, onNavigate, onCheck, onCheckAll, onContextMenu, onLoadMore, onRefresh, onFilter, onSort,
   onDelete, onArchive, onToggleFlag, onToggleRead, onTogglePin, onDragStart,
 }: MessageListProps) => {
   const { t } = useTranslation();
@@ -86,16 +87,77 @@ const MessageList = ({
   const showRecipients = folder?.wellKnownName === "sentitems" || folder?.wellKnownName === "drafts" || folder?.wellKnownName === "outbox";
   const pinnedSet = useMemo(() => new Set(pinned), [pinned]);
 
-  // Infinite scrolling
+  // Infinite scroll. Re-observe after each load, the sentinel may never leave the viewport
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    if (!sentinel || !list?.loaded || list.loading || list.loadingMore || !list.nextLink) return;
     const observer = new IntersectionObserver(entries => {
       if (entries[0]?.isIntersecting) onLoadMore();
     }, { root: scrollRef.current, rootMargin: "200px" });
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [onLoadMore, list?.key]);
+  }, [onLoadMore, list?.key, list?.loaded, list?.loading, list?.loadingMore, list?.nextLink, messages.length]);
+
+  // Keep keyboard focus on the open message when it changes while the list has focus
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root || !selectedId || !root.contains(document.activeElement)) return;
+    const option = Array.from(root.querySelectorAll<HTMLElement>("[role='option']")).find(el => el.dataset.messageId === selectedId);
+    if (option && document.activeElement !== option && !option.contains(document.activeElement)) option.focus();
+  }, [selectedId]);
+
+  const handleItemContextMenu = useCallback((message: Message, e: MouseEvent) => {
+    e.preventDefault();
+    // The context menu key reports no pointer position
+    if (e.clientX === 0 && e.clientY === 0) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      onContextMenu(message, { top: rect.top + rect.height / 2, left: rect.left + 48 });
+    } else {
+      onContextMenu(message, { top: e.clientY, left: e.clientX });
+    }
+  }, [onContextMenu]);
+
+  // Arrows/Home/End move, Enter opens, Space checks, Shift+F10 menu
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.getAttribute("role") !== "option" || messages.length === 0) return;
+    const index = messages.findIndex(m => m.id === target.dataset.messageId);
+    const current = messages[index];
+    let next: Message | undefined;
+    switch (e.key) {
+    case "ArrowDown": next = messages[Math.min(messages.length - 1, index + 1)]; break;
+    case "ArrowUp": next = messages[Math.max(0, index - 1)]; break;
+    case "Home": next = messages[0]; break;
+    case "End": next = messages[messages.length - 1]; break;
+    case "Enter":
+      if (current) onSelect(current, e);
+      e.preventDefault();
+      return;
+    case " ":
+      if (current) onCheck(current);
+      e.preventDefault();
+      return;
+    case "ContextMenu":
+    case "F10":
+      if (e.key === "F10" && !e.shiftKey) return;
+      if (current) {
+        const rect = target.getBoundingClientRect();
+        onContextMenu(current, { top: rect.top + rect.height / 2, left: rect.left + 48 });
+      }
+      e.preventDefault();
+      return;
+    default:
+      return;
+    }
+    e.preventDefault();
+    if (next && next !== current) {
+      onNavigate(next);
+      root().querySelector<HTMLElement>(`[data-message-id="${CSS.escape(next.id!)}"]`)?.focus();
+    }
+  };
+  const root = () => scrollRef.current as HTMLDivElement;
+  // Roving tab stop: the open message, otherwise the first one
+  const tabStopId = selectedId && messages.some(m => m.id === selectedId) ? selectedId : messages[0]?.id;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
@@ -107,7 +169,7 @@ const MessageList = ({
   const loading = list?.loading && messages.length === 0;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }} aria-label={t("Message list")}>
+    <Box component="section" role="region" sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }} aria-label={t("Message list")}>
       <Box sx={{ display: "flex", alignItems: "center", px: 1, minHeight: 44, borderBottom: 1, borderColor: "divider", gap: 0.5 }}>
         <Checkbox
           size="small"
@@ -136,7 +198,7 @@ const MessageList = ({
         {!isSearch && <>
           <Tooltip title={t("Filter")}>
             <Button size="small" color={filter === "all" ? "inherit" : "primary"} startIcon={<FilterList />} onClick={e => setFilterAnchor(e.currentTarget)} sx={{ minWidth: 0, px: 1, textTransform: "none" }}>
-              {t(FILTERS.find(f => f.value === filter)?.label || "Filter")}
+              {t(FILTERS.find(f => f.value === filter)?.label || (filter === "focused" || filter === "other" ? "All" : "Filter"))}
             </Button>
           </Tooltip>
           <Tooltip title={t("Sort")}>
@@ -145,7 +207,7 @@ const MessageList = ({
         </>}
       </Box>
 
-      <Box ref={scrollRef} role="listbox" aria-multiselectable sx={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+      <Box ref={scrollRef} role="listbox" aria-multiselectable aria-label={t("Messages")} onKeyDown={handleKeyDown} sx={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
         {loading && Array.from({ length: 8 }).map((_, i) => (
           <Box key={i} sx={{ display: "flex", gap: 1, p: 1, borderBottom: 1, borderColor: "divider" }}>
             <Skeleton variant="circular" width={32} height={32} />
@@ -175,13 +237,14 @@ const MessageList = ({
           return (
             <Fragment key={message.id}>
               {header && (
-                <Typography variant="caption" sx={{ display: "block", px: 1.5, py: 0.5, fontWeight: 600, color: "text.secondary", bgcolor: "background.default", position: "sticky", top: 0, zIndex: 1 }}>
+                <Typography variant="caption" role="presentation" sx={{ display: "block", px: 1.5, py: 0.5, fontWeight: 600, color: "text.secondary", bgcolor: "background.default", position: "sticky", top: 0, zIndex: 1 }}>
                   {t(header)}
                 </Typography>
               )}
               <MessageListItem
                 message={message}
                 selected={message.id === selectedId}
+                tabStop={message.id === tabStopId}
                 checked={selection.includes(message.id!)}
                 selectionMode={selectionMode}
                 pinned={isPinned}
@@ -192,7 +255,7 @@ const MessageList = ({
                 categories={categories}
                 onClick={onSelect}
                 onCheck={onCheck}
-                onContextMenu={onContextMenu}
+                onContextMenu={handleItemContextMenu}
                 onDelete={onDelete}
                 onArchive={onArchive}
                 onToggleFlag={onToggleFlag}

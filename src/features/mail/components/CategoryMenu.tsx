@@ -112,7 +112,7 @@ const CategoryMenu = ({ anchorEl, anchorPosition, open, onClose, applied, onTogg
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 3 }}>
           {CATEGORY_PRESETS.map(p => (
             <Tooltip key={p.preset} title={t(p.label)}>
-              <Box component="button" type="button" onClick={() => setNewColor(p.preset)} aria-label={p.label} aria-pressed={newColor === p.preset}
+              <Box component="button" type="button" onClick={() => setNewColor(p.preset)} aria-label={t(p.label)} aria-pressed={newColor === p.preset}
                 sx={{ width: 22, height: 22, borderRadius: "50%", bgcolor: p.color, border: "2px solid", borderColor: newColor === p.preset ? "text.primary" : "transparent", cursor: "pointer", p: 0 }} />
             </Tooltip>
           ))}
@@ -130,6 +130,8 @@ const CategoryMenu = ({ anchorEl, anchorPosition, open, onClose, applied, onTogg
               sx={{ width: 72 }}
               inputProps={{ "aria-label": t("Color") }}
             >
+              {/* Graph reports uncoloured categories as "none" */}
+              <MenuItem value="none"><ColorDot color={presetColor("none")} /><Box component="span" sx={{ ml: 1 }}>{t("No color")}</Box></MenuItem>
               {CATEGORY_PRESETS.map(p => (
                 <MenuItem key={p.preset} value={p.preset}><ColorDot color={p.color} /><Box component="span" sx={{ ml: 1 }}>{t(p.label)}</Box></MenuItem>
               ))}
