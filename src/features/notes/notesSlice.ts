@@ -83,9 +83,9 @@ const notesSlice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(loadNotes.pending, state => { state.loading = true; })
+      .addCase(loadNotes.pending, state => { state.loading = true; state.error = undefined; })
       .addCase(loadNotes.fulfilled, (state, action) => { state.notes = action.payload; state.loaded = true; state.loading = false; })
-      .addCase(loadNotes.rejected, (state, action) => { state.loading = false; state.loaded = true; state.error = action.payload || action.error.message; })
+      .addCase(loadNotes.rejected, (state, action) => { state.loading = false; state.error = action.payload || action.error.message || "Error"; })
       .addCase(createNote.fulfilled, (state, action) => { state.notes.unshift(action.payload); })
       .addCase(updateNote.fulfilled, (state, action) => {
         state.notes = state.notes.map(n => n.id === action.payload.id ? { ...n, ...action.payload } : n);

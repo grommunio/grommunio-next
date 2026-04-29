@@ -3,7 +3,7 @@
 
 import type { Contact, PhysicalAddress } from "microsoft-graph";
 
-const esc = (v?: string | null) => (v || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/[,;]/g, m => "\\" + m);
+const esc = (v?: string | null) => (v || "").replace(/\r\n?/g, "\n").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/[,;]/g, m => "\\" + m);
 
 function adr(address?: PhysicalAddress | null): string {
   if (!address) return "";
@@ -63,7 +63,7 @@ const CSV_COLUMNS: Array<[string, (c: Contact) => string]> = [
   ["Notes", c => c.personalNotes || ""],
 ];
 
-const csvCell = (v: string) => /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+const csvCell = (v: string) => /[",;\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 
 export function contactsToCsv(contacts: Contact[]): string {
   const header = CSV_COLUMNS.map(([name]) => csvCell(name)).join(",");
@@ -71,7 +71,20 @@ export function contactsToCsv(contacts: Contact[]): string {
   return [header, ...rows].join("\r\n") + "\r\n";
 }
 
+// ',' or ';', counted outside quotes in the header
+function detectDelimiter(text: string): "," | ";" {
+  let commas = 0, semis = 0, quoted = false;
+  for (const ch of text) {
+    if (ch === '"') quoted = !quoted;
+    else if (!quoted && (ch === "\n" || ch === "\r")) break;
+    else if (!quoted && ch === ",") commas++;
+    else if (!quoted && ch === ";") semis++;
+  }
+  return semis > commas ? ";" : ",";
+}
+
 export function parseCsv(text: string): string[][] {
+  const delimiter = detectDelimiter(text);
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";
@@ -83,7 +96,7 @@ export function parseCsv(text: string): string[][] {
         if (text[i + 1] === '"') { cell += '"'; i++; } else quoted = false;
       } else cell += ch;
     } else if (ch === '"') quoted = true;
-    else if (ch === "," || ch === ";") { row.push(cell); cell = ""; }
+    else if (ch === delimiter) { row.push(cell); cell = ""; }
     else if (ch === "\n" || ch === "\r") {
       if (ch === "\r" && text[i + 1] === "\n") i++;
       row.push(cell); cell = "";

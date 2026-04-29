@@ -7,13 +7,13 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { KeyboardEvent, useEffect, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ChecklistItem, PatternedRecurrence, TodoTask } from "microsoft-graph";
+import type { ChecklistItem, TodoTask } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { addChecklistItem, deleteChecklistItem, deleteTask, updateChecklistItem, updateTask } from "../tasksSlice";
-import { dayjs } from "../../calendar/dates";
-import { browserTimeZone } from "../../calendar/dates";
+import { dayjs, graphDateToDate } from "../../calendar/dates";
+import { buildRecurrence, dueDateValue, formatDateOnly, repeatKey, RepeatKey, taskCompletedDate, taskDueDate } from "../taskDates";
 import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
@@ -31,33 +31,26 @@ type TaskDetailProps = {
 // t("Weekly")
 // t("Monthly")
 // t("Yearly")
-const REPEAT_OPTIONS: Array<{ key: string; label: string; recurrence: PatternedRecurrence | null }> = [
-  { key: "none", label: "Never", recurrence: null },
-  { key: "daily", label: "Daily", recurrence: { pattern: { type: "daily", interval: 1 }, range: { type: "noEnd" } } },
-  { key: "weekdays", label: "Weekdays", recurrence: { pattern: { type: "weekly", interval: 1, daysOfWeek: ["monday", "tuesday", "wednesday", "thursday", "friday"] }, range: { type: "noEnd" } } },
-  { key: "weekly", label: "Weekly", recurrence: { pattern: { type: "weekly", interval: 1 }, range: { type: "noEnd" } } },
-  { key: "monthly", label: "Monthly", recurrence: { pattern: { type: "absoluteMonthly", interval: 1 }, range: { type: "noEnd" } } },
-  { key: "yearly", label: "Yearly", recurrence: { pattern: { type: "absoluteYearly", interval: 1 }, range: { type: "noEnd" } } },
+const REPEAT_OPTIONS: Array<{ key: RepeatKey; label: string }> = [
+  { key: "none", label: "Never" },
+  { key: "daily", label: "Daily" },
+  { key: "weekdays", label: "Weekdays" },
+  { key: "weekly", label: "Weekly" },
+  { key: "monthly", label: "Monthly" },
+  { key: "yearly", label: "Yearly" },
 ];
 
-function repeatKey(recurrence?: PatternedRecurrence | null): string {
-  if (!recurrence?.pattern) return "none";
-  const p = recurrence.pattern;
-  if (p.type === "daily") return "daily";
-  if (p.type === "weekly") return (p.daysOfWeek?.length || 0) >= 5 && !p.daysOfWeek?.includes("saturday") ? "weekdays" : "weekly";
-  if (p.type?.includes("Monthly")) return "monthly";
-  if (p.type?.includes("Yearly")) return "yearly";
-  return "none";
-}
-
 const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useTypeDispatch();
   const categories = useTypeSelector(state => state.mail.categories);
   const [title, setTitle] = useState(task.title || "");
   const [notes, setNotes] = useState(task.body?.content || "");
   const [newStep, setNewStep] = useState("");
-  const [editingStep, setEditingStep] = useState<{ id: string; value: string } | null>(null);
+  const [editingStep, setEditingStepState] = useState<{ id: string; value: string } | null>(null);
+  // Mirrors editingStep so a blur after Enter/Escape cannot commit a second time
+  const editingStepRef = useRef<{ id: string; value: string } | null>(null);
+  const setEditingStep = (value: { id: string; value: string } | null) => { editingStepRef.current = value; setEditingStepState(value); };
   const [repeatAnchor, setRepeatAnchor] = useState<HTMLElement | null>(null);
   const [catAnchor, setCatAnchor] = useState<HTMLElement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -72,7 +65,7 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
   const steps = task.checklistItems || [];
   const doneSteps = steps.filter(s => s.isChecked).length;
 
-  const commitTitle = () => { if (title.trim() && title !== task.title) patch({ title: title.trim() }); else setTitle(task.title || ""); };
+  const commitTitle = () => { if (title.trim() && title.trim() !== task.title) patch({ title: title.trim() }); else setTitle(task.title || ""); };
   const commitNotes = () => { if (notes !== (task.body?.content || "")) patch({ body: { contentType: "text", content: notes } }); };
 
   const addStep = () => {
@@ -82,12 +75,13 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
   };
 
   const commitStep = () => {
-    if (!editingStep) return;
-    const item = steps.find(s => s.id === editingStep.id);
-    if (item && editingStep.value.trim() && editingStep.value !== item.displayName) {
-      dispatch(updateChecklistItem({ listId, taskId: task.id!, item: { id: item.id, displayName: editingStep.value.trim() } }));
-    }
+    const edit = editingStepRef.current;
+    if (!edit) return;
     setEditingStep(null);
+    const item = steps.find(s => s.id === edit.id);
+    if (item && edit.value.trim() && edit.value.trim() !== item.displayName) {
+      dispatch(updateChecklistItem({ listId, taskId: task.id!, item: { id: item.id, displayName: edit.value.trim() } }));
+    }
   };
 
   const toggleStep = (item: ChecklistItem) => dispatch(updateChecklistItem({ listId, taskId: task.id!, item: { id: item.id, isChecked: !item.isChecked } }));
@@ -97,13 +91,27 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
     if (deleteTask.fulfilled.match(result)) onDeleted();
   };
 
-  const due = task.dueDateTime?.dateTime ? dayjs(task.dueDateTime.dateTime) : null;
-  const reminder = task.reminderDateTime?.dateTime ? dayjs.utc(task.reminderDateTime.dateTime).local() : null;
-  const created = task.createdDateTime ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(task.createdDateTime)) : "";
-  const completedAt = task.completedDateTime?.dateTime ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(task.completedDateTime.dateTime)) : "";
+  const dueDate = taskDueDate(task.dueDateTime);
+  const due = dueDate ? dayjs(dueDate) : null;
+  const reminder = task.reminderDateTime?.dateTime ? dayjs(graphDateToDate(task.reminderDateTime)) : null;
+  const created = task.createdDateTime ? new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }).format(new Date(task.createdDateTime)) : "";
+  const completedAt = formatDateOnly(taskCompletedDate(task.completedDateTime), i18n.language);
+  const currentRepeat = repeatKey(task.recurrence);
 
-  const onKey = (commit: () => void, cancel?: () => void) => (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commit(); (e.target as HTMLElement).blur(); }
+  const setDue = (date: string | null) => {
+    // Keep a repeat anchored on the due date; a repeat needs a due date
+    const recurrence = currentRepeat !== "none" ? { recurrence: date ? buildRecurrence(currentRepeat, date) : null } : {};
+    patch({ dueDateTime: dueDateValue(date), ...recurrence });
+  };
+
+  const setRepeat = (key: RepeatKey) => {
+    const date = dueDate || dayjs().format("YYYY-MM-DD");
+    patch({ recurrence: buildRecurrence(key, date), ...(key !== "none" && !dueDate ? { dueDateTime: dueDateValue(date) } : {}) });
+  };
+
+  // Enter commits by blurring, so the onBlur handler is the only commit path
+  const onKey = (cancel?: () => void) => (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.target as HTMLElement).blur(); }
     if (e.key === "Escape") cancel?.();
   };
 
@@ -122,7 +130,7 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
           value={title}
           onChange={e => setTitle(e.target.value)}
           onBlur={commitTitle}
-          onKeyDown={onKey(commitTitle, () => setTitle(task.title || ""))}
+          onKeyDown={onKey(() => setTitle(task.title || ""))}
           sx={{ fontSize: 18, fontWeight: 600, mt: 0.5, textDecoration: completed ? "line-through" : "none", color: completed ? "text.secondary" : "text.primary" }}
           inputProps={{ "aria-label": t("Title") }}
         />
@@ -135,12 +143,12 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
 
       <Box sx={{ px: 2, pl: 7, pb: 1 }}>
         {steps.map(item => (
-          <Box key={item.id} sx={{ display: "flex", alignItems: "center", gap: 0.5, "&:hover .step-delete": { opacity: 1 } }}>
+          <Box key={item.id} sx={{ display: "flex", alignItems: "center", gap: 0.5, "&:hover .step-delete, &:focus-within .step-delete": { opacity: 1 } }}>
             <Checkbox size="small" checked={Boolean(item.isChecked)} onChange={() => toggleStep(item)} inputProps={{ "aria-label": item.displayName || "" }} />
             {editingStep?.id === item.id ? (
-              <InputBase autoFocus fullWidth value={editingStep?.value || ""} onChange={e => setEditingStep({ id: item.id!, value: e.target.value })} onBlur={commitStep} onKeyDown={onKey(commitStep, () => setEditingStep(null))} sx={{ fontSize: 14 }} />
+              <InputBase autoFocus fullWidth value={editingStep?.value || ""} onChange={e => setEditingStep({ id: item.id!, value: e.target.value })} onBlur={commitStep} onKeyDown={onKey(() => setEditingStep(null))} sx={{ fontSize: 14 }} />
             ) : (
-              <Typography variant="body2" onClick={() => setEditingStep({ id: item.id!, value: item.displayName || "" })} sx={{ flex: 1, cursor: "text", textDecoration: item.isChecked ? "line-through" : "none", color: item.isChecked ? "text.secondary" : "text.primary" }}>
+              <Typography variant="body2" role="button" tabIndex={0} onClick={() => setEditingStep({ id: item.id!, value: item.displayName || "" })} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditingStep({ id: item.id!, value: item.displayName || "" }); } }} sx={{ flex: 1, cursor: "text", textDecoration: item.isChecked ? "line-through" : "none", color: item.isChecked ? "text.secondary" : "text.primary" }}>
                 {item.displayName}
               </Typography>
             )}
@@ -149,7 +157,7 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
         ))}
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <Add fontSize="small" color="primary" sx={{ mx: 1.1 }} />
-          <InputBase fullWidth placeholder={steps.length ? t("Next step") : t("Add step")} value={newStep} onChange={e => setNewStep(e.target.value)} onKeyDown={onKey(addStep)} onBlur={addStep} sx={{ fontSize: 14 }} inputProps={{ "aria-label": t("Add step") }} />
+          <InputBase fullWidth placeholder={steps.length ? t("Next step") : t("Add step")} value={newStep} onChange={e => setNewStep(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addStep(); } }} onBlur={addStep} sx={{ fontSize: 14 }} inputProps={{ "aria-label": t("Add step") }} />
         </Box>
         {steps.length > 0 && <Typography variant="caption" color="text.secondary">{t("{{done}} of {{total}} steps", { done: doneSteps, total: steps.length })}</Typography>}
       </Box>
@@ -161,7 +169,7 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
             <CalendarTodayOutlined fontSize="small" color={due ? "primary" : "action"} />
             <DatePicker
               value={due}
-              onChange={v => patch({ dueDateTime: v && v.isValid() ? { dateTime: v.format("YYYY-MM-DDT00:00:00"), timeZone: browserTimeZone() } : null })}
+              onChange={v => setDue(v && v.isValid() ? v.format("YYYY-MM-DD") : null)}
               slotProps={{ textField: { size: "small", variant: "standard", placeholder: t("Add due date"), InputProps: { disableUnderline: true }, sx: { flex: 1 } }, field: { clearable: true } }}
             />
           </Box>
@@ -176,11 +184,11 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minHeight: 44 }}>
             <Repeat fontSize="small" color={task.recurrence ? "primary" : "action"} />
             <Button size="small" color={task.recurrence ? "primary" : "inherit"} onClick={e => setRepeatAnchor(e.currentTarget)} sx={{ justifyContent: "flex-start", flex: 1, textTransform: "none", fontWeight: 400 }}>
-              {task.recurrence ? t(REPEAT_OPTIONS.find(o => o.key === repeatKey(task.recurrence))?.label || "Repeats") : t("Repeat")}
+              {task.recurrence ? t(REPEAT_OPTIONS.find(o => o.key === currentRepeat)?.label || "Repeats") : t("Repeat")}
             </Button>
             <Menu anchorEl={repeatAnchor} open={Boolean(repeatAnchor)} onClose={() => setRepeatAnchor(null)}>
               {REPEAT_OPTIONS.map(o => (
-                <MenuItem key={o.key} selected={repeatKey(task.recurrence) === o.key} onClick={() => { setRepeatAnchor(null); patch({ recurrence: o.recurrence, ...(o.recurrence && !due ? { dueDateTime: { dateTime: dayjs().format("YYYY-MM-DDT00:00:00"), timeZone: browserTimeZone() } } : {}) }); }}>
+                <MenuItem key={o.key} selected={currentRepeat === o.key} onClick={() => { setRepeatAnchor(null); setRepeat(o.key); }}>
                   {t(o.label)}
                 </MenuItem>
               ))}

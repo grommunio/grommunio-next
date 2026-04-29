@@ -7,6 +7,7 @@ import type { RootState } from "../../store";
 import * as api from "../../api/contacts";
 import { ApiError } from "../../api/graph";
 import { pushAlertStack } from "../../features/alerts/alertsSlice";
+import { folderWithDescendants } from "./contactUtils";
 
 const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof Error ? err.message : String(err);
 type ThunkApi = { state: RootState; rejectValue: string };
@@ -51,11 +52,21 @@ export const loadContactFolders = createAsyncThunk<ContactFolder[], void, ThunkA
   },
 );
 
+async function allFolderIds(state: RootState): Promise<string[]> {
+  const folders = state.contacts.foldersLoaded ? state.contacts.folders : await api.getContactFolders();
+  return folders.map(f => f.id!).filter(Boolean);
+}
+
 export const loadContacts = createAsyncThunk<{ key: string; contacts: Contact[]; nextLink?: string; total?: number }, { folderId?: string; search?: string; force?: boolean }, ThunkApi>(
   "contacts/loadContacts",
-  async ({ folderId, search }, { rejectWithValue }) => {
+  async ({ folderId, search }, { getState, rejectWithValue }) => {
     const key = contactListKey(folderId, search);
     try {
+      // "All contacts" aggregates the default folder and every contact folder
+      if (!folderId || folderId === ALL_CONTACTS) {
+        const contacts = await api.getContactsOfFolders(await allFolderIds(getState()), search);
+        return { key, contacts, total: contacts.length };
+      }
       const page = await api.getContactsPage(folderId === ALL_CONTACTS ? undefined : folderId, search);
       return { key, contacts: page.value, nextLink: page.nextLink, total: page.count };
     } catch (err) {
@@ -85,12 +96,11 @@ export const loadMoreContacts = createAsyncThunk<{ key: string; contacts: Contac
   { condition: (key, { getState }) => { const l = getState().contacts.lists[key]; return Boolean(l?.nextLink && !l.loadingMore); } },
 );
 
-// For recipient suggestions
 export const loadAllContacts = createAsyncThunk<Contact[], void, ThunkApi>(
   "contacts/loadAll",
-  async (_arg, { rejectWithValue }) => {
+  async (_arg, { getState, rejectWithValue }) => {
     try {
-      return await api.getContacts();
+      return await api.getContactsOfFolders(await allFolderIds(getState()));
     } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
@@ -109,16 +119,17 @@ export const loadContact = createAsyncThunk<Contact, string, ThunkApi>(
   },
 );
 
-export const createContact = createAsyncThunk<{ contact: Contact; folderId?: string }, { contact: Contact; folderId?: string; photo?: File }, ThunkApi>(
+// silent: bulk import reports one summary instead
+export const createContact = createAsyncThunk<{ contact: Contact; folderId?: string }, { contact: Contact; folderId?: string; photo?: File; silent?: boolean }, ThunkApi>(
   "contacts/create",
-  async ({ contact, folderId, photo }, { dispatch, rejectWithValue }) => {
+  async ({ contact, folderId, photo, silent }, { dispatch, rejectWithValue }) => {
     try {
       const created = await api.postContact(contact, folderId === ALL_CONTACTS ? undefined : folderId);
       if (photo && created.id) await api.putContactPhoto(created.id, photo);
-      dispatch(pushAlertStack({ message: "Contact saved", severity: "success" }));
+      if (!silent) dispatch(pushAlertStack({ message: "Contact saved", severity: "success" }));
       return { contact: created, folderId };
     } catch (err) {
-      dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
+      if (!silent) dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
       return rejectWithValue(errorMessage(err));
     }
   },
@@ -147,7 +158,8 @@ export const deleteContacts = createAsyncThunk<string[], string[], ThunkApi>(
   async (ids, { dispatch, rejectWithValue }) => {
     try {
       await Promise.all(ids.map(id => api.deleteContact(id)));
-      dispatch(pushAlertStack({ message: ids.length === 1 ? "Contact deleted" : `${ids.length} contacts deleted`, severity: "success" }));
+      // t("{{count}} contacts deleted")
+      dispatch(pushAlertStack({ message: ids.length === 1 ? "Contact deleted" : "{{count}} contacts deleted", params: { count: ids.length }, severity: "success" }));
       return ids;
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
@@ -232,7 +244,7 @@ const contactsSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(loadContactFolders.fulfilled, (state, action) => {
-        state.folders = [...action.payload].sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
+        state.folders = action.payload;
         state.foldersLoaded = true;
       })
       .addCase(loadContacts.pending, (state, action) => {
@@ -274,7 +286,7 @@ const contactsSlice = createSlice({
         merge(state, [contact]);
         Object.values(state.lists).forEach(list => {
           if (list.search) return;
-          const inScope = (!list.folderId || list.folderId === ALL_CONTACTS) ? !folderId || folderId === ALL_CONTACTS : list.folderId === folderId;
+          const inScope = !list.folderId || list.folderId === ALL_CONTACTS || list.folderId === folderId;
           if (inScope && contact.id) {
             list.ids = [...list.ids, contact.id].sort((a, b) => byName(state.contacts[a], state.contacts[b]));
             if (list.total !== undefined) list.total += 1;
@@ -297,14 +309,21 @@ const contactsSlice = createSlice({
       })
       .addCase(loadContactPhoto.fulfilled, (state, action) => { state.photos[action.payload.id] = action.payload.url; })
       .addCase(createContactFolder.fulfilled, (state, action) => {
-        state.folders = [...state.folders, action.payload].sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
+        state.folders = [...state.folders, action.payload];
       })
       .addCase(renameContactFolder.fulfilled, (state, action) => {
         state.folders = state.folders.map(f => f.id === action.payload.id ? { ...f, ...action.payload } : f);
       })
       .addCase(deleteContactFolder.fulfilled, (state, action) => {
-        state.folders = state.folders.filter(f => f.id !== action.payload);
-        Object.keys(state.lists).filter(k => k.startsWith(action.payload + "|")).forEach(k => delete state.lists[k]);
+        const removed = folderWithDescendants(state.folders, action.payload);
+        state.folders = state.folders.filter(f => !removed.has(f.id!));
+        Object.keys(state.lists).filter(k => removed.has(k.split("|")[0])).forEach(k => delete state.lists[k]);
+        // Drop the deleted folders' contacts from the aggregated lists
+        Object.values(state.lists).forEach(list => {
+          const before = list.ids.length;
+          list.ids = list.ids.filter(id => !removed.has(state.contacts[id]?.parentFolderId || ""));
+          if (list.total !== undefined) list.total -= before - list.ids.length;
+        });
       });
   },
 });

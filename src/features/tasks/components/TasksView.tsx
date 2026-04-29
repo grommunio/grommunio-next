@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { Box, Button, Checkbox, Chip, Collapse, Divider, IconButton, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, Skeleton, Tooltip, Typography, useMediaQuery } from "@mui/material";
-import { Add, CalendarTodayOutlined, Check, CheckCircle, ChevronRight, DeleteOutline, DriveFileRenameOutline, ExpandMore, FlagOutlined, FormatListBulleted, HomeOutlined, MenuOpen, NotificationsOutlined, RadioButtonUnchecked, Repeat, Star, StarBorder, SwapVert, TaskAltOutlined, VisibilityOffOutlined, VisibilityOutlined } from "@mui/icons-material";
+import { Add, ErrorOutline, CalendarTodayOutlined, Check, CheckCircle, ChevronRight, DeleteOutline, DriveFileRenameOutline, ExpandMore, FlagOutlined, FormatListBulleted, HomeOutlined, MenuOpen, NotificationsOutlined, RadioButtonUnchecked, Repeat, Star, StarBorder, SwapVert, TaskAltOutlined, VisibilityOffOutlined, VisibilityOutlined } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import TaskDetail from "./TaskDetail";
 import { createTask, createTaskList, deleteTaskList, loadTaskLists, loadTasks, renameTaskList, setShowCompleted, setTaskSort, TaskSort, updateTask } from "../tasksSlice";
 import { loadCategories } from "../../mail/mailSlice";
 import { dayjs } from "../../calendar/dates";
+import { taskDueDate } from "../taskDates";
 import { presetColor } from "../../mail/categories";
 
 // Dynamic translation keys, picked up by scripts/extractTranslations.py:
@@ -35,15 +36,27 @@ function sortTasks(tasks: TodoTask[], sort: TaskSort): TodoTask[] {
   const copy = [...tasks];
   switch (sort) {
   case "importance": return copy.sort((a, b) => Number(b.importance === "high") - Number(a.importance === "high"));
-  case "dueDate": return copy.sort((a, b) => (a.dueDateTime?.dateTime || "9999").localeCompare(b.dueDateTime?.dateTime || "9999"));
+  case "dueDate": return copy.sort((a, b) => (taskDueDate(a.dueDateTime) || "9999").localeCompare(taskDueDate(b.dueDateTime) || "9999"));
   case "alphabetical": return copy.sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" }));
   default: return copy.sort((a, b) => (b.createdDateTime || "").localeCompare(a.createdDateTime || ""));
   }
 }
 
+function moveOptionFocus(e: KeyboardEvent<HTMLElement>) {
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+  const options = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'));
+  if (!options.length) return;
+  e.preventDefault();
+  const current = options.findIndex(o => o.contains(document.activeElement));
+  const next = e.key === "Home" ? 0 : e.key === "End" ? options.length - 1
+    : Math.max(0, Math.min(options.length - 1, current + (e.key === "ArrowDown" ? 1 : -1)));
+  options[next]?.focus();
+}
+
 function dueLabel(task: TodoTask, t: (k: string, o?: any) => string): { text: string; overdue: boolean } | null {
-  if (!task.dueDateTime?.dateTime) return null;
-  const due = dayjs(task.dueDateTime.dateTime).startOf("day");
+  const date = taskDueDate(task.dueDateTime);
+  if (!date) return null;
+  const due = dayjs(date).startOf("day");
   const today = dayjs().startOf("day");
   const overdue = due.isBefore(today) && task.status !== "completed";
   if (due.isSame(today)) return { text: t("Today"), overdue: false };
@@ -59,7 +72,7 @@ const TasksView = () => {
   const navigate = useNavigate();
   const params = useParams<{ listId?: string; taskId?: string }>();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { lists, listsLoaded, tasks, loading, loaded, sort, showCompleted } = useTypeSelector(state => state.tasks);
+  const { lists, listsLoaded, listsError, tasks, loading, loaded, errors, sort, showCompleted } = useTypeSelector(state => state.tasks);
   const categories = useTypeSelector(state => state.mail.categories);
   const [search, setSearch] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -137,6 +150,10 @@ const TasksView = () => {
   const listIcon = (l: TodoTaskList) => l.wellknownListName === "defaultList" ? <HomeOutlined fontSize="small" /> : l.wellknownListName === "flaggedEmails" ? <FlagOutlined fontSize="small" /> : <FormatListBulleted fontSize="small" />;
   const listName = (l: TodoTaskList) => l.wellknownListName === "defaultList" ? t("Tasks") : l.wellknownListName === "flaggedEmails" ? t("Flagged email") : l.displayName || "";
 
+  const openTask = (task: TodoTask) => listId && navigate(`/tasks/${encodeURIComponent(listId)}/${encodeURIComponent(task.id!)}`);
+  const visibleTasks = [...filtered.open, ...(showCompleted && completedOpen ? filtered.done : [])];
+  const focusId = visibleTasks.find(x => x.id === taskId)?.id || visibleTasks[0]?.id;
+
   const renderTask = (task: TodoTask) => {
     const completed = task.status === "completed";
     const due = dueLabel(task, t);
@@ -147,8 +164,10 @@ const TasksView = () => {
         key={task.id}
         role="option"
         aria-selected={active}
-        onClick={() => listId && navigate(`/tasks/${encodeURIComponent(listId)}/${encodeURIComponent(task.id!)}`)}
-        sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, mb: 0.5, borderRadius: 1.5, cursor: "pointer", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "primary.main" + "14") : "background.paper", border: 1, borderColor: active ? "primary.main" : "divider", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}
+        tabIndex={task.id === focusId ? 0 : -1}
+        onClick={() => openTask(task)}
+        onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openTask(task); } }}
+        sx={{ "&:focus-visible": { outline: 2, outlineColor: "primary.main", outlineOffset: -2 }, display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.5, mb: 0.5, borderRadius: 1.5, cursor: "pointer", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "primary.main" + "14") : "background.paper", border: 1, borderColor: active ? "primary.main" : "divider", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}
       >
         <Checkbox icon={<RadioButtonUnchecked />} checkedIcon={<CheckCircle />} checked={completed} onClick={toggleComplete(task)} inputProps={{ "aria-label": t("Mark as completed") }} />
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -193,7 +212,10 @@ const TasksView = () => {
               const isEditing = editingList?.id === l.id;
               const count = (tasks[l.id!] || []).filter(x => x.status !== "completed").length;
               return (
-                <Box key={l.id} onClick={() => navigate(`/tasks/${encodeURIComponent(l.id!)}`)} onContextMenu={e => { if (l.wellknownListName && l.wellknownListName !== "none") return; e.preventDefault(); setListMenu({ anchor: { top: e.clientY, left: e.clientX }, list: l }); }}
+                <Box key={l.id} role="link" tabIndex={isEditing ? -1 : 0} aria-current={active ? "page" : undefined}
+                  onClick={() => navigate(`/tasks/${encodeURIComponent(l.id!)}`)}
+                  onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); navigate(`/tasks/${encodeURIComponent(l.id!)}`); } }}
+                  onContextMenu={e => { if (l.wellknownListName && l.wellknownListName !== "none") return; e.preventDefault(); setListMenu({ anchor: { top: e.clientY, left: e.clientX }, list: l }); }}
                   sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}>
                   <Box sx={{ color: active ? "primary.main" : "text.secondary", display: "flex" }}>{listIcon(l)}</Box>
                   {isEditing ? <InputBase autoFocus value={editingList!.value} onChange={e => setEditingList({ id: l.id!, value: e.target.value })} onKeyDown={onListKey} onBlur={commitList} onClick={e => e.stopPropagation()} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} /> :
@@ -227,9 +249,15 @@ const TasksView = () => {
                 )}
               </Box>
             )}
-            <Box sx={{ flex: 1, overflowY: "auto", px: 2, pb: 2 }} role="listbox" aria-label={t("Tasks")}>
+            <Box sx={{ flex: 1, overflowY: "auto", px: 2, pb: 2 }} role="listbox" aria-label={t("Tasks")} onKeyDown={moveOptionFocus}>
               {listId && loading[listId] && !loaded[listId] && Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="rounded" height={52} sx={{ mb: 0.5 }} />)}
-              {listId && loaded[listId] && filtered.open.length === 0 && filtered.done.length === 0 && (
+              {listId && errors[listId] && !loading[listId] && (
+                <EmptyState icon={<ErrorOutline />} title={t("Could not load tasks")} description={errors[listId]} action={<Button variant="outlined" onClick={() => dispatch(loadTasks({ listId, force: true }))}>{t("Retry")}</Button>} />
+              )}
+              {!listId && listsError && (
+                <EmptyState icon={<ErrorOutline />} title={t("Could not load task lists")} description={listsError} action={<Button variant="outlined" onClick={() => dispatch(loadTaskLists())}>{t("Retry")}</Button>} />
+              )}
+              {listId && loaded[listId] && !errors[listId] && filtered.open.length === 0 && filtered.done.length === 0 && (
                 <EmptyState icon={<TaskAltOutlined />} title={search ? t("No results") : t("No tasks")} description={search ? undefined : t("Add a task above to get started.")} />
               )}
               {filtered.open.map(renderTask)}

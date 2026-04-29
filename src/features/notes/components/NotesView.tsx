@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { Box, Button, CircularProgress, IconButton, Menu, Skeleton, Tooltip, Typography, useMediaQuery } from "@mui/material";
-import { Add, ArrowBack, DeleteOutline, Palette, StickyNote2Outlined } from "@mui/icons-material";
+import { Add, ArrowBack, DeleteOutline, ErrorOutline, Palette, StickyNote2Outlined } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { Editor } from "@tinymce/tinymce-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Message } from "microsoft-graph";
@@ -21,6 +21,17 @@ import { formatListDate } from "../../mail/utils";
 
 const AUTOSAVE_DELAY = 1500;
 
+function moveOptionFocus(e: KeyboardEvent<HTMLElement>) {
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+  const options = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'));
+  if (!options.length) return;
+  e.preventDefault();
+  const current = options.findIndex(o => o.contains(document.activeElement));
+  const next = e.key === "Home" ? 0 : e.key === "End" ? options.length - 1
+    : Math.max(0, Math.min(options.length - 1, current + (e.key === "ArrowDown" ? 1 : -1)));
+  options[next]?.focus();
+}
+
 const NotesView = () => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
@@ -28,14 +39,17 @@ const NotesView = () => {
   const navigate = useNavigate();
   const { noteId } = useParams<{ noteId?: string }>();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { notes, loaded, loading, colors } = useTypeSelector(state => state.notes);
+  const { notes, loaded, loading, colors, error } = useTypeSelector(state => state.notes);
   const [search, setSearch] = useState("");
   const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const editorRef = useRef<any>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  // Latest unsaved edit, bound to the note it was made in
+  const pending = useRef<{ id: string; content: string } | null>(null);
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
   const dark = theme.palette.mode === "dark";
 
   const selectedId = noteId ? decodeURIComponent(noteId) : undefined;
@@ -47,27 +61,34 @@ const NotesView = () => {
 
   const shown = useMemo(() => search ? notes.filter(n => (n.bodyPreview || "").toLowerCase().includes(search) || (n.subject || "").toLowerCase().includes(search)) : notes, [notes, search]);
 
-  const save = useCallback(async () => {
-    if (!selected?.id || !editorRef.current) return;
-    const content = purify(editorRef.current.getContent());
-    if (content === selected.body?.content) { setDirty(false); return; }
+  // Pending edit goes to its own note, not the one shown now
+  const flush = async () => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    const edit = pending.current;
+    if (!edit) return;
+    pending.current = null;
+    const content = purify(edit.content);
+    const note = notesRef.current.find(n => n.id === edit.id);
+    if (!note || content === note.body?.content) { setDirty(false); return; }
     setSaving(true);
-    await dispatch(updateNote({ id: selected.id, content }));
+    await dispatch(updateNote({ id: edit.id, content }));
     setSaving(false);
-    setDirty(false);
-  }, [selected?.id, selected?.body?.content, dispatch]);
+    if (!pending.current) setDirty(false);
+  };
+  const flushRef = useRef(flush);
+  flushRef.current = flush;
 
-  const scheduleSave = () => {
+  const scheduleSave = (id: string, initial: string) => (content: string) => {
+    if (content === initial && !pending.current) return;
+    pending.current = { id, content };
     setDirty(true);
     clearTimeout(timer.current);
-    timer.current = setTimeout(save, AUTOSAVE_DELAY);
+    timer.current = setTimeout(() => flushRef.current(), AUTOSAVE_DELAY);
   };
 
   // Flush pending changes when switching notes or leaving
-  useEffect(() => () => { clearTimeout(timer.current); }, []);
-  const saveRef = useRef(save);
-  saveRef.current = save;
-  useEffect(() => () => { if (timer.current) { clearTimeout(timer.current); saveRef.current(); } }, [selected?.id]);
+  useEffect(() => () => { flushRef.current(); }, [selected?.id]);
 
   const handleNew = async () => {
     const result = await dispatch(createNote({ content: "<p></p>" }));
@@ -103,7 +124,7 @@ const NotesView = () => {
           <Box sx={{ display: "flex", gap: 1, p: 1.5 }}>
             {(Object.keys(NOTE_COLORS) as NoteColor[]).map(c => (
               <Tooltip key={c} title={t(NOTE_COLORS[c].label)}>
-                <Box component="button" type="button" aria-label={NOTE_COLORS[c].label} onClick={() => { if (selected) dispatch(setNoteColor({ id: selected.id!, color: c })); setColorAnchor(null); }}
+                <Box component="button" type="button" aria-label={t(NOTE_COLORS[c].label)} onClick={() => { if (selected) dispatch(setNoteColor({ id: selected.id!, color: c })); setColorAnchor(null); }}
                   sx={{ width: 28, height: 28, borderRadius: "50%", bgcolor: bg(c), border: "2px solid", borderColor: selected && colorOf(selected) === c ? "text.primary" : "divider", cursor: "pointer", p: 0 }} />
               </Tooltip>
             ))}
@@ -112,19 +133,23 @@ const NotesView = () => {
       </Box>
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {showList && (
-          <Box sx={{ width: isMobile ? "100%" : 340, flexShrink: 0, borderRight: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.paper", overflowY: "auto", p: 1 }} role="listbox" aria-label={t("Notes")}>
+          <Box sx={{ width: isMobile ? "100%" : 340, flexShrink: 0, borderRight: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.paper", overflowY: "auto", p: 1 }} role="listbox" aria-label={t("Notes")} onKeyDown={moveOptionFocus}>
             {loading && !loaded && Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} variant="rounded" height={88} sx={{ mb: 1 }} />)}
-            {loaded && shown.length === 0 && <EmptyState icon={<StickyNote2Outlined />} title={search ? t("No results") : t("No notes yet")} description={search ? undefined : t("Create a note to jot something down.")} />}
-            {shown.map(note => {
+            {error && !loading && <EmptyState icon={<ErrorOutline />} title={t("Could not load notes")} description={error} action={<Button variant="outlined" onClick={() => dispatch(loadNotes())}>{t("Retry")}</Button>} />}
+            {loaded && !error && shown.length === 0 && <EmptyState icon={<StickyNote2Outlined />} title={search ? t("No results") : t("No notes yet")} description={search ? undefined : t("Create a note to jot something down.")} />}
+            {shown.map((note, index) => {
               const color = colorOf(note);
               const active = note.id === selectedId;
+              const open = () => navigate(`/notes/${encodeURIComponent(note.id!)}`);
               return (
                 <Box
                   key={note.id}
                   role="option"
                   aria-selected={active}
-                  onClick={() => navigate(`/notes/${encodeURIComponent(note.id!)}`)}
-                  sx={{ p: 1.5, mb: 1, borderRadius: 2, cursor: "pointer", bgcolor: bg(color), outline: active ? "2px solid" : "none", outlineColor: "primary.main", boxShadow: active ? 2 : 0, "&:hover": { boxShadow: 1 } }}
+                  tabIndex={active || (!shown.some(n => n.id === selectedId) && index === 0) ? 0 : -1}
+                  onClick={open}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+                  sx={{ "&:focus-visible": { boxShadow: 3, outline: "2px solid", outlineColor: "primary.main" }, p: 1.5, mb: 1, borderRadius: 2, cursor: "pointer", bgcolor: bg(color), outline: active ? "2px solid" : "none", outlineColor: "primary.main", boxShadow: active ? 2 : 0, "&:hover": { boxShadow: 1 } }}
                 >
                   <Typography variant="subtitle2" noWrap>{note.subject || t("(Empty note)")}</Typography>
                   <Typography variant="body2" sx={{ color: dark ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.65)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: 20 }}>
@@ -145,10 +170,9 @@ const NotesView = () => {
                   <Editor
                     key={selected.id}
                     tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
-                    onInit={(_e, editor) => { editorRef.current = editor; }}
                     initialValue={selected.body?.content || ""}
-                    onEditorChange={scheduleSave}
-                    onBlur={() => { clearTimeout(timer.current); save(); }}
+                    onEditorChange={scheduleSave(selected.id!, selected.body?.content || "")}
+                    onBlur={() => { flush(); }}
                     init={{
                       language: i18n.language.replace("-", "_") === "en_US" ? undefined : i18n.language.replace("-", "_"),
                       menubar: false, statusbar: false, branding: false, promotion: false,
@@ -165,7 +189,7 @@ const NotesView = () => {
                   />
                 </Box>
                 <Typography variant="caption" sx={{ px: 2, pb: 1, color: dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)" }}>
-                  {t("Last modified")}: {selected.lastModifiedDateTime ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(selected.lastModifiedDateTime)) : ""}
+                  {t("Last modified")}: {selected.lastModifiedDateTime ? new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(selected.lastModifiedDateTime)) : ""}
                 </Typography>
               </>
             ) : loading && !loaded ? <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><CircularProgress /></Box> : (

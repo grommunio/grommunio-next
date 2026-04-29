@@ -8,13 +8,14 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ChangeEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Contact, EmailAddress, PhysicalAddress } from "microsoft-graph";
+import type { Contact, PhysicalAddress } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { createContact, updateContact } from "../contactsSlice";
 import PersonAvatar from "../../../components/common/PersonAvatar";
 import { dayjs } from "../../calendar/dates";
 import { isValidEmail } from "../../mail/utils";
 import { presetColor } from "../../mail/categories";
+import { birthdayDate, birthdayValue, buildContactPayload, ContactDraft } from "../contactUtils";
 
 type ContactEditorProps = {
   contact?: Contact;
@@ -23,7 +24,7 @@ type ContactEditorProps = {
   onSaved?: (contact: Contact) => void;
 };
 
-type Draft = Contact & { businessPhones: string[]; homePhones: string[]; emailAddresses: EmailAddress[] };
+type Draft = ContactDraft;
 
 const emptyAddress = (): PhysicalAddress => ({ street: "", city: "", state: "", postalCode: "", countryOrRegion: "" });
 
@@ -109,18 +110,7 @@ const ContactEditor = ({ contact, folderId, onClose, onSaved }: ContactEditorPro
   const invalidEmails = draft.emailAddresses.filter(e => e.address && !isValidEmail(e.address));
 
   const handleSave = async () => {
-    const payload: Contact = {
-      ...draft,
-      displayName: draft.displayName || [draft.givenName, draft.surname].filter(Boolean).join(" ") || draft.emailAddresses[0]?.address || "",
-      emailAddresses: draft.emailAddresses.filter(e => e.address?.trim()).map(e => ({ address: e.address!.trim(), name: e.name || draft.displayName || "" })),
-      businessPhones: draft.businessPhones.filter(p => p.trim()),
-      homePhones: draft.homePhones.filter(p => p.trim()),
-      businessAddress: Object.values(draft.businessAddress || {}).some(Boolean) ? draft.businessAddress : undefined,
-      homeAddress: Object.values(draft.homeAddress || {}).some(Boolean) ? draft.homeAddress : undefined,
-      birthday: draft.birthday || undefined,
-    };
-    // Empty strings would overwrite with blanks; drop them for clarity
-    (Object.keys(payload) as Array<keyof Contact>).forEach(k => { if (payload[k] === "") delete payload[k]; });
+    const payload = buildContactPayload(draft, contact?.id ? contact : undefined);
     setBusy(true);
     const result = contact?.id ?
       await dispatch(updateContact({ contact: { ...payload, id: contact.id }, photo })) :
@@ -195,7 +185,7 @@ const ContactEditor = ({ contact, folderId, onClose, onSaved }: ContactEditorPro
 
         <Group title={t("Personal")} defaultOpen={Boolean(contact?.birthday || contact?.nickName || contact?.spouseName)}>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={dayjs.locale()}>
-            <DatePicker label={t("Birthday")} value={draft.birthday ? dayjs(draft.birthday) : null} onChange={v => setDraft({ ...draft, birthday: v && v.isValid() ? v.format("YYYY-MM-DD") + "T00:00:00Z" : null })} slotProps={{ textField: { size: "small" }, field: { clearable: true } }} />
+            <DatePicker label={t("Birthday")} value={birthdayDate(draft.birthday) ? dayjs(birthdayDate(draft.birthday)) : null} onChange={v => setDraft({ ...draft, birthday: birthdayValue(v && v.isValid() ? v.format("YYYY-MM-DD") : null) })} slotProps={{ textField: { size: "small" }, field: { clearable: true } }} />
           </LocalizationProvider>
           <TextField label={t("Nickname")} value={draft.nickName || ""} onChange={set("nickName")} />
           <TextField label={t("Spouse/Partner")} value={draft.spouseName || ""} onChange={set("spouseName")} />

@@ -10,6 +10,7 @@ import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { loadContactPhoto } from "../contactsSlice";
 import PersonAvatar from "../../../components/common/PersonAvatar";
 import { presetColor } from "../../mail/categories";
+import { formatBirthday } from "../contactUtils";
 
 type ContactCardProps = {
   contact: Contact;
@@ -42,7 +43,7 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 );
 
 const ContactCard = ({ contact, onEdit, onDelete, onEmail, onMeeting, onBack }: ContactCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useTypeDispatch();
   const photo = useTypeSelector(state => state.contacts.photos[contact.id!]);
   const categories = useTypeSelector(state => state.mail.categories);
@@ -61,7 +62,7 @@ const ContactCard = ({ contact, onEdit, onDelete, onEmail, onMeeting, onBack }: 
     { label: t("Other address"), value: formatAddress(contact.otherAddress), icon: <PlaceOutlined fontSize="small" /> },
   ].filter(a => a.value);
   const work = [contact.jobTitle, contact.companyName].filter(Boolean).join(" · ");
-  const birthday = contact.birthday ? new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(new Date(contact.birthday)) : "";
+  const birthday = formatBirthday(contact.birthday, i18n.language);
 
   return (
     <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 3 } }} aria-label={t("Contact details")}>
@@ -120,7 +121,7 @@ const ContactCard = ({ contact, onEdit, onDelete, onEmail, onMeeting, onBack }: 
               {contact.businessHomePage && <Row icon={<LanguageOutlined fontSize="small" />} label={t("Website")}><Link href={contact.businessHomePage.startsWith("http") ? contact.businessHomePage : `https://${contact.businessHomePage}`} target="_blank" rel="noopener" variant="body2">{contact.businessHomePage}</Link></Row>}
             </Section>
           )}
-          {(birthday || contact.nickName || contact.spouseName || contact.children?.length) && (
+          {Boolean(birthday || contact.nickName || contact.spouseName || contact.children?.length) && (
             <Section title={t("Personal")}>
               {birthday && <Row icon={<CakeOutlined fontSize="small" />} label={t("Birthday")}>{birthday}</Row>}
               {contact.nickName && <Row icon={<NotesOutlined fontSize="small" />} label={t("Nickname")}>{contact.nickName}</Row>}

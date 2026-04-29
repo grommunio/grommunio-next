@@ -24,4 +24,13 @@ describe("notes reducer", () => {
     expect(state.notes.map(n => n.id)).toEqual(["b"]);
     expect(state.colors.a).toBeUndefined();
   });
+
+  it("keeps load errors without marking the notes loaded", () => {
+    let state = reducer(initial, loadNotes.pending("req"));
+    state = reducer(state, loadNotes.rejected(null, "req", undefined, "boom"));
+    expect(state.loaded).toBe(false);
+    expect(state.error).toBe("boom");
+    state = reducer(state, loadNotes.pending("req"));
+    expect(state.error).toBeUndefined();
+  });
 });

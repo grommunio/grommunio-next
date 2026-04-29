@@ -9,6 +9,10 @@ describe("parseCsv", () => {
   it("accepts semicolon separated files", () => {
     expect(parseCsv("a;b\n1;2")).toEqual([["a", "b"], ["1", "2"]]);
   });
+  it("uses only the header's delimiter", () => {
+    expect(parseCsv("a,b\nHead; EMEA,x")).toEqual([["a", "b"], ["Head; EMEA", "x"]]);
+    expect(parseCsv("a;b\n1,5;x")).toEqual([["a", "b"], ["1,5", "x"]]);
+  });
 });
 
 describe("csvToContacts", () => {
@@ -45,6 +49,20 @@ describe("exports", () => {
     expect(vcf).toContain("TEL;TYPE=WORK,VOICE:+1 555");
     expect(vcf).toContain("NOTE:a\\;b\\,c");
     expect(vcf.trim().endsWith("END:VCARD")).toBe(true);
+  });
+
+  it("normalises CR line breaks in vCard values", () => {
+    const vcf = contactsToVCard([{ displayName: "A", personalNotes: "one\r\ntwo\rthree" }]);
+    expect(vcf).toContain("NOTE:one\\ntwo\\nthree\r\n");
+    expect(vcf.replace(/\r\n/g, "")).not.toContain("\r");
+  });
+
+  it("quotes values containing semicolons in CSV", () => {
+    const csv = contactsToCsv([{ displayName: "A", givenName: "A", jobTitle: "Head of Sales; EMEA", emailAddresses: [{ address: "a@x.org" }] }]);
+    expect(csv).toContain('"Head of Sales; EMEA"');
+    const [back] = csvToContacts(csv);
+    expect(back.jobTitle).toBe("Head of Sales; EMEA");
+    expect(back.emailAddresses?.[0].address).toBe("a@x.org");
   });
 
   it("writes CSV that parses back", () => {

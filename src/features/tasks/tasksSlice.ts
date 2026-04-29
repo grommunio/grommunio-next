@@ -21,7 +21,8 @@ export type TasksState = {
   loaded: Record<string, boolean>;
   sort: TaskSort;
   showCompleted: boolean;
-  error?: string;
+  errors: Record<string, string>;
+  listsError?: string;
 };
 
 export const loadTaskLists = createAsyncThunk<TodoTaskList[], void, ThunkApi>("tasks/loadLists", async (_a, { rejectWithValue }) => {
@@ -93,6 +94,7 @@ const initialState: TasksState = {
   loaded: {},
   sort: (window.localStorage.getItem(SORT_KEY) as TaskSort) || "default",
   showCompleted: window.localStorage.getItem(COMPLETED_KEY) !== "false",
+  errors: {},
 };
 
 const WELL_KNOWN_ORDER: Record<string, number> = { defaultList: 0, flaggedEmails: 1 };
@@ -119,8 +121,9 @@ const tasksSlice = createSlice({
   },
   extraReducers: builder => {
     builder
+      .addCase(loadTaskLists.pending, state => { state.listsError = undefined; })
       .addCase(loadTaskLists.fulfilled, (state, action) => { state.lists = sortLists(action.payload); state.listsLoaded = true; })
-      .addCase(loadTaskLists.rejected, (state, action) => { state.error = action.payload || action.error.message; state.listsLoaded = true; })
+      .addCase(loadTaskLists.rejected, (state, action) => { state.listsError = action.payload || action.error.message || "Error"; })
       .addCase(createTaskList.fulfilled, (state, action) => { state.lists = sortLists([...state.lists, action.payload]); })
       .addCase(renameTaskList.fulfilled, (state, action) => { state.lists = sortLists(state.lists.map(l => l.id === action.payload.id ? { ...l, ...action.payload } : l)); })
       .addCase(deleteTaskList.fulfilled, (state, action) => {
@@ -128,13 +131,13 @@ const tasksSlice = createSlice({
         delete state.tasks[action.payload];
         delete state.loaded[action.payload];
       })
-      .addCase(loadTasks.pending, (state, action) => { state.loading[action.meta.arg.listId] = true; })
+      .addCase(loadTasks.pending, (state, action) => { state.loading[action.meta.arg.listId] = true; delete state.errors[action.meta.arg.listId]; })
       .addCase(loadTasks.fulfilled, (state, action) => {
         state.tasks[action.payload.listId] = action.payload.tasks;
         state.loaded[action.payload.listId] = true;
         delete state.loading[action.payload.listId];
       })
-      .addCase(loadTasks.rejected, (state, action) => { delete state.loading[action.meta.arg.listId]; state.loaded[action.meta.arg.listId] = true; state.error = action.payload || action.error.message; })
+      .addCase(loadTasks.rejected, (state, action) => { delete state.loading[action.meta.arg.listId]; state.errors[action.meta.arg.listId] = action.payload || action.error.message || "Error"; })
       .addCase(createTask.fulfilled, (state, action) => {
         state.tasks[action.payload.listId] = [{ ...action.payload.task, checklistItems: [] }, ...(state.tasks[action.payload.listId] || [])];
       })

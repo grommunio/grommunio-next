@@ -28,6 +28,18 @@ describe("tasks reducer", () => {
     expect(state.tasks.L.map(t => t.id)).toEqual(["t2"]);
   });
 
+  it("keeps load errors per list instead of marking the list loaded", () => {
+    let state = reducer(initial, loadTasks.pending("req", { listId: "L" }));
+    state = reducer(state, loadTasks.rejected(null, "req", { listId: "L" }, "boom"));
+    expect(state.loaded.L).toBeUndefined();
+    expect(state.loading.L).toBeUndefined();
+    expect(state.errors.L).toBe("boom");
+    state = reducer(state, loadTasks.pending("req", { listId: "L", force: true }));
+    expect(state.errors.L).toBeUndefined();
+    state = reducer(state, loadTaskLists.rejected(null, "req", undefined, "nope"));
+    expect(state.listsError).toBe("nope");
+  });
+
   it("persists the sort preference", () => {
     const state = reducer(initial, setTaskSort("dueDate"));
     expect(state.sort).toBe("dueDate");

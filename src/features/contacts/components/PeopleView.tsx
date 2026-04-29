@@ -23,7 +23,8 @@ import {
 import { loadCategories } from "../../mail/mailSlice";
 import { contactsToCsv, contactsToVCard, csvToContacts, downloadText } from "../vcard";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
-import { getContacts } from "../../../api/contacts";
+import { getContacts, getContactsOfFolders } from "../../../api/contacts";
+import { folderWithDescendants, orderFolders, runLimited } from "../contactUtils";
 
 const PeopleView = () => {
   const { t } = useTranslation();
@@ -32,7 +33,9 @@ const PeopleView = () => {
   const navigate = useNavigate();
   const params = useParams<{ folder?: string; contactId?: string }>();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { folders, foldersLoaded, selection, lists } = useTypeSelector(state => state.contacts);
+  const { folders, foldersLoaded, selection, lists, contacts: contactsById } = useTypeSelector(state => state.contacts);
+  const folderTree = useMemo(() => orderFolders(folders), [folders]);
+  const [confirmDeleteFolder, setConfirmDeleteFolder] = useState<ContactFolder | null>(null);
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<{ contact?: Contact } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null);
@@ -71,7 +74,7 @@ const PeopleView = () => {
 
   const open = (contact: Contact) => navigate(`/contacts/${folderId}/${encodeURIComponent(contact.id!)}`);
 
-  const handleSelect = (contact: Contact, e: MouseEvent) => {
+  const handleSelect = (contact: Contact, e: MouseEvent | KeyboardEvent) => {
     if (e.ctrlKey || e.metaKey) { dispatch(toggleContactSelection(contact.id!)); return; }
     if (selection.length) dispatch(setContactSelection([]));
     open(contact);
@@ -88,12 +91,12 @@ const PeopleView = () => {
     if (deleteContacts.fulfilled.match(result) && confirmDelete.includes(contactId || "")) navigate(`/contacts/${folderId}`);
   };
 
-  const exportContacts = async (format: "csv" | "vcf", scope: "selection" | "all") => {
+  const exportContacts = async (format: "csv" | "vcf", scope: "selection" | "all", ids: string[] = targetIds) => {
     setToolsMenu(null);
     try {
       let items: Contact[];
-      if (scope === "selection") items = targetIds.map(id => contacts.find(c => c.id === id)).filter(Boolean) as Contact[];
-      else items = await getContacts(folderId === ALL_CONTACTS ? undefined : folderId);
+      if (scope === "selection") items = ids.map(id => contactsById[id]).filter(Boolean);
+      else items = folderId === ALL_CONTACTS ? await getContactsOfFolders(folders.map(f => f.id!)) : await getContacts(folderId);
       if (items.length === 0) return;
       const date = new Date().toISOString().slice(0, 10);
       if (format === "csv") downloadText(`contacts-${date}.csv`, contactsToCsv(items), "text/csv;charset=utf-8");
@@ -112,15 +115,16 @@ const PeopleView = () => {
       const text = await file.text();
       const parsed = csvToContacts(text);
       if (parsed.length === 0) {
-        dispatch(pushAlertStack({ message: t("No contacts found in the file"), severity: "warning" }));
+        dispatch(pushAlertStack({ message: "No contacts found in the file", severity: "warning" }));
         return;
       }
-      let ok = 0;
-      for (const contact of parsed) {
-        const result = await dispatch(createContact({ contact, folderId }));
-        if (createContact.fulfilled.match(result)) ok++;
-      }
-      dispatch(pushAlertStack({ message: t("{{count}} contacts imported", { count: ok }), severity: "success" }));
+      const results = await runLimited(parsed, 4, contact => dispatch(createContact({ contact, folderId, silent: true })));
+      const ok = results.filter(r => createContact.fulfilled.match(r)).length;
+      const failed = parsed.length - ok;
+      // t("{{count}} contacts imported") t("{{count}} contacts imported, {{failed}} failed")
+      dispatch(pushAlertStack(failed
+        ? { message: "{{count}} contacts imported, {{failed}} failed", params: { count: ok, failed }, severity: "warning" }
+        : { message: "{{count}} contacts imported", params: { count: ok }, severity: "success" }));
       dispatch(loadContacts({ folderId, force: true }));
     } catch (err: any) {
       dispatch(pushAlertStack({ message: err?.message || String(err), severity: "error" }));
@@ -152,15 +156,20 @@ const PeopleView = () => {
     { key: "Escape", handler: () => { dispatch(setContactSelection([])); if (search) setSearch(""); } },
   ], !editor);
 
-  const folderItem = (id: string, label: string, icon: JSX.Element, f?: ContactFolder) => {
+  const folderItem = (id: string, label: string, icon: JSX.Element, f?: ContactFolder, depth = 0) => {
     const active = folderId === id;
     const isEditing = f && editingFolder?.id === f.id;
+    const go = () => { dispatch(setContactSelection([])); navigate(`/contacts/${id}`); };
     return (
       <Box
         key={id}
-        onClick={() => { dispatch(setContactSelection([])); navigate(`/contacts/${id}`); }}
+        role="button"
+        tabIndex={isEditing ? -1 : 0}
+        aria-current={active ? "page" : undefined}
+        onClick={go}
+        onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); go(); } }}
         onContextMenu={f ? e => { e.preventDefault(); setFolderMenu({ anchor: { top: e.clientY, left: e.clientX }, folder: f }); } : undefined}
-        sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}
+        sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, pl: 1.5 + depth * 2, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}
       >
         <Box sx={{ color: active ? "primary.main" : "text.secondary", display: "flex" }}>{icon}</Box>
         {isEditing ? (
@@ -202,7 +211,7 @@ const PeopleView = () => {
         {foldersVisible && !isMobile && (
           <Box sx={{ width: 232, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper", py: 1, display: "flex", flexDirection: "column" }}>
             {folderItem(ALL_CONTACTS, t("All contacts"), <PeopleAltOutlined fontSize="small" />)}
-            {folders.map(f => folderItem(f.id!, f.displayName || "", <FolderOutlined fontSize="small" />, f))}
+            {folderTree.map(({ folder: f, depth }) => folderItem(f.id!, f.displayName || "", <FolderOutlined fontSize="small" />, f, depth))}
             {editingFolder && !editingFolder.id && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5 }}>
                 <FolderOutlined fontSize="small" sx={{ color: "text.secondary" }} />
@@ -228,6 +237,7 @@ const PeopleView = () => {
               onCheckAll={checked => dispatch(setContactSelection(checked ? contacts.map(c => c.id!) : []))}
               onContextMenu={(c, e) => { e.preventDefault(); setContextMenu({ position: { top: e.clientY, left: e.clientX }, ids: selection.includes(c.id!) ? selection : [c.id!] }); }}
               onLoadMore={handleLoadMore}
+              onRetry={() => dispatch(loadContacts({ folderId, search: search || undefined, force: true }))}
             />
           </Box>
         )}
@@ -250,15 +260,15 @@ const PeopleView = () => {
       </Box>
 
       <Menu open={Boolean(contextMenu)} onClose={() => setContextMenu(null)} anchorReference="anchorPosition" anchorPosition={contextMenu?.position} MenuListProps={{ dense: true }}>
-        {contextMenu?.ids.length === 1 && <MenuItem onClick={() => { const c = contacts.find(x => x.id === contextMenu.ids[0]); setContextMenu(null); if (c) setEditor({ contact: c }); }}><ListItemIcon><Edit fontSize="small" /></ListItemIcon><ListItemText>{t("Edit")}</ListItemText></MenuItem>}
-        {contextMenu?.ids.length === 1 && <MenuItem onClick={() => { const c = contacts.find(x => x.id === contextMenu.ids[0]); setContextMenu(null); if (c?.emailAddresses?.[0]?.address) handleEmail(c.emailAddresses[0].address); }}><ListItemIcon><MailOutline fontSize="small" /></ListItemIcon><ListItemText>{t("Send email")}</ListItemText></MenuItem>}
-        <MenuItem onClick={() => { setContextMenu(null); exportContacts("vcf", "selection"); }}><ListItemIcon><FileDownloadOutlined fontSize="small" /></ListItemIcon><ListItemText>{t("Export as vCard")}</ListItemText></MenuItem>
+        {contextMenu?.ids.length === 1 && <MenuItem onClick={() => { const c = contactsById[contextMenu.ids[0]]; setContextMenu(null); if (c) setEditor({ contact: c }); }}><ListItemIcon><Edit fontSize="small" /></ListItemIcon><ListItemText>{t("Edit")}</ListItemText></MenuItem>}
+        {contextMenu?.ids.length === 1 && <MenuItem onClick={() => { const c = contactsById[contextMenu.ids[0]]; setContextMenu(null); if (c?.emailAddresses?.[0]?.address) handleEmail(c.emailAddresses[0].address); }}><ListItemIcon><MailOutline fontSize="small" /></ListItemIcon><ListItemText>{t("Send email")}</ListItemText></MenuItem>}
+        <MenuItem onClick={() => { const ids = contextMenu?.ids || []; setContextMenu(null); exportContacts("vcf", "selection", ids); }}><ListItemIcon><FileDownloadOutlined fontSize="small" /></ListItemIcon><ListItemText>{t("Export as vCard")}</ListItemText></MenuItem>
         <Divider />
         <MenuItem onClick={() => { setConfirmDelete(contextMenu?.ids || []); setContextMenu(null); }}><ListItemIcon><DeleteOutline fontSize="small" /></ListItemIcon><ListItemText>{t("Delete")}</ListItemText></MenuItem>
       </Menu>
       <Menu open={Boolean(folderMenu)} onClose={() => setFolderMenu(null)} anchorReference="anchorPosition" anchorPosition={folderMenu?.anchor} MenuListProps={{ dense: true }}>
         <MenuItem onClick={() => { setEditingFolder({ id: folderMenu!.folder.id!, value: folderMenu!.folder.displayName || "" }); setFolderMenu(null); }}><ListItemIcon><DriveFileRenameOutline fontSize="small" /></ListItemIcon><ListItemText>{t("Rename")}</ListItemText></MenuItem>
-        <MenuItem onClick={() => { const f = folderMenu!.folder; setFolderMenu(null); dispatch(deleteContactFolder(f.id!)); if (folderId === f.id) navigate("/contacts/all"); }}><ListItemIcon><DeleteOutline fontSize="small" /></ListItemIcon><ListItemText>{t("Delete folder")}</ListItemText></MenuItem>
+        <MenuItem onClick={() => { setConfirmDeleteFolder(folderMenu!.folder); setFolderMenu(null); }}><ListItemIcon><DeleteOutline fontSize="small" /></ListItemIcon><ListItemText>{t("Delete folder")}</ListItemText></MenuItem>
       </Menu>
       <Box sx={{ display: "none" }}><MoreHoriz /></Box>
 
@@ -271,6 +281,20 @@ const PeopleView = () => {
         destructive
         onConfirm={handleDelete}
         onClose={() => setConfirmDelete(null)}
+      />
+      <ConfirmDialog
+        open={Boolean(confirmDeleteFolder)}
+        title={t("Delete folder \"{{name}}\"?", { name: confirmDeleteFolder?.displayName || "" })}
+        description={t("The folder, its subfolders and all contacts in them will be deleted. This cannot be undone.")}
+        confirmLabel={t("Delete")}
+        destructive
+        onConfirm={() => {
+          const f = confirmDeleteFolder;
+          if (!f?.id) return;
+          dispatch(deleteContactFolder(f.id));
+          if (folderWithDescendants(folders, f.id).has(folderId)) navigate("/contacts/all");
+        }}
+        onClose={() => setConfirmDeleteFolder(null)}
       />
       {folder && <Box sx={{ display: "none" }}>{folder.displayName}</Box>}
     </Box>

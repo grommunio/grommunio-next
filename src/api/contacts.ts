@@ -18,14 +18,25 @@ export async function getContacts(folderId?: string): Promise<Contact[]> {
   return getAll<Contact>(contactsBase(folderId), { select: CONTACT_SELECT, orderby: "displayName", top: 500 });
 }
 
+const searchFilter = (search: string) => {
+  const term = odataString(search);
+  return `startswith(displayName,${term}) or startswith(givenName,${term}) or startswith(surname,${term}) or emailAddresses/any(a:a/address eq ${term})`;
+};
+
+const byDisplayName = (a: Contact, b: Contact) => (a.displayName || "").localeCompare(b.displayName || "", undefined, { sensitivity: "base" });
+
+// /me/contacts only covers the default folder
+export async function getContactsOfFolders(folderIds: string[], search?: string): Promise<Contact[]> {
+  const options = search ? { select: CONTACT_SELECT, filter: searchFilter(search), top: 500 } : { select: CONTACT_SELECT, orderby: "displayName", top: 500 };
+  const results = await Promise.all([undefined, ...folderIds].map(id => getAll<Contact>(contactsBase(id), options)));
+  const seen = new Map<string, Contact>();
+  results.flat().forEach(c => { if (c.id && !seen.has(c.id)) seen.set(c.id, c); });
+  return [...seen.values()].sort(byDisplayName);
+}
+
 export async function getContactsPage(folderId?: string, search?: string, top = 100): Promise<Page<Contact>> {
   if (search) {
-    const term = odataString(search);
-    return getPage<Contact>(contactsBase(folderId), {
-      select: CONTACT_SELECT,
-      filter: `startswith(displayName,${term}) or startswith(givenName,${term}) or startswith(surname,${term}) or emailAddresses/any(a:a/address eq ${term})`,
-      top,
-    });
+    return getPage<Contact>(contactsBase(folderId), { select: CONTACT_SELECT, filter: searchFilter(search), top });
   }
   return getPage<Contact>(contactsBase(folderId), { select: CONTACT_SELECT, orderby: "displayName", top, count: true });
 }
@@ -34,8 +45,22 @@ export async function getContactsNextPage(nextLink: string): Promise<Page<Contac
   return getNextPage<Contact>(nextLink);
 }
 
+// childFolders is only expanded one level, deeper levels are walked here
 export async function getContactFolders(): Promise<ContactFolder[]> {
-  return getAll<ContactFolder>("/me/contactFolders", { expand: "childFolders" });
+  const out: ContactFolder[] = [];
+  const walk = async (folders: ContactFolder[]): Promise<void> => {
+    await Promise.all(folders.map(async folder => {
+      const { childFolders, ...rest } = folder;
+      out.push(rest);
+      if (childFolders?.length) {
+        const children = await getAll<ContactFolder>(`/me/contactFolders/${folder.id}/childFolders`, { expand: "childFolders" });
+        children.forEach(c => { if (!c.parentFolderId) c.parentFolderId = folder.id; });
+        await walk(children);
+      }
+    }));
+  };
+  await walk(await getAll<ContactFolder>("/me/contactFolders", { expand: "childFolders" }));
+  return out;
 }
 
 export async function postContactFolder(displayName: string, parentFolderId?: string): Promise<ContactFolder> {
