@@ -102,8 +102,11 @@ export async function getMessagesDelta(folderId: string, deltaLink?: string, top
       return { value: [], removed: [], deltaLink: fresh.deltaLink, reset: true };
     }
   } else {
+    // Only recent mail, else the first round enumerates the whole folder
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
     page = await getPage<Message>(`/me/mailFolders/${folderId}/messages/delta`, {
       select: MESSAGE_LIST_SELECT,
+      filter: `receivedDateTime ge ${since}`,
       top,
       headers: { Prefer: `odata.maxpagesize=${top}` },
     });

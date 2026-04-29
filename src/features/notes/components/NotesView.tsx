@@ -16,7 +16,7 @@ import EmptyState from "../../../components/common/EmptyState";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { createNote, deleteNote, loadNotes, NOTE_COLORS, NoteColor, setNoteColor, updateNote } from "../notesSlice";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
-import { purify } from "../../mail/utils-compose";
+import { purify, tinymceLanguage } from "../../mail/utils-compose";
 import { formatListDate } from "../../mail/utils";
 
 const AUTOSAVE_DELAY = 1500;
@@ -174,7 +174,7 @@ const NotesView = () => {
                     onEditorChange={scheduleSave(selected.id!, selected.body?.content || "")}
                     onBlur={() => { flush(); }}
                     init={{
-                      language: i18n.language.replace("-", "_") === "en_US" ? undefined : i18n.language.replace("-", "_"),
+                      language: tinymceLanguage(i18n.language),
                       menubar: false, statusbar: false, branding: false, promotion: false,
                       skin: dark ? "oxide-dark" : "oxide",
                       content_css: dark ? "dark" : "default",

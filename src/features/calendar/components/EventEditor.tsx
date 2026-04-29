@@ -28,7 +28,7 @@ import RecurrenceEditor, { describeRecurrence } from "./RecurrenceEditor";
 import SchedulingAssistant from "./SchedulingAssistant";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { FREEBUSY_TYPES, REMINDER_OPTIONS } from "../../../constants";
-import { purify } from "../../mail/utils-compose";
+import { purify, tinymceLanguage } from "../../mail/utils-compose";
 import { deleteEventAttachment, eventAttachments, getEventAttachmentContent } from "../../../api/calendar";
 import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -445,7 +445,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
                   initialValue={source?.body?.content || ""}
                   disabled={!isOrganizer}
                   init={{
-                    language: i18n.language.replace("-", "_") === "en_US" ? undefined : i18n.language.replace("-", "_"),
+                    language: tinymceLanguage(i18n.language),
                     menubar: false, statusbar: false, branding: false, promotion: false,
                     skin: theme.palette.mode === "dark" ? "oxide-dark" : "oxide",
                     content_css: theme.palette.mode === "dark" ? "dark" : "default",

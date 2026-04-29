@@ -14,7 +14,7 @@ import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { updatePrefs } from "../../mail/mailSlice";
 import { saveAutomaticReplies } from "../settingsSlice";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
-import { purify } from "../../mail/utils-compose";
+import { purify, tinymceLanguage } from "../../mail/utils-compose";
 import { browserTimeZone, dayjs, Dayjs, graphDateToDate } from "../../calendar/dates";
 import { Section } from "./GeneralSettings";
 import type { ReadingPanePosition } from "../../mail/types";
@@ -59,6 +59,9 @@ export const MailLayoutSettings = () => {
     <Section title={t("Deleting")}>
       <FormControlLabel control={<Switch checked={prefs.confirmDelete} onChange={e => set({ confirmDelete: e.target.checked })} />} label={t("Ask before deleting messages")} />
     </Section>
+    <Section title={t("Privacy")} description={t("Images from the internet can tell senders when you opened a message.")}>
+      <FormControlLabel control={<Switch checked={prefs.blockRemoteImages} onChange={e => set({ blockRemoteImages: e.target.checked })} />} label={t("Block images from the internet")} />
+    </Section>
   </>;
 };
 
@@ -87,7 +90,7 @@ export const SignatureSettings = () => {
           initialValue={prefs.signature}
           onDirty={() => setDirty(true)}
           init={{
-            language: i18n.language.replace("-", "_") === "en_US" ? undefined : i18n.language.replace("-", "_"),
+            language: tinymceLanguage(i18n.language),
             menubar: false, statusbar: false, branding: false, promotion: false, height: 220,
             skin: theme.palette.mode === "dark" ? "oxide-dark" : "oxide",
             content_css: theme.palette.mode === "dark" ? "dark" : "default",
@@ -160,7 +163,7 @@ export const AutoRepliesSettings = () => {
   };
 
   const editorInit = {
-    language: i18n.language.replace("-", "_") === "en_US" ? undefined : i18n.language.replace("-", "_"),
+    language: tinymceLanguage(i18n.language),
     menubar: false, statusbar: false, branding: false, promotion: false, height: 180,
     skin: theme.palette.mode === "dark" ? "oxide-dark" : "oxide",
     content_css: theme.palette.mode === "dark" ? "dark" : "default",
