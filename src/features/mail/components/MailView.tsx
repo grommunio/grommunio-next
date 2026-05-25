@@ -21,7 +21,7 @@ import Compose from "./Compose";
 import MailToolbar from "./MailToolbar";
 import MessageActionsMenu from "./MessageActionsMenu";
 import useMailActions from "../useMailActions";
-import useMailNotifications from "../useMailNotifications";
+import { folderSlug } from "../utils";
 import { makeSelectListMessages } from "../selectors";
 import {
   clearSearchLists, clearSelection, deleteConfirmClosed, deleteMessages, findFolder, findWellKnownFolder, listKey, loadCategories,
@@ -35,14 +35,9 @@ import type { ExtendedMailFolder, WellKnownFolderName } from "../../../types/mes
 
 const SYNC_INTERVAL = 30000;
 const HIDDEN_SYNC_INTERVAL = 120000;
-const FOLDER_REFRESH_INTERVAL = 120000;
 
 const WELL_KNOWN: WellKnownFolderName[] = ["inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive", "outbox"];
 
-// Well-known name where possible, id otherwise
-export function folderSlug(folder: ExtendedMailFolder): string {
-  return folder.wellKnownName !== "custom" ? folder.wellKnownName : encodeURIComponent(folder.id || "");
-}
 
 const isFocusFilter = (filter?: MailFilter) => filter === "focused" || filter === "other";
 
@@ -147,8 +142,8 @@ const MailView = () => {
     dispatch(loadMessages({ folderId: folder?.id, search: search || undefined, filter }));
   }, [folder?.id, search, effectiveFilter]);
 
-  // Delta sync of the open folder and, always, of the inbox (new-mail notifications)
-  const syncIds = useMemo(() => Array.from(new Set([search ? undefined : folder?.id, inboxId].filter(Boolean) as string[])), [folder?.id, inboxId, search]);
+  // The inbox is synced app-wide by useBackgroundMailSync
+  const syncIds = useMemo(() => (!search && folder?.id && folder.id !== inboxId ? [folder.id] : []), [folder?.id, inboxId, search]);
   useEffect(() => {
     if (syncIds.length === 0) return;
     let last = 0;
@@ -170,12 +165,6 @@ const MailView = () => {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [syncIds.join("|"), list?.loaded]);
-
-  // Folder counts
-  useEffect(() => {
-    const timer = setInterval(() => document.visibilityState === "visible" && dispatch(loadFolders()), FOLDER_REFRESH_INTERVAL);
-    return () => clearInterval(timer);
-  }, []);
 
   // Only on selection change so "mark as unread" sticks
   useEffect(() => {
@@ -205,13 +194,6 @@ const MailView = () => {
     if (folder) navigate(`/mail/${folderSlug(folder)}/${encodeURIComponent(id)}`, { replace });
   }, [folder, navigate]);
 
-  // Arrivals may come from the inbox while another folder is open
-  const openArrival = useCallback((message: Message) => {
-    const target = findFolder(store.getState().mail.folders, message.parentFolderId || undefined);
-    if (target && message.id) navigate(`/mail/${folderSlug(target)}/${encodeURIComponent(message.id)}`);
-  }, [navigate]);
-
-  useMailNotifications(openArrival);
 
   const handleSelectFolder = useCallback((next: ExtendedMailFolder) => {
     dispatch(clearSelection());

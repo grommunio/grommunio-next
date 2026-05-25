@@ -4,6 +4,7 @@
 import DOMPurify, { type DOMPurify as DOMPurifyInstance } from "dompurify";
 import type { Attachment, EventMessage, FileAttachment, Message, Recipient } from "microsoft-graph";
 import i18n from "../../i18n";
+import type { ExtendedMailFolder } from "../../types/messages";
 import { convertHtmlMailToDarkmode } from "../../htmlUtils";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -337,4 +338,9 @@ export function downloadBlob(blob: Blob, name: string) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// Well-known name where possible, otherwise the id
+export function folderSlug(folder: ExtendedMailFolder): string {
+  return folder.wellKnownName !== "custom" ? folder.wellKnownName : encodeURIComponent(folder.id || "");
 }

@@ -6,9 +6,16 @@ import React from "react";
 import AppRail from "./AppRail";
 import TopBar from "./TopBar";
 import { SearchProvider } from "./SearchContext";
+import useBackgroundMailSync from "../../features/mail/useBackgroundMailSync";
+
+const BackgroundSync = () => {
+  useBackgroundMailSync();
+  return null;
+};
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => (
   <SearchProvider>
+    <BackgroundSync />
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, width: "100%", minWidth: 0, height: "100%", overflow: "hidden", bgcolor: "background.default" }}>
       <TopBar />
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
