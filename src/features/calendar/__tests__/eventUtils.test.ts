@@ -105,3 +105,13 @@ describe("misc helpers", () => {
     applyWeekStart(0);
   });
 });
+
+import { weekNumber } from "../dates";
+
+describe("weekNumber", () => {
+  it("uses ISO weeks when weeks start on Monday", () => {
+    // 2024-12-30 belongs to ISO week 1 of 2025
+    expect(weekNumber(new Date("2024-12-30T12:00:00"), 1)).toBe(1);
+    expect(weekNumber(new Date("2024-10-28T12:00:00"), 1)).toBe(44);
+  });
+});

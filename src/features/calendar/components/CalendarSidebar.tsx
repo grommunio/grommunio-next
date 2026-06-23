@@ -39,7 +39,7 @@ const CalendarSidebar = ({ date, onDateChange, events }: CalendarSidebarProps) =
   const { t } = useTranslation();
   const theme = useTheme();
   const dispatch = useTypeDispatch();
-  const { calendars, visibleCalendarIds } = useTypeSelector(state => state.calendar);
+  const { calendars, visibleCalendarIds, prefs } = useTypeSelector(state => state.calendar);
   const [open, setOpen] = useState(true);
   const [menu, setMenu] = useState<{ anchor: HTMLElement; calendar: Calendar } | null>(null);
   const [colorMenu, setColorMenu] = useState<{ anchor: HTMLElement; calendar: Calendar } | null>(null);
@@ -87,6 +87,7 @@ const CalendarSidebar = ({ date, onDateChange, events }: CalendarSidebarProps) =
           value={dayjs(date)}
           onChange={value => value && onDateChange(value.toDate())}
           showDaysOutsideCurrentMonth
+          displayWeekNumber={prefs.showWeekNumbers}
           slots={{ day: DayWithEvents as any }}
           slotProps={{ day: { eventDays } as any }}
           sx={{ width: "100%", maxHeight: 300, "& .MuiPickersDay-root": { fontSize: 12 }, "& .MuiDayCalendar-weekDayLabel": { fontSize: 11 } }}

@@ -20,7 +20,7 @@ import CalendarSidebar from "./CalendarSidebar";
 import EventPopover from "./EventPopover";
 import EventEditor, { EventEditorTarget } from "./EventEditor";
 import { eventMoved, loadCalendars, loadEvents, makeSelectCalendarEvents, selectCalendarLoading, setView, updateCalendarPrefs, updateEvent } from "../calendarSlice";
-import { applyWeekStart, dateToGraphDate, dayjs, roundToStep, setDayjsLocale } from "../dates";
+import { applyWeekStart, dateToGraphDate, dayjs, roundToStep, setDayjsLocale, weekNumber } from "../dates";
 import { isAllDaySelection } from "../eventUtils";
 import { loadCategories } from "../../mail/mailSlice";
 import type { CalendarEvent, CalendarViewName } from "../types";
@@ -250,6 +250,20 @@ const CalendarView = () => {
     "--gn-selection": dark ? "rgba(79,120,199,0.4)" : "rgba(29,75,153,0.2)",
   } as React.CSSProperties;
 
+  // Week number in the first cell of each month row
+  const monthComponents = useMemo(() => !prefs.showWeekNumbers ? {} : {
+    month: {
+      dateHeader: ({ date: d, label }: { date: Date; label: string }) => (
+        <Box component="span" sx={{ display: "flex", justifyContent: "space-between", gap: 0.5 }}>
+          {dayjs(d).day() === prefs.weekStartsOn
+            ? <Box component="span" sx={{ color: "text.secondary", fontSize: 10 }} aria-label={t("Week {{n}}", { n: weekNumber(d, prefs.weekStartsOn) })}>{weekNumber(d, prefs.weekStartsOn)}</Box>
+            : <span />}
+          <span>{label}</span>
+        </Box>
+      ),
+    },
+  }, [prefs.showWeekNumbers, prefs.weekStartsOn, t]);
+
   const currentView = VIEWS.find(v => v.value === view)!;
   const messages = useMemo(() => ({
     today: t("Today"), previous: t("Back"), next: t("Next"), month: t("Month"), week: t("Week"), work_week: t("Work week"), day: t("Day"), agenda: t("Agenda"),
@@ -274,6 +288,11 @@ const CalendarView = () => {
           <IconButton size="small" onClick={() => navigateBy(1)} aria-label={t("Next")}><ChevronRight /></IconButton>
         </ButtonGroup>
         <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 16, mx: 1, whiteSpace: "nowrap" }}>{titleFor(view, date, prefs.weekStartsOn)}</Typography>
+        {prefs.showWeekNumbers && view !== "month" && view !== "agenda" && (
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+            {t("Week {{n}}", { n: weekNumber(date, prefs.weekStartsOn) })}
+          </Typography>
+        )}
         {loading && <CircularProgress size={16} />}
         <Box sx={{ flex: 1 }} />
         {isMobile ? (
@@ -327,6 +346,7 @@ const CalendarView = () => {
             eventPropGetter={eventPropGetter}
             slotPropGetter={slotPropGetter}
             messages={messages}
+            components={monthComponents}
             formats={{
               timeGutterFormat: (d: Date) => dayjs(d).format("LT"),
               eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => `${dayjs(start).format("LT")} – ${dayjs(end).format("LT")}`,

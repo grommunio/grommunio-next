@@ -123,5 +123,11 @@ export function formatDuration(start: Date, end: Date): string {
   return `${days} d`;
 }
 
+// ISO weeks when the week starts on Monday, locale weeks otherwise
+export function weekNumber(date: Date | Dayjs, weekStartsOn: number): number {
+  const d = dayjs(date);
+  return weekStartsOn === 1 ? d.isoWeek() : d.week();
+}
+
 export { dayjs };
 export type { Dayjs };
