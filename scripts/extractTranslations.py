@@ -46,7 +46,7 @@ def main():
         added = 0
         for key in keys:
             if key not in data:
-                data[key] = key if name == "en-US.json" else ""
+                data[key] = re.sub(r"_(zero|one|two|few|many|other)$", "", key) if name == "en-US.json" else ""
                 added += 1
         removed = 0
         if prune:
