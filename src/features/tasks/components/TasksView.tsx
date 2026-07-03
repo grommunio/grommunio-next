@@ -32,6 +32,13 @@ const SORTS: Array<{ value: TaskSort; label: string }> = [
   { value: "alphabetical", label: "Alphabetically" },
 ];
 
+// t("Important")
+// t("Planned")
+const SMART_LISTS: Array<{ id: string; label: string; icon: typeof Star; match: (t: TodoTask) => boolean; defaults: () => Partial<TodoTask> }> = [
+  { id: "important", label: "Important", icon: StarBorder, match: task => task.importance === "high", defaults: () => ({ importance: "high" }) },
+  { id: "planned", label: "Planned", icon: CalendarTodayOutlined, match: task => Boolean(task.dueDateTime?.dateTime), defaults: () => ({ dueDateTime: { dateTime: dayjs().format("YYYY-MM-DD") + "T00:00:00", timeZone: "UTC" } }) },
+];
+
 function sortTasks(tasks: TodoTask[], sort: TaskSort): TodoTask[] {
   const copy = [...tasks];
   switch (sort) {
@@ -86,8 +93,23 @@ const TasksView = () => {
   const listId = params.listId ? decodeURIComponent(params.listId) : undefined;
   const taskId = params.taskId ? decodeURIComponent(params.taskId) : undefined;
   const list = lists.find(l => l.id === listId);
-  const listTasks = (listId && tasks[listId]) || [];
+  const smart = SMART_LISTS.find(s => s.id === listId);
+  const defaultListId = (lists.find(l => l.wellknownListName === "defaultList") || lists[0])?.id;
+
+  // Smart lists span all lists, remember where each task lives
+  const ownerOf = useMemo(() => {
+    const map = new Map<string, string>();
+    Object.entries(tasks).forEach(([lid, items]) => items.forEach(task => task.id && map.set(task.id, lid)));
+    return map;
+  }, [tasks]);
+  const listTasks = useMemo(() => {
+    if (!smart) return (listId && tasks[listId]) || [];
+    return lists.flatMap(l => (tasks[l.id!] || []).filter(smart.match));
+  }, [smart, listId, tasks, lists]);
+  const realListId = (task?: TodoTask) => (smart ? (task?.id && ownerOf.get(task.id)) : listId) || undefined;
   const selectedTask = listTasks.find(t => t.id === taskId);
+  const listLoading = smart ? lists.some(l => loading[l.id!]) && !lists.every(l => loaded[l.id!]) : Boolean(listId && loading[listId] && !loaded[listId]);
+  const listLoaded = smart ? lists.length > 0 && lists.every(l => loaded[l.id!] || errors[l.id!]) : Boolean(listId && loaded[listId]);
 
   useEffect(() => {
     dispatch(loadTaskLists());
@@ -101,7 +123,15 @@ const TasksView = () => {
     }
   }, [listsLoaded, listId, lists.length]);
 
-  useEffect(() => { if (listId) dispatch(loadTasks({ listId })); }, [listId]);
+  useEffect(() => {
+    if (smart) return;
+    if (listId) dispatch(loadTasks({ listId }));
+  }, [listId, smart]);
+
+  // Load all lists once for the smart list counts
+  useEffect(() => {
+    lists.forEach(l => l.id && dispatch(loadTasks({ listId: l.id })));
+  }, [lists.length]);
 
   useGlobalSearch(t("Search tasks"), q => setSearch(q.toLowerCase()), () => setSearch(""));
 
@@ -112,19 +142,22 @@ const TasksView = () => {
 
   const handleAdd = async () => {
     const title = newTitle.trim();
-    if (!title || !listId) return;
+    const target = smart ? defaultListId : listId;
+    if (!title || !target) return;
     setNewTitle("");
-    await dispatch(createTask({ listId, task: { title } }));
+    await dispatch(createTask({ listId: target, task: { title, ...(smart?.defaults() || {}) } }));
   };
 
   const toggleComplete = (task: TodoTask) => (e: MouseEvent) => {
     e.stopPropagation();
-    if (listId) dispatch(updateTask({ listId, task: { id: task.id, status: task.status === "completed" ? "notStarted" : "completed" } }));
+    const lid = realListId(task);
+    if (lid) dispatch(updateTask({ listId: lid, task: { id: task.id, status: task.status === "completed" ? "notStarted" : "completed" } }));
   };
 
   const toggleImportant = (task: TodoTask) => (e: MouseEvent) => {
     e.stopPropagation();
-    if (listId) dispatch(updateTask({ listId, task: { id: task.id, importance: task.importance === "high" ? "normal" : "high" } }));
+    const lid = realListId(task);
+    if (lid) dispatch(updateTask({ listId: lid, task: { id: task.id, importance: task.importance === "high" ? "normal" : "high" } }));
   };
 
   const commitList = () => {
@@ -207,6 +240,22 @@ const TasksView = () => {
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {listsVisible && !isMobile && (
           <Box sx={{ width: 240, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper", py: 1, display: "flex", flexDirection: "column" }} role="navigation" aria-label={t("Task lists")}>
+            {SMART_LISTS.map(sl => {
+              const active = sl.id === listId;
+              const count = lists.reduce((sum, l) => sum + (tasks[l.id!] || []).filter(x => x.status !== "completed" && sl.match(x)).length, 0);
+              const Icon = sl.icon;
+              return (
+                <Box key={sl.id} role="link" tabIndex={0} aria-current={active ? "page" : undefined}
+                  onClick={() => navigate(`/tasks/${sl.id}`)}
+                  onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); navigate(`/tasks/${sl.id}`); } }}
+                  sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}>
+                  <Icon fontSize="small" sx={{ color: active ? "primary.main" : "text.secondary" }} />
+                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>{t(sl.label)}</Typography>
+                  {count > 0 && <Typography variant="caption" color="text.secondary">{count}</Typography>}
+                </Box>
+              );
+            })}
+            <Divider sx={{ my: 0.5, mx: 2 }} />
             {lists.map(l => {
               const active = l.id === listId;
               const isEditing = editingList?.id === l.id;
@@ -237,10 +286,10 @@ const TasksView = () => {
         )}
         {showMain && (
           <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
-            {list && (
+            {(list || smart) && (
               <Box sx={{ px: 2, pt: 2 }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1.5 }}>{listName(list)}</Typography>
-                {list.wellknownListName !== "flaggedEmails" && (
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1.5 }}>{list ? listName(list) : t(smart!.label)}</Typography>
+                {list?.wellknownListName !== "flaggedEmails" && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 0.5, mb: 2, borderRadius: 1.5, bgcolor: "background.paper", border: 1, borderColor: "divider" }}>
                     <Add color="primary" />
                     <InputBase id="new-task-input" fullWidth placeholder={t("Add a task")} value={newTitle} onChange={e => setNewTitle(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleAdd(); }} inputProps={{ "aria-label": t("Add a task") }} />
@@ -250,14 +299,14 @@ const TasksView = () => {
               </Box>
             )}
             <Box sx={{ flex: 1, overflowY: "auto", px: 2, pb: 2 }} role="listbox" aria-label={t("Tasks")} onKeyDown={moveOptionFocus}>
-              {listId && loading[listId] && !loaded[listId] && Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="rounded" height={52} sx={{ mb: 0.5 }} />)}
-              {listId && errors[listId] && !loading[listId] && (
+              {listLoading && Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="rounded" height={52} sx={{ mb: 0.5 }} />)}
+              {listId && !smart && errors[listId] && !loading[listId] && (
                 <EmptyState icon={<ErrorOutline />} title={t("Could not load tasks")} description={errors[listId]} action={<Button variant="outlined" onClick={() => dispatch(loadTasks({ listId, force: true }))}>{t("Retry")}</Button>} />
               )}
               {!listId && listsError && (
                 <EmptyState icon={<ErrorOutline />} title={t("Could not load task lists")} description={listsError} action={<Button variant="outlined" onClick={() => dispatch(loadTaskLists())}>{t("Retry")}</Button>} />
               )}
-              {listId && loaded[listId] && !errors[listId] && filtered.open.length === 0 && filtered.done.length === 0 && (
+              {listLoaded && !(listId && errors[listId]) && filtered.open.length === 0 && filtered.done.length === 0 && (
                 <EmptyState icon={<TaskAltOutlined />} title={search ? t("No results") : t("No tasks")} description={search ? undefined : t("Add a task above to get started.")} />
               )}
               {filtered.open.map(renderTask)}
@@ -271,9 +320,9 @@ const TasksView = () => {
             </Box>
           </Box>
         )}
-        {showDetail && selectedTask && listId && (
+        {showDetail && selectedTask && listId && realListId(selectedTask) && (
           <Box sx={{ width: isMobile ? "100%" : 360, flexShrink: 0, borderLeft: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.paper" }}>
-            <TaskDetail listId={listId} task={selectedTask} onClose={() => navigate(`/tasks/${encodeURIComponent(listId)}`)} onDeleted={() => navigate(`/tasks/${encodeURIComponent(listId)}`)} />
+            <TaskDetail listId={realListId(selectedTask)!} task={selectedTask} onClose={() => navigate(`/tasks/${encodeURIComponent(listId)}`)} onDeleted={() => navigate(`/tasks/${encodeURIComponent(listId)}`)} />
           </Box>
         )}
       </Box>
