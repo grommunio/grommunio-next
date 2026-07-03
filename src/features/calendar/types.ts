@@ -10,6 +10,8 @@ export type CalendarEvent = Event & {
   start_: Date;
   end_: Date;
   color: string;
+  // Shared calendar events are read-only
+  readOnly?: boolean;
 };
 
 export type CalendarState = {
@@ -25,6 +27,8 @@ export type CalendarState = {
   details: Record<string, Event>;
   view: CalendarViewName;
   prefs: CalendarPrefs;
+  shared: Array<{ address: string; name: string; color?: string }>;
+  calendarErrors: Record<string, string>;
   error?: string;
 };
 

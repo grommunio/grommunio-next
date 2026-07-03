@@ -339,10 +339,11 @@ const CalendarView = () => {
             length={30}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
-            onDoubleClickEvent={event => setEditor({ mode: "edit", event, scope: "occurrence" })}
+            onDoubleClickEvent={event => !event.readOnly && setEditor({ mode: "edit", event, scope: "occurrence" })}
             onEventDrop={moveOrResize}
             onEventResize={moveOrResize}
-            draggableAccessor={e => e.isOrganizer !== false}
+            draggableAccessor={e => e.isOrganizer !== false && !e.readOnly}
+            resizableAccessor={e => e.isOrganizer !== false && !e.readOnly}
             eventPropGetter={eventPropGetter}
             slotPropGetter={slotPropGetter}
             messages={messages}

@@ -47,3 +47,24 @@ export function loadView(): CalendarViewName {
 }
 
 export const saveView = (view: CalendarViewName) => window.localStorage.setItem(VIEW_KEY, view);
+
+// Other people's calendars added from the directory
+export type SharedCalendarRef = { address: string; name: string; color?: string };
+
+const SHARED_KEY = "calendar.shared";
+export const SHARED_PREFIX = "shared:";
+
+export const sharedCalendarId = (address: string) => SHARED_PREFIX + address.toLowerCase();
+export const isSharedCalendarId = (id?: string | null) => Boolean(id && id.startsWith(SHARED_PREFIX));
+
+export function loadSharedCalendars(): SharedCalendarRef[] {
+  try {
+    const raw = window.localStorage.getItem(SHARED_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(r => r && typeof r.address === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export const saveSharedCalendars = (refs: SharedCalendarRef[]) => window.localStorage.setItem(SHARED_KEY, JSON.stringify(refs));

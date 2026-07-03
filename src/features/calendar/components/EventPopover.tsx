@@ -35,7 +35,8 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
   const [comment, setComment] = useState("");
 
   const recurring = event.type === "occurrence" || event.type === "exception" || event.type === "seriesMaster";
-  const isOrganizer = event.isOrganizer !== false;
+  const readOnly = Boolean(event.readOnly);
+  const isOrganizer = event.isOrganizer !== false && !readOnly;
   const response = event.responseStatus?.response;
   const attendees = event.attendees || [];
   const hasAttendees = attendees.length > 0;
@@ -77,8 +78,8 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
             {event.subject || t("(No title)")}
           </Typography>
           {isOrganizer && <Tooltip title={t("Edit")}><IconButton size="small" onClick={withScope("edit")} aria-label={t("Edit")}><Edit fontSize="small" /></IconButton></Tooltip>}
-          {!isOrganizer && <Tooltip title={t("Details")}><IconButton size="small" onClick={() => onEdit("occurrence")} aria-label={t("Details")}><Edit fontSize="small" /></IconButton></Tooltip>}
-          <Tooltip title={t("Delete")}><IconButton size="small" onClick={withScope("delete")} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
+          {!isOrganizer && !readOnly && <Tooltip title={t("Details")}><IconButton size="small" onClick={() => onEdit("occurrence")} aria-label={t("Details")}><Edit fontSize="small" /></IconButton></Tooltip>}
+          {!readOnly && <Tooltip title={t("Delete")}><IconButton size="small" onClick={withScope("delete")} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>}
           <IconButton size="small" onClick={onClose} aria-label={t("Close")}><Close fontSize="small" /></IconButton>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 1, color: "text.secondary" }}>
@@ -122,7 +123,7 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
         )}
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>{calendar?.name}</Typography>
       </Box>
-      {!isOrganizer && (
+      {!isOrganizer && !readOnly && (
         <>
           <Divider />
           <Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1 }}>

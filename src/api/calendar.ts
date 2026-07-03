@@ -29,6 +29,21 @@ export async function getCalendarView(calendarId: string | undefined, start: str
   });
 }
 
+// Needs Calendars.Read.Shared
+export async function getSharedCalendar(address: string): Promise<Calendar> {
+  return get<Calendar>(`/users/${encodeURIComponent(address)}/calendar`, { select: ["id", "name", "owner", "canEdit", "color", "hexColor"] });
+}
+
+export async function getSharedCalendarView(address: string, start: string, end: string, timeZone?: string): Promise<Event[]> {
+  const path = `/users/${encodeURIComponent(address)}/calendar/calendarView?startDateTime=${encodeURIComponent(start)}&endDateTime=${encodeURIComponent(end)}`;
+  return getAll<Event>(path, {
+    select: EVENT_SELECT,
+    orderby: "start/dateTime",
+    top: 250,
+    headers: timeZone ? { Prefer: `outlook.timezone="${timeZone}"` } : undefined,
+  });
+}
+
 /** @deprecated use getCalendarView */
 export async function getEvents(calendarId?: string | undefined): Promise<Event[]> {
   const response: PageCollection = await get(eventsBase(calendarId), { top: 100 });

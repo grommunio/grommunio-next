@@ -8,7 +8,7 @@ import * as api from "../../api/calendar";
 import { ApiError } from "../../api/graph";
 import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { CalendarEvent, CalendarPrefs, CalendarState, CalendarViewName } from "./types";
-import { loadCalendarPrefs, loadView, loadVisibleCalendars, saveCalendarPrefs, saveView, saveVisibleCalendars } from "./prefs";
+import { isSharedCalendarId, loadSharedCalendars, saveSharedCalendars, sharedCalendarId, SharedCalendarRef, loadCalendarPrefs, loadView, loadVisibleCalendars, saveCalendarPrefs, saveView, saveVisibleCalendars } from "./prefs";
 import { browserTimeZone, graphDateToDate } from "./dates";
 import { EventReponseType } from "../../types/calendar";
 
@@ -96,21 +96,49 @@ export const deleteCalendar = createAsyncThunk<string, string, ThunkApi>(
 
 type LoadEventsArg = { start: string; end: string; calendarIds?: string[]; force?: boolean };
 
-export const loadEvents = createAsyncThunk<{ start: string; end: string; byCalendar: Record<string, Event[]> }, LoadEventsArg, ThunkApi>(
+export const loadEvents = createAsyncThunk<{ start: string; end: string; byCalendar: Record<string, Event[]>; errors: Record<string, string> }, LoadEventsArg, ThunkApi>(
   "calendar/loadEvents",
   async ({ start, end, calendarIds }, { getState, rejectWithValue }) => {
     const state = getState().calendar;
     const ids = calendarIds || state.visibleCalendarIds;
     try {
-      const results = await Promise.all(ids.map(async id => [id, await api.getCalendarView(id, start, end, browserTimeZone())] as const));
+      const errors: Record<string, string> = {};
+      const results = await Promise.all(ids.map(async id => {
+        if (!isSharedCalendarId(id)) return [id, await api.getCalendarView(id, start, end, browserTimeZone())] as const;
+        // A shared calendar without permission must not break the others
+        const ref = state.shared.find(r => sharedCalendarId(r.address) === id);
+        try {
+          return [id, ref ? await api.getSharedCalendarView(ref.address, start, end, browserTimeZone()) : []] as const;
+        } catch (err) {
+          errors[id] = errorMessage(err);
+          return [id, [] as Event[]] as const;
+        }
+      }));
       const byCalendar: Record<string, Event[]> = {};
       results.forEach(([id, events]) => { byCalendar[id] = events; });
-      return { start, end, byCalendar };
+      return { start, end, byCalendar, errors };
     } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
   },
 );
+
+export const addSharedCalendar = createAsyncThunk<SharedCalendarRef, { address: string; name?: string }, ThunkApi>(
+  "calendar/addSharedCalendar",
+  async ({ address, name }, { dispatch, getState, rejectWithValue }) => {
+    const normalized = address.trim().toLowerCase();
+    if (getState().calendar.shared.some(r => r.address === normalized)) return rejectWithValue("This calendar is already open");
+    try {
+      await api.getSharedCalendar(normalized);
+      return { address: normalized, name: name || normalized };
+    } catch (err) {
+      dispatch(pushAlertStack({ message: "The calendar of {{name}} could not be opened. It may not be shared with you.", params: { name: name || normalized }, severity: "error" }));
+      return rejectWithValue(errorMessage(err));
+    }
+  },
+);
+// t("This calendar is already open")
+// t("The calendar of {{name}} could not be opened. It may not be shared with you.")
 
 // For series changes, only the server can expand the occurrences
 export const refreshEvents = createAsyncThunk<void, void, ThunkApi>(
@@ -218,7 +246,22 @@ const initialState: CalendarState = {
   details: {},
   view: loadView(),
   prefs: loadCalendarPrefs(),
+  shared: loadSharedCalendars(),
+  calendarErrors: {},
 };
+
+// Fake entries for shared calendars so sidebar and colors treat them alike
+function sharedCalendarEntries(refs: SharedCalendarRef[]): Calendar[] {
+  return refs.map(ref => ({
+    id: sharedCalendarId(ref.address),
+    name: ref.name,
+    hexColor: ref.color,
+    owner: { address: ref.address, name: ref.name },
+    canEdit: false,
+    canShare: false,
+    isRemovable: true,
+  }));
+}
 
 const RESPONSE_MAP: Record<EventReponseType, string> = {
   [EventReponseType.accept]: "accepted",
@@ -240,6 +283,21 @@ const calendarSlice = createSlice({
     setView(state, action: PayloadAction<CalendarViewName>) {
       state.view = action.payload;
       saveView(action.payload);
+    },
+    removeSharedCalendar(state, action: PayloadAction<string>) {
+      const id = action.payload;
+      state.shared = state.shared.filter(r => sharedCalendarId(r.address) !== id);
+      saveSharedCalendars(state.shared);
+      state.calendars = state.calendars.filter(c => c.id !== id);
+      state.visibleCalendarIds = state.visibleCalendarIds.filter(v => v !== id);
+      saveVisibleCalendars(state.visibleCalendarIds);
+      delete state.events[id];
+      delete state.calendarErrors[id];
+    },
+    setSharedCalendarColor(state, action: PayloadAction<{ id: string; color: string }>) {
+      state.shared = state.shared.map(r => sharedCalendarId(r.address) === action.payload.id ? { ...r, color: action.payload.color } : r);
+      saveSharedCalendars(state.shared);
+      state.calendars = state.calendars.map(c => c.id === action.payload.id ? { ...c, hexColor: action.payload.color } : c);
     },
     toggleCalendarVisible(state, action: PayloadAction<string>) {
       const idx = state.visibleCalendarIds.indexOf(action.payload);
@@ -266,10 +324,10 @@ const calendarSlice = createSlice({
     builder
       .addCase(loadCalendars.pending, state => { state.calendarsLoading = true; })
       .addCase(loadCalendars.fulfilled, (state, action) => {
-        state.calendars = action.payload;
+        state.calendars = [...action.payload, ...sharedCalendarEntries(state.shared)];
         state.calendarsLoaded = true;
         state.calendarsLoading = false;
-        const ids = action.payload.map(c => c.id!);
+        const ids = state.calendars.map(c => c.id!);
         // First run shows the default calendar, later runs drop deleted ones
         if (loadVisibleCalendars() === null) {
           const def = action.payload.find(c => c.isDefaultCalendar) || action.payload[0];
@@ -294,6 +352,14 @@ const calendarSlice = createSlice({
       .addCase(updateCalendar.fulfilled, (state, action) => {
         state.calendars = state.calendars.map(c => c.id === action.payload.id ? { ...c, ...action.payload } : c);
       })
+      .addCase(addSharedCalendar.fulfilled, (state, action) => {
+        state.shared.push(action.payload);
+        saveSharedCalendars(state.shared);
+        state.calendars.push(...sharedCalendarEntries([action.payload]));
+        const id = sharedCalendarId(action.payload.address);
+        if (!state.visibleCalendarIds.includes(id)) state.visibleCalendarIds.push(id);
+        saveVisibleCalendars(state.visibleCalendarIds);
+      })
       .addCase(deleteCalendar.fulfilled, (state, action) => {
         state.calendars = state.calendars.filter(c => c.id !== action.payload);
         state.visibleCalendarIds = state.visibleCalendarIds.filter(id => id !== action.payload);
@@ -316,6 +382,8 @@ const calendarSlice = createSlice({
         Object.entries(byCalendar).forEach(([id, events]) => {
           state.events[id] = events;
           delete state.loading[id];
+          if (action.payload.errors[id]) state.calendarErrors[id] = action.payload.errors[id];
+          else delete state.calendarErrors[id];
         });
         state.error = undefined;
       })
@@ -350,7 +418,7 @@ const calendarSlice = createSlice({
   },
 });
 
-export const { setView, toggleCalendarVisible, updateCalendarPrefs, eventMoved } = calendarSlice.actions;
+export const { setView, toggleCalendarVisible, removeSharedCalendar, setSharedCalendarColor, updateCalendarPrefs, eventMoved } = calendarSlice.actions;
 export default calendarSlice.reducer;
 
 export const selectCalendars = (state: RootState) => state.calendar.calendars;
@@ -366,7 +434,7 @@ export const makeSelectCalendarEvents = (fallbackColor: string) => createSelecto
       const color = calendarColor(calendar, fallbackColor);
       (events[calendarId] || []).forEach(event => {
         if (event.isCancelled) return;
-        result.push({ ...event, calendarId, color, start_: graphDateToDate(event.start), end_: graphDateToDate(event.end) });
+        result.push({ ...event, calendarId, color, readOnly: isSharedCalendarId(calendarId), start_: graphDateToDate(event.start), end_: graphDateToDate(event.end) });
       });
     });
     return result;
