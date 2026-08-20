@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import { Box, Button, ButtonGroup, CircularProgress, IconButton, Menu, MenuItem, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery } from "@mui/material";
-import { Add, ChevronLeft, ChevronRight, KeyboardArrowDown, MenuOpen, Today } from "@mui/icons-material";
+import { Add, ChevronLeft, ChevronRight, KeyboardArrowDown, MenuOpen, Print, Today } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { Calendar as BigCalendar, dayjsLocalizer, SlotInfo, View, Views } from "react-big-calendar";
 import withDragAndDrop, { EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
@@ -273,7 +273,7 @@ const CalendarView = () => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      <Box role="toolbar" aria-label={t("Calendar actions")} sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, minHeight: 48, borderBottom: 1, borderColor: "divider", bgcolor: "background.paper", flexWrap: "wrap" }}>
+      <Box className="gn-no-print" role="toolbar" aria-label={t("Calendar actions")} sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, minHeight: 48, borderBottom: 1, borderColor: "divider", bgcolor: "background.paper", flexWrap: "wrap" }}>
         {!isMobile && (
           <Tooltip title={t("Toggle sidebar")}>
             <IconButton size="small" onClick={() => dispatch(updateCalendarPrefs({ sidebarVisible: !prefs.sidebarVisible }))} aria-label={t("Toggle sidebar")}><MenuOpen /></IconButton>
@@ -295,6 +295,9 @@ const CalendarView = () => {
         )}
         {loading && <CircularProgress size={16} />}
         <Box sx={{ flex: 1 }} />
+        <Tooltip title={t("Print")}>
+          <IconButton size="small" onClick={() => window.print()} aria-label={t("Print")}><Print fontSize="small" /></IconButton>
+        </Tooltip>
         {isMobile ? (
           <>
             <Button size="small" color="inherit" endIcon={<KeyboardArrowDown />} onClick={e => setViewMenu(e.currentTarget)}>{t(currentView.label)}</Button>
@@ -310,11 +313,12 @@ const CalendarView = () => {
       </Box>
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {prefs.sidebarVisible && !isMobile && (
-          <Box sx={{ width: 264, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper" }}>
+          <Box className="gn-no-print" sx={{ width: 264, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper" }}>
             <CalendarSidebar date={date} onDateChange={d => go(view === "month" ? "day" : view, d)} events={events} />
           </Box>
         )}
         <Box className="gn-calendar" sx={{ flex: 1, minWidth: 0, p: 1.5, bgcolor: "background.default" }} style={cssVars}>
+          <Typography className="gn-print-only" variant="h6" sx={{ mb: 1 }}>{titleFor(view, date, prefs.weekStartsOn)}</Typography>
           <DnDCalendar
             localizer={localizer}
             culture={localeReady}

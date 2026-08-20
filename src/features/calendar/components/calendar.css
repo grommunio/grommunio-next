@@ -102,3 +102,9 @@
   overflow: hidden;
   margin-right: 0 !important;
 }
+
+@media print {
+  .gn-calendar { padding: 0 !important; background: #fff !important; color: #000; }
+  .gn-calendar .rbc-time-content { overflow: visible !important; }
+  .gn-calendar .rbc-event { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

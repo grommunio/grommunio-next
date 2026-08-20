@@ -118,3 +118,13 @@ pre {
     /* Modern Browsers */ url("./fonts/Roboto-Black.ttf") format("truetype"),
     /* Safari, Android, iOS */ url("./fonts/Roboto-Black.ttf") format("svg"); /* Legacy iOS */
 }
+
+.gn-print-only { display: none; }
+
+/* || Print: only the module content, without the app chrome */
+@media print {
+  .gn-no-print, .MuiDrawer-root, .MuiPopover-root, .MuiSnackbar-root { display: none !important; }
+  html, body, #root { height: auto !important; overflow: visible !important; }
+  main { overflow: visible !important; }
+  .gn-print-only { display: block !important; }
+}
