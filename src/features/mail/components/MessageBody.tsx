@@ -22,8 +22,11 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
   const theme = useTheme();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(200);
-  const [showOriginal, setShowOriginal] = useState(false);
-  const [showImages, setShowImages] = useState(false);
+  // Overrides are tied to a message id, so the next one starts out blocked
+  const [originalFor, setOriginalFor] = useState<string>();
+  const [imagesFor, setImagesFor] = useState<string>();
+  const showOriginal = originalFor === message.id;
+  const showImages = imagesFor === message.id;
   const blockImages = useTypeSelector(state => state.mail.prefs.blockRemoteImages) && !showImages;
   const dark = theme.palette.mode === "dark";
 
@@ -47,34 +50,40 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
   }, [printable]);
 
   useEffect(() => {
-    setShowOriginal(false);
-    setShowImages(false);
-  }, [message.id]);
-
-  useEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;
     let observer: ResizeObserver | undefined;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    // The root element is at least as high as the frame, so measure the body
     const measure = () => {
       const doc = frame.contentDocument;
-      if (!doc?.documentElement) return;
-      const h = Math.max(doc.documentElement.scrollHeight, doc.body?.scrollHeight || 0);
+      if (!doc?.body) return;
+      const style = frame.contentWindow?.getComputedStyle(doc.body);
+      const margins = style ? (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0) : 0;
+      const h = Math.ceil(Math.max(doc.body.scrollHeight, doc.body.getBoundingClientRect().height) + margins);
       if (h > 0) setHeight(h + 8);
     };
     const onLoad = () => {
-      measure();
       const doc = frame.contentDocument;
-      if (doc?.body && "ResizeObserver" in window) {
+      if (!doc?.documentElement) return;
+      // A new document: collapse the frame first so the height can also shrink
+      const previous = frame.style.height;
+      frame.style.height = "0px";
+      const h = doc.documentElement.scrollHeight;
+      frame.style.height = previous;
+      if (h > 0) setHeight(h + 8);
+      if (doc.body && "ResizeObserver" in window) {
         observer = new ResizeObserver(measure);
         observer.observe(doc.body);
       }
       // Images load later, keep re-measuring for a bit
-      [100, 400, 1000, 2500].forEach(ms => setTimeout(measure, ms));
+      [100, 400, 1000, 2500].forEach(ms => timers.push(setTimeout(measure, ms)));
     };
     frame.addEventListener("load", onLoad);
     return () => {
       frame.removeEventListener("load", onLoad);
       observer?.disconnect();
+      timers.forEach(clearTimeout);
     };
   }, [prepared.html]);
 
@@ -83,7 +92,7 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
       {dark && !showOriginal && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
           {t("Colors were adjusted for dark mode.")}{" "}
-          <Link component="button" variant="caption" onClick={() => setShowOriginal(true)}>{t("Show original")}</Link>
+          <Link component="button" variant="caption" onClick={() => setOriginalFor(message.id!)}>{t("Show original")}</Link>
         </Typography>
       )}
       {prepared.blockedRemote > 0 && (
@@ -92,7 +101,7 @@ const MessageBody = ({ message, inlineAttachments, onHtml }: MessageBodyProps) =
           <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
             {t("Images from the internet were blocked to protect your privacy.")}
           </Typography>
-          <Button size="small" onClick={() => setShowImages(true)}>{t("Show images")}</Button>
+          <Button size="small" onClick={() => setImagesFor(message.id!)}>{t("Show images")}</Button>
         </Box>
       )}
       {prepared.missingInline > 0 && (

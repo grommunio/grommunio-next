@@ -800,6 +800,8 @@ export const sendCompose = createAsyncThunk<number, { patch: DraftPatch }, Thunk
       return rejectWithValue(errorMessage(err));
     }
   },
+  // Repeated Ctrl+Enter must not send twice
+  { condition: (_arg, { getState }) => getState().mail.compose?.status !== "sending" },
 );
 
 export const discardCompose = createAsyncThunk<number, void, ThunkApi>(

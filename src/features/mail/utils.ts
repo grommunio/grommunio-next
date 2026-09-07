@@ -187,18 +187,41 @@ function purifier(): DOMPurifyInstance {
 
 const REMOTE_URL = /^\s*(https?:)?\/\//i;
 const CSS_REMOTE_URL = /url\(\s*(['"]?)\s*(https?:)?\/\/[^)]*\)/gi;
+const CSS_REMOTE_STRING = /(['"])\s*(https?:)?\/\/[^'"]*\1/gi;
+const CSS_IMPORT = /@import[^;]*(;|$)/gi;
+const REMOTE_ATTRS = ["src", "href", "xlink:href", "poster", "data"];
+const REMOTE_SELECTOR = "img, image, use, video, audio, source, track, input, embed, object, iframe, frame";
 
-// Strips remote images and CSS backgrounds, returns the count
+// null when nothing was remote
+function blockRemoteCss(css: string, isStylesheet: boolean): string | null {
+  const hasImport = isStylesheet && /@import/i.test(css);
+  const hasUrl = CSS_REMOTE_URL.test(css);
+  CSS_REMOTE_URL.lastIndex = 0;
+  const hasString = CSS_REMOTE_STRING.test(css);
+  CSS_REMOTE_STRING.lastIndex = 0;
+  if (!hasImport && !hasUrl && !hasString) return null;
+  let result = isStylesheet ? css.replace(CSS_IMPORT, "") : css;
+  result = result.replace(CSS_REMOTE_URL, "none").replace(CSS_REMOTE_STRING, '""');
+  return result;
+}
+
+// Drops tracking pixels and other remote resources, returns the count
 function blockRemoteContent(doc: Document): number {
   let blocked = 0;
-  doc.querySelectorAll("img[src], image[href], video[poster], input[src]").forEach(el => {
-    ["src", "href", "poster"].forEach(attr => {
+  doc.querySelectorAll(REMOTE_SELECTOR).forEach(el => {
+    REMOTE_ATTRS.forEach(attr => {
       const value = el.getAttribute(attr);
       if (value && REMOTE_URL.test(value)) {
         el.removeAttribute(attr);
         blocked++;
       }
     });
+    // Any remote srcset candidate loads, drop the whole attribute
+    const srcset = el.getAttribute("srcset");
+    if (srcset && srcset.split(",").some(c => REMOTE_URL.test(c))) {
+      el.removeAttribute("srcset");
+      blocked++;
+    }
   });
   doc.querySelectorAll("[background]").forEach(el => {
     if (REMOTE_URL.test(el.getAttribute("background") || "")) {
@@ -207,22 +230,26 @@ function blockRemoteContent(doc: Document): number {
     }
   });
   doc.querySelectorAll("[style]").forEach(el => {
-    const style = el.getAttribute("style") || "";
-    if (CSS_REMOTE_URL.test(style)) {
-      el.setAttribute("style", style.replace(CSS_REMOTE_URL, "none"));
+    const style = blockRemoteCss(el.getAttribute("style") || "", false);
+    if (style !== null) {
+      el.setAttribute("style", style);
       blocked++;
     }
-    CSS_REMOTE_URL.lastIndex = 0;
   });
   doc.querySelectorAll("style").forEach(el => {
-    const css = el.textContent || "";
-    if (CSS_REMOTE_URL.test(css)) {
-      el.textContent = css.replace(CSS_REMOTE_URL, "none").replace(/@import[^;]+;/gi, "");
+    const css = blockRemoteCss(el.textContent || "", true);
+    if (css !== null) {
+      el.textContent = css;
       blocked++;
     }
-    CSS_REMOTE_URL.lastIndex = 0;
   });
   return blocked;
+}
+
+// contentId is missing from the list response
+export function inlineCandidates(list: Attachment[]): Attachment[] {
+  const inline = list.filter(a => a.isInline);
+  return inline.length ? inline : list.filter(a => (a.contentType || "").toLowerCase().startsWith("image/"));
 }
 
 export function normalizeCid(cid: string): string {

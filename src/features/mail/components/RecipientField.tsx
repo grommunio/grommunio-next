@@ -64,20 +64,23 @@ const RecipientField = ({ label, value, onChange, autoFocus, endAdornment, onBlu
 
   const local = useMemo(() => contactOptions(contacts), [contacts]);
 
-  // Remote suggestions, debounced
+  // Debounced, only the latest request may update the list
+  const requestSeq = useRef(0);
   useEffect(() => {
     clearTimeout(timer.current);
+    const seq = ++requestSeq.current;
     const term = input.trim();
     if (term.length < 2) {
       setPeople([]);
+      setSearching(false);
       return;
     }
     timer.current = setTimeout(() => {
       setSearching(true);
       searchPeople(term)
-        .then(result => setPeople(personOptions(result)))
-        .catch(() => setPeople([]))
-        .finally(() => setSearching(false));
+        .then(result => { if (seq === requestSeq.current) setPeople(personOptions(result)); })
+        .catch(() => { if (seq === requestSeq.current) setPeople([]); })
+        .finally(() => { if (seq === requestSeq.current) setSearching(false); });
     }, 300);
     return () => clearTimeout(timer.current);
   }, [input]);

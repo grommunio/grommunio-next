@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
 import DOMPurify from "dompurify";
+import { normalizeCid } from "./utils";
 export { isValidEmail } from "./utils";
 
 export function purify(html: string): string {
@@ -25,4 +26,17 @@ export function replaceInlineImageSources(html: string, sources: Map<string, str
     const cid = sources.get(src);
     return cid ? `${pre}${cid}${post}` : match;
   });
+}
+
+// Also returns a URL -> cid: map for replaceInlineImageSources
+export function resolveCidSources(html: string, urls: Map<string, string>): { html: string; sources: Map<string, string> } {
+  const sources = new Map<string, string>();
+  if (urls.size === 0) return { html, sources };
+  const result = html.replace(/(<img\b[^>]*?\bsrc\s*=\s*["'])cid:([^"']+)(["'])/gi, (match, pre, cid, post) => {
+    const url = urls.get(normalizeCid(cid));
+    if (!url) return match;
+    sources.set(url, `cid:${cid}`);
+    return `${pre}${url}${post}`;
+  });
+  return { html: result, sources };
 }

@@ -272,6 +272,18 @@ describe("compose", () => {
     expect(store.getState().mail.compose).toBeNull();
   });
 
+  it("sends only once when send is triggered twice", async () => {
+    const store = makeStore();
+    await openNew(store);
+    let resolveSend: () => void = () => undefined;
+    api.sendMail.mockReturnValue(new Promise<void>(resolve => { resolveSend = resolve; }));
+    const first = run(store, sendCompose({ patch: { subject: "a", toRecipients: [{ emailAddress: { address: "a@b.c" } }] } }));
+    const second = run(store, sendCompose({ patch: { subject: "a", toRecipients: [{ emailAddress: { address: "a@b.c" } }] } }));
+    resolveSend();
+    await Promise.all([first, second]);
+    expect(api.sendMail).toHaveBeenCalledTimes(1);
+  });
+
   it("ignores a reply that finishes after the compose was closed", async () => {
     const store = makeStore();
     let resolveReply: (m: Message) => void = () => undefined;

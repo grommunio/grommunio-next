@@ -20,9 +20,9 @@ import AttachmentList from "./AttachmentList";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
-import { isValidEmail, purify, replaceInlineImageSources, tinymceLanguage } from "../utils-compose";
+import { isValidEmail, purify, replaceInlineImageSources, resolveCidSources, tinymceLanguage } from "../utils-compose";
 import { getAttachment } from "../../../api/messages";
-import { getAttachmentRaw } from "../attachments";
+import { getAttachmentRaw, loadInlineImageUrls } from "../attachments";
 
 type ComposeProps = {
   fullscreen?: boolean;
@@ -56,6 +56,9 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
   const dirtyRef = useRef(false);
   // editor blob:/data: URL -> cid: of uploaded inline images
   const inlineImages = useRef(new Map<string, string>());
+  // object URLs for the draft's existing cid: images
+  const objectUrls = useRef<string[]>([]);
+  const [editorBody, setEditorBody] = useState<{ key: number; html: string }>();
 
   const key = compose?.key;
   const composeRef = useRef(compose);
@@ -76,7 +79,36 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
     dirtyRef.current = false;
     clearTimeout(autosaveTimer.current);
     inlineImages.current = new Map();
+    editorRef.current = null;
+    setEditorReady(false);
+    revokeObjectUrls();
+    const formKey = compose.key;
+    const draftId = compose.draftId;
+    if (!draftId || !/cid:/i.test(init.body)) {
+      setEditorBody({ key: formKey, html: init.body });
+      return;
+    }
+    // Show existing inline images from the attachments, saving maps them back to cid:
+    setEditorBody(undefined);
+    loadInlineImageUrls(draftId).then(urls => {
+      if (composeRef.current?.key !== formKey) {
+        urls.forEach(url => URL.revokeObjectURL(url));
+        return;
+      }
+      const resolved = resolveCidSources(init.body, urls);
+      resolved.sources.forEach((cid, url) => inlineImages.current.set(url, cid));
+      objectUrls.current = [...urls.values()];
+      setEditorBody({ key: formKey, html: resolved.html });
+    }).catch(() => {
+      if (composeRef.current?.key === formKey) setEditorBody({ key: formKey, html: init.body });
+    });
   }, [key, compose?.status === "creating"]);
+
+  const revokeObjectUrls = () => {
+    objectUrls.current.forEach(url => URL.revokeObjectURL(url));
+    objectUrls.current = [];
+  };
+  useEffect(() => revokeObjectUrls, []);
 
   const currentPatch = useCallback(() => ({
     toRecipients: to,
@@ -127,6 +159,9 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
 
   const handleSend = async () => {
     setSendAnchor(null);
+    // Ctrl+Enter bypasses the disabled Send button
+    const status = composeRef.current?.status;
+    if (!composeRef.current || status === "sending" || status === "creating") return;
     if (recipients.length === 0) {
       dispatch(pushAlertStack({ message: t("Add at least one recipient"), severity: "warning" }));
       return;
@@ -193,6 +228,8 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
   const addFiles = (files: FileList | File[] | null) => {
     const list = Array.from(files || []);
     if (list.length === 0) return;
+    // Attachment changes are edits: an untouched reply must not be discarded with them
+    markDirty();
     dispatch(addDraftAttachments({ files: list, patch: currentPatch() }));
   };
 
@@ -334,18 +371,18 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
                   attachments={compose.initial.attachments}
                   fetchContent={fetchContent}
                   fetchRaw={fetchRaw}
-                  onRemove={attachment => dispatch(removeDraftAttachment(attachment.id!))}
+                  onRemove={attachment => { markDirty(); dispatch(removeDraftAttachment(attachment.id!)); }}
                 />
               </Box>
             )}
           </Box>
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 320, p: 2, pt: 1, "& .tox-tinymce": { border: "none !important", flex: 1 }, "& .tox .tox-edit-area::before": { border: "none !important" } }}>
             {!editorReady && <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={24} /></Box>}
-            <Editor
+            {editorBody && editorBody.key === key && <Editor
               key={key}
               tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
               onInit={(_evt, editor) => { editorRef.current = editor; setEditorReady(true); }}
-              initialValue={compose.initial.body}
+              initialValue={editorBody.html}
               onDirty={markDirty}
               onKeyDown={(e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); handleSend(); } }}
               init={{
@@ -367,8 +404,12 @@ const Compose = ({ fullscreen, onToggleFullscreen }: ComposeProps) => {
                 convert_urls: false,
                 browser_spellcheck: true,
                 content_style: 'body { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; }',
+                // Existing inline images are attachments already, never upload them again
+                setup: (editor: any) => editor.on("PreInit", () => {
+                  editor.editorUpload?.addFilter((img: HTMLImageElement) => !inlineImages.current.has(img.getAttribute("src") || ""));
+                }),
               }}
-            />
+            />}
           </Box>
         </Box>
       )}

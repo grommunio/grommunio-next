@@ -14,7 +14,7 @@ import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { loadMessageDetails } from "../mailSlice";
 import { getAttachment, getAttachments } from "../../../api/messages";
 import { getAttachmentRaw } from "../attachments";
-import { formatFullDate, formatRecipient, isMeetingMessage, recipientName, senderAddress, senderName } from "../utils";
+import { formatFullDate, formatRecipient, inlineCandidates, isMeetingMessage, recipientName, senderAddress, senderName } from "../utils";
 import { categoryColor } from "../categories";
 
 type MessageActionsProps = {
@@ -130,6 +130,8 @@ export const MessageContent = ({ message, onBodyHtml }: { message: Message; onBo
   const loading = useTypeSelector(state => state.mail.loadingDetails[message.id!]);
   const error = useTypeSelector(state => state.mail.detailsError[message.id!]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentsFailed, setAttachmentsFailed] = useState(false);
+  const [attachmentsTry, setAttachmentsTry] = useState(0);
 
   useEffect(() => {
     if (!loaded && !error) dispatch(loadMessageDetails(message.id!));
@@ -139,6 +141,7 @@ export const MessageContent = ({ message, onBodyHtml }: { message: Message; onBo
   useEffect(() => {
     let cancelled = false;
     setAttachments([]);
+    setAttachmentsFailed(false);
     const needsInline = /cid:/i.test(message.body?.content || "");
     if (!message.hasAttachments && !needsInline) return;
     if (!loaded) return;
@@ -147,14 +150,14 @@ export const MessageContent = ({ message, onBodyHtml }: { message: Message; onBo
       if (cancelled) return;
       setAttachments(list);
       if (!needsInline) return;
-      const inline = list.filter(a => a.isInline || (a as FileAttachment).contentId);
+      const inline = inlineCandidates(list);
       const withContent = await Promise.all(inline.map(a => getAttachment(message.id!, a.id!).catch(() => a)));
       if (cancelled) return;
       const byId = new Map(withContent.map(a => [a.id, a]));
       setAttachments(list.map(a => byId.get(a.id) || a));
-    })().catch(() => undefined);
+    })().catch(() => { if (!cancelled) setAttachmentsFailed(true); });
     return () => { cancelled = true; };
-  }, [message.id, loaded]);
+  }, [message.id, loaded, attachmentsTry]);
 
   const inlineAttachments = useMemo(() => attachments.filter(a => a.isInline || (a as FileAttachment).contentId), [attachments]);
 
@@ -167,7 +170,12 @@ export const MessageContent = ({ message, onBodyHtml }: { message: Message; onBo
   const fetchRaw = (attachment: Attachment) => getAttachmentRaw(message.id!, attachment.id!);
 
   return <>
-    {isMeetingMessage(message) && <MeetingCard message={message as EventMessage} />}
+    {isMeetingMessage(message) && <MeetingCard key={message.id} message={message as EventMessage} />}
+    {attachmentsFailed && (
+      <Alert severity="warning" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={() => setAttachmentsTry(n => n + 1)}>{t("Try again")}</Button>}>
+        {t("The attachments could not be loaded.")}
+      </Alert>
+    )}
     {attachments.length > 0 && <Box sx={{ mb: 2 }}><AttachmentList attachments={attachments} fetchContent={fetchContent} fetchRaw={fetchRaw} /></Box>}
     {!loaded && loading ? (
       <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress size={28} /></Box>

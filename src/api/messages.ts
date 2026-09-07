@@ -253,12 +253,18 @@ export async function messageAttachments(message: Message): Promise<Attachment[]
   return response.value;
 }
 
+// contentId/contentBytes only exist on fileAttachment, Graph rejects them in $select
 export async function getAttachments(messageId: string, withContent = false): Promise<Attachment[]> {
-  const response: PageCollection = await get(`/me/messages/${messageId}/attachments`, {
-    select: withContent ? [...ATTACHMENT_SELECT, "contentId", "contentBytes"] : [...ATTACHMENT_SELECT, "contentId"],
-    top: 100,
-  });
-  return response.value;
+  const response: PageCollection = await get(`/me/messages/${messageId}/attachments`, { select: ATTACHMENT_SELECT, top: 100 });
+  const list: Attachment[] = response.value;
+  if (!withContent) return list;
+  return Promise.all(list.map(a => isFileAttachment(a) ? getAttachment(messageId, a.id!).catch(() => a) : a));
+}
+
+// Item and reference attachments have no contentBytes
+export function isFileAttachment(attachment: Attachment): boolean {
+  const type = (attachment as { "@odata.type"?: string })["@odata.type"];
+  return !type || type === "#microsoft.graph.fileAttachment";
 }
 
 export async function getAttachment(messageId: string, attachmentId: string): Promise<FileAttachment> {
