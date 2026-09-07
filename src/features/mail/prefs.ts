@@ -25,6 +25,8 @@ export const DEFAULT_MAIL_PREFS: MailPrefs = {
   listWidth: 380,
   folderPaneWidth: 248,
   folderPaneVisible: true,
+  conversationView: true,
+  conversationOrder: "newestFirst",
 };
 
 function readJson<T>(key: string, fallback: T): T {

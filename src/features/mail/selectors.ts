@@ -6,6 +6,7 @@ import type { Message } from "microsoft-graph";
 import type { RootState } from "../../store";
 import type { ExtendedMailFolder, WellKnownFolderName } from "../../types/messages";
 import { findFolder, findWellKnownFolder } from "./mailSlice";
+import { ConversationGroup, conversationMessages, groupConversations } from "./conversations";
 
 export const selectMail = (state: RootState) => state.mail;
 export const selectFolders = (state: RootState) => state.mail.folders;
@@ -40,6 +41,23 @@ export const makeSelectListMessages = (key: string) => createSelector(
     const top = items.filter(m => pinnedSet.has(m.id!));
     if (top.length === 0) return items;
     return [...top, ...items.filter(m => !pinnedSet.has(m.id!))];
+  },
+);
+
+export const makeSelectConversationGroups = (key: string) => createSelector(
+  [makeSelectListMessages(key), (state: RootState) => state.mail.lists[key]?.sort, selectPinned],
+  (messages, sort, pinned): ConversationGroup[] => groupConversations(messages, { sort, pinned }),
+);
+
+// Skips Deleted Items and Junk unless opened from there
+export const makeSelectConversationMessages = (conversationId: string | undefined, currentFolderId: string | undefined) => createSelector(
+  [(state: RootState) => state.mail.messages, selectFolders],
+  (messages, folders): Message[] => {
+    if (!conversationId) return [];
+    const excluded = new Set((["deleteditems", "junkemail"] as WellKnownFolderName[])
+      .map(name => findWellKnownFolder(folders, name)?.id)
+      .filter((id): id is string => Boolean(id) && id !== currentFolderId));
+    return conversationMessages(messages, conversationId, excluded);
   },
 );
 

@@ -16,14 +16,18 @@ import { useTypeSelector } from "../../../store";
 
 type MailToolbarProps = {
   ids: string[];
+  // Reply/forward target if it differs from ids, like the open message of a conversation
+  replyIds?: string[];
   onNewMessage: () => void;
   onToggleFolders: () => void;
   bodyHtml?: string;
 };
 
-const MailToolbar = ({ ids, onNewMessage, onToggleFolders, bodyHtml }: MailToolbarProps) => {
+const MailToolbar = ({ ids, replyIds = ids, onNewMessage, onToggleFolders, bodyHtml }: MailToolbarProps) => {
   const { t } = useTranslation();
   const actions = useMailActions(ids);
+  const replyActions = useMailActions(replyIds);
+  const singleReply = replyIds.length === 1;
   const pinned = useTypeSelector(state => state.mail.pinned);
   const [moveAnchor, setMoveAnchor] = useState<HTMLElement | null>(null);
   const [catAnchor, setCatAnchor] = useState<HTMLElement | null>(null);
@@ -57,9 +61,9 @@ const MailToolbar = ({ ids, onNewMessage, onToggleFolders, bodyHtml }: MailToolb
       {action(actions.isJunkFolder ? t("Not junk") : t("Mark as junk"), actions.isJunkFolder ? <Inbox /> : <ReportGmailerrorredOutlined />, actions.junk, !enabled, "md")}
       {action(t("Move to"), <DriveFileMoveOutlined />, e => setMoveAnchor(e.currentTarget))}
       <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
-      {action(t("Reply"), <Reply />, actions.reply, !single)}
-      {action(t("Reply all"), <ReplyAll />, actions.replyAll, !single)}
-      {action(t("Forward"), <Forward />, actions.forward, !single)}
+      {action(t("Reply"), <Reply />, replyActions.reply, !singleReply)}
+      {action(t("Reply all"), <ReplyAll />, replyActions.replyAll, !singleReply)}
+      {action(t("Forward"), <Forward />, replyActions.forward, !singleReply)}
       <Divider orientation="vertical" flexItem sx={{ my: 1, display: { xs: "none", sm: "block" } }} />
       {action(actions.allRead ? t("Mark as unread") : t("Mark as read"), actions.allRead ? <MailOutline /> : <DraftsOutlined />, actions.toggleRead, !enabled, "sm")}
       {action(actions.allFlagged ? t("Clear flag") : t("Flag"), actions.allFlagged ? <Flag color="error" /> : <FlagOutlined />, actions.toggleFlag, !enabled, "sm")}

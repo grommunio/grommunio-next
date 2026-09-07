@@ -6,7 +6,7 @@ import { Attachment, FileAttachment, Message, OutlookCategory } from "microsoft-
 import { fileToBase64 } from "../utils";
 import { MessageCategory, MessageListParams } from "../types/messages";
 import { SCROLL_ITEMS } from "../constants";
-import { ApiError, batch, BatchResponse, client, del, get, getNextPage, getPage, normalizeError, Page, patch, post, quoteSearch, request } from "./graph";
+import { ApiError, batch, BatchResponse, client, del, get, getAll, getNextPage, getPage, normalizeError, odataString, Page, patch, post, quoteSearch, request } from "./graph";
 
 // List view only, the body is loaded on demand
 export const MESSAGE_LIST_SELECT = [
@@ -50,6 +50,15 @@ export async function searchMessages(search: string, top = SCROLL_ITEMS): Promis
     search: quoteSearch(search),
     top,
   });
+}
+
+// Unsorted: some backends reject $orderby with this filter
+export async function getConversationMessages(conversationId: string, limit = 250): Promise<Message[]> {
+  return getAll<Message>("/me/messages", {
+    select: MESSAGE_LIST_SELECT,
+    filter: `conversationId eq ${odataString(conversationId)}`,
+    top: 50,
+  }, limit);
 }
 
 export async function getMessagesNextPage(nextLink: string): Promise<Page<Message>> {

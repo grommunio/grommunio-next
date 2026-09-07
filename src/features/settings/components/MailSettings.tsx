@@ -17,7 +17,7 @@ import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { purify, tinymceLanguage } from "../../mail/utils-compose";
 import { browserTimeZone, dayjs, Dayjs, graphDateToDate } from "../../calendar/dates";
 import { Section } from "./GeneralSettings";
-import type { ReadingPanePosition } from "../../mail/types";
+import type { ConversationOrder, ReadingPanePosition } from "../../mail/types";
 
 // Honours the returned timeZone; values without one are UTC
 const fromGraphDate = (value: NullableOption<DateTimeTimeZone> | undefined): Dayjs =>
@@ -44,6 +44,14 @@ export const MailLayoutSettings = () => {
         <FormControlLabel control={<Switch checked={prefs.showAvatars} onChange={e => set({ showAvatars: e.target.checked })} />} label={t("Show sender pictures")} />
         <FormControlLabel control={<Switch checked={prefs.focusedInbox} onChange={e => set({ focusedInbox: e.target.checked })} />} label={t("Sort messages into Focused and Other")} />
       </Box>
+    </Section>
+    <Section title={t("Conversations")} description={t("Sent Items and Drafts always show individual messages.")}>
+      <FormControlLabel control={<Switch checked={prefs.conversationView} onChange={e => set({ conversationView: e.target.checked })} />} label={t("Group messages by conversation")} />
+      <Typography variant="subtitle2" sx={{ mt: 1 }}>{t("Reading pane order")}</Typography>
+      <RadioGroup value={prefs.conversationOrder} onChange={e => set({ conversationOrder: e.target.value as ConversationOrder })}>
+        <FormControlLabel value="newestFirst" disabled={!prefs.conversationView} control={<Radio />} label={t("Newest message on top")} />
+        <FormControlLabel value="oldestFirst" disabled={!prefs.conversationView} control={<Radio />} label={t("Newest message on bottom")} />
+      </RadioGroup>
     </Section>
     <Section title={t("Mark as read")}>
       <RadioGroup value={prefs.markAsRead} onChange={e => set({ markAsRead: e.target.value as typeof prefs.markAsRead })}>

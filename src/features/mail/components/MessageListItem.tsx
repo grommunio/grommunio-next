@@ -27,6 +27,7 @@ export type MessageListItemProps = {
   showPreview: boolean;
   showRecipients: boolean;
   categories: OutlookCategory[];
+  nested?: boolean;
   onClick: (message: Message, e: MouseEvent) => void;
   onCheck: (message: Message) => void;
   onContextMenu: (message: Message, e: MouseEvent) => void;
@@ -50,7 +51,7 @@ function meetingIcon(message: Message) {
 }
 
 const MessageListItem = memo(function MessageListItem({
-  message, selected, tabStop, checked, selectionMode, pinned, compact, showAvatar, showPreview, showRecipients, categories,
+  message, selected, tabStop, checked, selectionMode, pinned, compact, showAvatar, showPreview, showRecipients, categories, nested,
   onClick, onCheck, onContextMenu, onDelete, onArchive, onToggleFlag, onToggleRead, onTogglePin, onDragStart,
 }: MessageListItemProps) {
   const { t } = useTranslation();
@@ -67,6 +68,7 @@ const MessageListItem = memo(function MessageListItem({
       aria-selected={selected}
       tabIndex={tabStop ? 0 : -1}
       data-message-id={message.id}
+      data-row-id={message.id}
       draggable
       onDragStart={e => onDragStart?.(message, e)}
       onClick={e => onClick(message, e)}
@@ -77,8 +79,9 @@ const MessageListItem = memo(function MessageListItem({
         alignItems: "flex-start",
         gap: 1,
         px: 1,
-        py: compact ? 0.5 : 1,
-        minHeight: compact ? 44 : 64,
+        pl: nested ? 4 : 1,
+        py: compact || nested ? 0.5 : 1,
+        minHeight: compact || nested ? 44 : 64,
         cursor: "pointer",
         borderBottom: 1,
         borderColor: "divider",

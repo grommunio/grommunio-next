@@ -17,12 +17,19 @@ import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import FolderPane from "./FolderPane";
 import MessageList from "./MessageList";
 import MessageView from "./MessageView";
+import ConversationView from "./ConversationView";
+import type { ConversationAction } from "./ConversationListItem";
 import Compose from "./Compose";
 import MailToolbar from "./MailToolbar";
 import MessageActionsMenu from "./MessageActionsMenu";
 import useMailActions from "../useMailActions";
+import useMarkAsRead from "../useMarkAsRead";
+import {
+  buildRows, ConversationGroup, conversationRowId, conversationViewApplies, flatRows, ListRow, rowIds, rowMessage,
+  selectedRowId as findSelectedRow,
+} from "../conversations";
 import { folderSlug } from "../utils";
-import { makeSelectListMessages } from "../selectors";
+import { makeSelectConversationGroups, makeSelectListMessages } from "../selectors";
 import {
   clearSearchLists, clearSelection, deleteConfirmClosed, deleteMessages, findFolder, findWellKnownFolder, listKey, loadCategories,
   loadChildFolders, loadFolders, loadMessageDetails, loadMessages, loadMoreMessages, moveMessages, requestDelete, setListFilter,
@@ -68,11 +75,13 @@ const MailView = () => {
   const [search, setSearch] = useState("");
   const [focusedTab, setFocusedTab] = useState<"focused" | "other">("focused");
   const [contextMenu, setContextMenu] = useState<{ position: { top: number; left: number }; ids: string[] } | null>(null);
-  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
+  const [more, setMore] = useState<{ anchor: HTMLElement; id: string; bodyHtml?: string } | null>(null);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  // Picked from the rows of an expanded conversation
+  const [childSelected, setChildSelected] = useState(false);
   const [bodyHtml, setBodyHtml] = useState("");
   const [composeFullscreen, setComposeFullscreen] = useState(false);
   const [folderDrawer, setFolderDrawer] = useState(false);
-  const readTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const folder = useMemo(() => {
     const slug = params.folder;
@@ -87,6 +96,10 @@ const MailView = () => {
   const list = useTypeSelector(state => state.mail.lists[key]);
   const selectListMessages = useMemo(() => makeSelectListMessages(key), [key]);
   const messages = useTypeSelector(selectListMessages);
+  const selectGroups = useMemo(() => makeSelectConversationGroups(key), [key]);
+  const groups = useTypeSelector(selectGroups);
+  const conversationMode = conversationViewApplies(prefs.conversationView, folder?.wellKnownName, Boolean(search));
+  const rows = useMemo(() => conversationMode ? buildRows(groups, expanded) : flatRows(messages), [conversationMode, groups, expanded, messages]);
   const selectedMessage = useTypeSelector(state => messageId ? state.mail.messages[messageId] : undefined);
   const selectedError = useTypeSelector(state => messageId ? state.mail.detailsError[messageId] : undefined);
   const selectedLoading = useTypeSelector(state => messageId ? state.mail.loadingDetails[messageId] : false);
@@ -166,19 +179,19 @@ const MailView = () => {
     };
   }, [syncIds.join("|"), list?.loaded]);
 
-  // Only on selection change so "mark as unread" sticks
+  const selectedRowId = conversationMode ? findSelectedRow(rows, messageId, childSelected) : messageId;
+  const selectedRow = useMemo(() => rows.find(r => r.id === selectedRowId), [rows, selectedRowId]);
+  // The conversation pane marks its expanded messages itself
+  const conversationPane = conversationMode && Boolean(selectedMessage?.conversationId);
+
+  // Expansion is per folder view
   useEffect(() => {
-    clearTimeout(readTimer.current);
-    const id = selectedMessage?.id;
-    if (!id || prefs.markAsRead === "never") return;
-    const mark = () => {
-      const current = store.getState().mail.messages[id];
-      if (current && !current.isRead) dispatch(updateMessages({ ids: [id], props: { isRead: true } }));
-    };
-    if (prefs.markAsRead === "onSelect") mark();
-    else readTimer.current = setTimeout(mark, prefs.markAsReadDelay * 1000);
-    return () => clearTimeout(readTimer.current);
-  }, [selectedMessage?.id, prefs.markAsRead, prefs.markAsReadDelay]);
+    setExpanded(new Set());
+    setChildSelected(false);
+  }, [key]);
+
+  // Only on selection change so "mark as unread" sticks
+  useMarkAsRead(selectedMessage?.id && !conversationPane ? [selectedMessage.id] : [], selectedMessage?.id);
 
   const resetSearch = () => {
     setSearch("");
@@ -204,42 +217,89 @@ const MailView = () => {
   }, [navigate, setQuery]);
 
   // Refs keep the memoised list items stable
-  const latest = useRef({ messages, messageId, selection, folder, openMessage });
-  latest.current = { messages, messageId, selection, folder, openMessage };
+  const latest = useRef({ rows, selectedRowId, selection, folder, openMessage });
+  latest.current = { rows, selectedRowId, selection, folder, openMessage };
+
+  // Shift+click range select
+  const selectRange = (rowId: string) => {
+    const { rows, selectedRowId } = latest.current;
+    const a = rows.findIndex(r => r.id === selectedRowId);
+    const b = rows.findIndex(r => r.id === rowId);
+    if (a === -1 || b === -1) return false;
+    dispatch(setSelection(Array.from(new Set(rows.slice(Math.min(a, b), Math.max(a, b) + 1).flatMap(rowIds)))));
+    return true;
+  };
+
+  const toggleIds = (ids: string[]) => {
+    const { selection } = latest.current;
+    const all = ids.every(id => selection.includes(id));
+    dispatch(setSelection(all ? selection.filter(id => !ids.includes(id)) : Array.from(new Set([...selection, ...ids]))));
+  };
 
   const handleSelectMessage = useCallback((message: Message, e: MouseEvent | KeyboardEvent) => {
-    const { messages, messageId, selection, folder, openMessage } = latest.current;
+    const { selection, folder, openMessage } = latest.current;
     if (e.ctrlKey || e.metaKey) {
       dispatch(toggleSelection(message.id!));
       return;
     }
-    if (e.shiftKey && messageId) {
-      const ids = messages.map(m => m.id!);
-      const a = ids.indexOf(messageId);
-      const b = ids.indexOf(message.id!);
-      if (a !== -1 && b !== -1) {
-        dispatch(setSelection(ids.slice(Math.min(a, b), Math.max(a, b) + 1)));
-        return;
-      }
-    }
+    if (e.shiftKey && selectRange(message.id!)) return;
     if (selection.length) dispatch(clearSelection());
     if (message.isDraft && folder?.wellKnownName === "drafts") {
       dispatch(startCompose({ mode: "draft", originalId: message.id! }));
       return;
     }
+    setChildSelected(true);
     openMessage(message.id!);
   }, []);
 
+  const handleSelectConversation = useCallback((group: ConversationGroup, e: MouseEvent | KeyboardEvent) => {
+    const { selection, openMessage } = latest.current;
+    if (e.ctrlKey || e.metaKey) {
+      toggleIds(group.ids);
+      return;
+    }
+    if (e.shiftKey && selectRange(conversationRowId(group.id))) return;
+    if (selection.length) dispatch(clearSelection());
+    setChildSelected(false);
+    openMessage(group.latest.id!);
+  }, []);
+
   // Keyboard navigation replaces the history entry
-  const handleNavigate = useCallback((message: Message) => latest.current.openMessage(message.id!, true), []);
+  const handleNavigate = useCallback((row: ListRow) => {
+    setChildSelected(row.kind === "message" && Boolean(row.nested));
+    latest.current.openMessage(rowMessage(row).id!, true);
+  }, []);
+
+  const handleToggleExpand = useCallback((group: ConversationGroup) => setExpanded(prev => {
+    const next = new Set(prev);
+    if (next.has(group.id)) next.delete(group.id);
+    else next.add(group.id);
+    return next;
+  }), []);
 
   const handleCheck = useCallback((message: Message) => dispatch(toggleSelection(message.id!)), []);
+  const handleCheckConversation = useCallback((group: ConversationGroup) => toggleIds(group.ids), []);
   const handleCheckAll = (checked: boolean) => dispatch(checked ? setSelection(messages.map(m => m.id!)) : clearSelection());
 
   const handleContextMenu = useCallback((message: Message, position: { top: number; left: number }) => {
     const { selection } = latest.current;
     const ids = selection.includes(message.id!) ? selection : [message.id!];
     setContextMenu({ position, ids });
+  }, []);
+
+  // The selection if it covers the conversation
+  const conversationTargets = (group: ConversationGroup) => {
+    const { selection } = latest.current;
+    return group.ids.every(id => selection.includes(id)) ? selection : group.ids;
+  };
+
+  const handleConversationContextMenu = useCallback((group: ConversationGroup, position: { top: number; left: number }) => {
+    setContextMenu({ position, ids: conversationTargets(group) });
+  }, []);
+
+  const handleConversationDragStart = useCallback((group: ConversationGroup, e: React.DragEvent) => {
+    e.dataTransfer.setData("application/x-message-ids", JSON.stringify(conversationTargets(group)));
+    e.dataTransfer.effectAllowed = "move";
   }, []);
 
   const handleLoadMore = useCallback(() => dispatch(loadMoreMessages(key)), [key]);
@@ -263,9 +323,13 @@ const MailView = () => {
     e.dataTransfer.effectAllowed = "move";
   }, []);
 
-  // Actions for the current target: the checked messages or the open one
-  const targetIds = useMemo(() => selection.length ? selection : messageId ? [messageId] : [], [selection, messageId]);
+  const targetIds = useMemo(() => selection.length ? selection :
+    selectedRow?.kind === "conversation" ? selectedRow.group.ids :
+      messageId ? [messageId] : [], [selection, messageId, selectedRow]);
   const actions = useMailActions(targetIds);
+  // Reply and forward use the open message when a conversation is the target
+  const replyIds = useMemo(() => selection.length ? selection : messageId ? [messageId] : [], [selection, messageId]);
+  const replyActions = useMailActions(replyIds);
 
   // Hover actions act on that one message, not the selection
   const itemDelete = useCallback((m: Message) => dispatch(requestDelete([m.id!])), []);
@@ -278,6 +342,29 @@ const MailView = () => {
   const itemToggleFlag = useCallback((m: Message) => dispatch(updateMessages({ ids: [m.id!], props: { flag: { flagStatus: m.flag?.flagStatus === "flagged" ? "notFlagged" : "flagged" } } })), []);
   const itemToggleRead = useCallback((m: Message) => dispatch(updateMessages({ ids: [m.id!], props: { isRead: !m.isRead } })), []);
   const itemTogglePin = useCallback((m: Message) => dispatch(togglePinned(m.id!)), []);
+
+  // Hover actions of a conversation row act on all its messages in the folder
+  const conversationAction = useCallback((group: ConversationGroup, action: ConversationAction) => {
+    const ids = group.ids;
+    switch (action) {
+    case "delete": dispatch(requestDelete(ids)); break;
+    case "archive": {
+      const archive = findWellKnownFolder(store.getState().mail.folders, "archive");
+      if (archive?.id) dispatch(moveMessages({ ids, destinationId: archive.id }));
+      else dispatch(pushAlertStack({ message: "This mailbox has no archive folder", severity: "warning" }));
+      break;
+    }
+    case "flag":
+      dispatch(updateMessages({ ids, props: { flag: { flagStatus: group.flagged ? "notFlagged" : "flagged" } } }));
+      break;
+    case "read": {
+      const isRead = group.unread > 0;
+      const changed = group.messages.filter(m => Boolean(m.isRead) !== isRead).map(m => m.id!);
+      if (changed.length) dispatch(updateMessages({ ids: changed, props: { isRead } }));
+      break;
+    }
+    }
+  }, []);
 
   // Deep link to a message outside the loaded page
   const prevIds = useRef<string[]>([]);
@@ -298,17 +385,17 @@ const MailView = () => {
   }, [messages, messageId, selectedMessage, list?.loaded, selectedError]);
 
   const moveSelection = (delta: number) => {
-    if (messages.length === 0) return;
-    const idx = messageId ? messages.findIndex(m => m.id === messageId) : -1;
-    const next = messages[Math.max(0, Math.min(messages.length - 1, idx + delta))];
-    if (next) openMessage(next.id!, true);
+    if (rows.length === 0) return;
+    const idx = selectedRowId ? rows.findIndex(r => r.id === selectedRowId) : -1;
+    const next = rows[Math.max(0, Math.min(rows.length - 1, idx + delta))];
+    if (next) handleNavigate(next);
   };
 
   useKeyboardShortcuts([
     { key: "n", handler: () => dispatch(startCompose({ mode: "new" })) },
-    { key: "r", handler: () => targetIds.length === 1 && actions.reply() },
-    { key: "a", shift: true, handler: () => targetIds.length === 1 && actions.replyAll() },
-    { key: "f", handler: () => targetIds.length === 1 && actions.forward() },
+    { key: "r", handler: () => replyIds.length === 1 && replyActions.reply() },
+    { key: "a", shift: true, handler: () => replyIds.length === 1 && replyActions.replyAll() },
+    { key: "f", handler: () => replyIds.length === 1 && replyActions.forward() },
     { key: "Delete", handler: () => actions.remove() },
     { key: "Delete", shift: true, handler: () => actions.remove(true) },
     { key: "e", handler: () => actions.archive() },
@@ -320,7 +407,7 @@ const MailView = () => {
     { key: "ArrowUp", handler: () => moveSelection(-1) },
     { key: "a", ctrl: true, handler: () => handleCheckAll(true) },
     { key: "Escape", handler: () => { dispatch(clearSelection()); if (search) resetSearch(); } },
-  ], !compose && !contextMenu && !moreAnchor && !deleteConfirm);
+  ], !compose && !contextMenu && !more && !deleteConfirm);
 
   const paneOpen = Boolean(messageId || compose);
   const showFolderPane = prefs.folderPaneVisible && !isMobile;
@@ -334,13 +421,21 @@ const MailView = () => {
     <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", bgcolor: "background.paper" }}>
       {compose ? (
         <Compose fullscreen={composeFullscreen} onToggleFullscreen={() => setComposeFullscreen(!composeFullscreen)} />
+      ) : selectedMessage && conversationPane ? (
+        <ConversationView
+          message={selectedMessage}
+          currentFolderId={folder?.id || undefined}
+          onMore={(anchor, id, html) => setMore({ anchor, id, bodyHtml: html })}
+          onBack={isMobile || prefs.readingPane === "off" ? () => folder && navigate(`/mail/${folderSlug(folder)}`) : undefined}
+          onBodyHtml={setBodyHtml}
+        />
       ) : selectedMessage ? (
         <MessageView
           message={selectedMessage}
-          onReply={actions.reply}
-          onReplyAll={actions.replyAll}
-          onForward={actions.forward}
-          onMore={anchor => setMoreAnchor(anchor)}
+          onReply={replyActions.reply}
+          onReplyAll={replyActions.replyAll}
+          onForward={replyActions.forward}
+          onMore={anchor => setMore({ anchor, id: selectedMessage.id! })}
           onBack={isMobile || prefs.readingPane === "off" ? () => folder && navigate(`/mail/${folderSlug(folder)}`) : undefined}
           onBodyHtml={setBodyHtml}
         />
@@ -358,6 +453,7 @@ const MailView = () => {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <MailToolbar
         ids={targetIds}
+        replyIds={replyIds}
         onNewMessage={() => dispatch(startCompose({ mode: "new" }))}
         onToggleFolders={() => isMobile ? setFolderDrawer(true) : dispatch(updatePrefs({ folderPaneVisible: !prefs.folderPaneVisible }))}
         bodyHtml={bodyHtml}
@@ -391,7 +487,9 @@ const MailView = () => {
                   folder={folder}
                   list={list}
                   messages={messages}
-                  selectedId={messageId}
+                  rows={rows}
+                  selectedRowId={selectedRowId}
+                  expanded={expanded}
                   selection={selection}
                   pinned={pinned}
                   isSearch={Boolean(search)}
@@ -412,6 +510,12 @@ const MailView = () => {
                   onToggleRead={itemToggleRead}
                   onTogglePin={itemTogglePin}
                   onDragStart={handleDragStart}
+                  onToggleExpand={handleToggleExpand}
+                  onSelectConversation={handleSelectConversation}
+                  onCheckConversation={handleCheckConversation}
+                  onConversationContextMenu={handleConversationContextMenu}
+                  onConversationAction={conversationAction}
+                  onConversationDragStart={handleConversationDragStart}
                 />
               </Box>
             )}
@@ -427,11 +531,11 @@ const MailView = () => {
         bodyHtml={contextMenu?.ids.length === 1 && contextMenu.ids[0] === messageId ? bodyHtml : undefined}
       />
       <MessageActionsMenu
-        ids={messageId ? [messageId] : []}
-        anchorEl={moreAnchor}
-        open={Boolean(moreAnchor)}
-        onClose={() => setMoreAnchor(null)}
-        bodyHtml={bodyHtml}
+        ids={more ? [more.id] : []}
+        anchorEl={more?.anchor}
+        open={Boolean(more)}
+        onClose={() => setMore(null)}
+        bodyHtml={more?.bodyHtml ?? bodyHtml}
         compact
       />
       <ConfirmDialog

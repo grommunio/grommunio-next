@@ -336,6 +336,20 @@ export const loadMessageDetails = createAsyncThunk<Message, string, ThunkApi>(
   },
 );
 
+export const loadConversation = createAsyncThunk<Message[], string, ThunkApi>(
+  "mail/loadConversation",
+  async (conversationId, { rejectWithValue }) => {
+    try {
+      return await messagesApi.getConversationMessages(conversationId);
+    } catch (err) {
+      return rejectWithValue(errorMessage(err));
+    }
+  },
+  {
+    condition: (conversationId, { getState }) => !getState().mail.conversations[conversationId]?.loading,
+  },
+);
+
 function unreadDeltas(messages: Message[], isRead: boolean): Array<{ folderId: string; delta: number }> {
   const deltas = new Map<string, number>();
   messages.forEach(m => {
@@ -829,6 +843,7 @@ const initialState: MailState = {
   lastSync: 0,
   newArrivals: [],
   sync: {},
+  conversations: {},
   deleteConfirm: null,
 };
 
@@ -1149,6 +1164,16 @@ const mailSlice = createSlice({
         delete state.loadingDetails[action.meta.arg];
         state.detailsError[action.meta.arg] = action.payload || action.error.message || "Error";
       })
+      .addCase(loadConversation.pending, (state, action) => {
+        state.conversations[action.meta.arg] = { loading: true, loaded: Boolean(state.conversations[action.meta.arg]?.loaded) };
+      })
+      .addCase(loadConversation.fulfilled, (state, action) => {
+        mergeMessages(state, action.payload);
+        state.conversations[action.meta.arg] = { loading: false, loaded: true };
+      })
+      .addCase(loadConversation.rejected, (state, action) => {
+        state.conversations[action.meta.arg] = { loading: false, loaded: true, error: action.payload || action.error.message };
+      })
       .addCase(loadCategories.fulfilled, (state, action) => {
         state.categories = action.payload;
         state.categoriesLoaded = true;
@@ -1203,6 +1228,8 @@ const mailSlice = createSlice({
       .addCase(sendCompose.pending, state => { if (state.compose) state.compose.status = "sending"; })
       .addCase(sendCompose.fulfilled, (state, action) => {
         if (state.compose?.key === action.payload) state.compose = null;
+        // The sent message may belong to an open conversation: reload it
+        Object.values(state.conversations).forEach(c => { c.loaded = false; });
       })
       .addCase(sendCompose.rejected, (state, action) => {
         if (state.compose) { state.compose.status = "ready"; state.compose.error = action.payload; }

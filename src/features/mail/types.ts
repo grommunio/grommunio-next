@@ -49,6 +49,16 @@ export type MailPrefs = {
   listWidth: number;
   folderPaneWidth: number;
   folderPaneVisible: boolean;
+  conversationView: boolean;
+  conversationOrder: ConversationOrder;
+};
+
+export type ConversationOrder = "newestFirst" | "oldestFirst";
+
+export type ConversationLoadState = {
+  loading: boolean;
+  loaded: boolean;
+  error?: string;
 };
 
 export type ComposeMode = "new" | "reply" | "replyAll" | "forward" | "draft";
@@ -113,5 +123,6 @@ export type MailState = {
   newArrivals: string[];
   // Kept across list reloads
   sync: Record<string, FolderSyncState>;
+  conversations: Record<string, ConversationLoadState>;
   deleteConfirm: DeleteRequest | null;
 };
