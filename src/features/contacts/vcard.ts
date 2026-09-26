@@ -151,12 +151,31 @@ export function csvToContacts(text: string): Contact[] {
     if (Object.values(bAddr).some(Boolean)) contact.businessAddress = bAddr;
     const hAddr = { street: get(row, cols.hStreet), city: get(row, cols.hCity), state: get(row, cols.hState), postalCode: get(row, cols.hZip), countryOrRegion: get(row, cols.hCountry) };
     if (Object.values(hAddr).some(Boolean)) contact.homeAddress = hAddr;
-    const bday = get(row, cols.birthday);
-    if (/^\d{4}-\d{2}-\d{2}/.test(bday)) contact.birthday = bday.slice(0, 10) + "T00:00:00Z";
+    const bday = parseCsvDate(get(row, cols.birthday));
+    if (bday) contact.birthday = bday + "T00:00:00Z";
     if (get(row, cols.web)) contact.businessHomePage = get(row, cols.web);
     if (get(row, cols.notes)) contact.personalNotes = get(row, cols.notes);
     return contact;
   }).filter(c => c.displayName);
+}
+
+// ISO, M/D/YYYY (Outlook en-US) or D.M.YYYY. Outlook writes "0/0/00" for none.
+export function parseCsvDate(value: string): string | undefined {
+  const text = value.trim();
+  let y: number, m: number, d: number;
+  let match = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(text);
+  if (match) [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  else if ((match = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/.exec(text))) [m, d, y] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  else if ((match = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/.exec(text))) [d, m, y] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  else return undefined;
+  if (match[3].length === 2 && !match[0].includes("-")) {
+    // Two-digit years: not in the future
+    const century = Math.floor(new Date().getFullYear() / 100) * 100;
+    y = century + y > new Date().getFullYear() ? century - 100 + y : century + y;
+  }
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (m < 1 || d < 1 || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return undefined;
+  return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
 export function downloadText(filename: string, content: string, type: string) {

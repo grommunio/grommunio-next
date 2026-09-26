@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Button, Checkbox, Chip, Collapse, Divider, IconButton, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, Skeleton, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Box, Button, Checkbox, Chip, Collapse, Divider, Drawer, IconButton, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, Skeleton, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { Add, ErrorOutline, CalendarTodayOutlined, Check, CheckCircle, ChevronRight, DeleteOutline, DriveFileRenameOutline, ExpandMore, FlagOutlined, FormatListBulleted, HomeOutlined, MenuOpen, NotificationsOutlined, RadioButtonUnchecked, Repeat, Star, StarBorder, SwapVert, TaskAltOutlined, VisibilityOffOutlined, VisibilityOutlined } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from "react";
@@ -89,6 +89,8 @@ const TasksView = () => {
   const [confirmDeleteList, setConfirmDeleteList] = useState<TodoTaskList | null>(null);
   const [completedOpen, setCompletedOpen] = useState(true);
   const [listsVisible, setListsVisible] = useState(true);
+  // Mobile: the list pane opens as a drawer
+  const [listDrawer, setListDrawer] = useState(false);
 
   const listId = params.listId ? decodeURIComponent(params.listId) : undefined;
   const taskId = params.taskId ? decodeURIComponent(params.taskId) : undefined;
@@ -132,6 +134,8 @@ const TasksView = () => {
   useEffect(() => {
     lists.forEach(l => l.id && dispatch(loadTasks({ listId: l.id })));
   }, [lists.length]);
+
+  useEffect(() => { setListDrawer(false); }, [listId]);
 
   useGlobalSearch(t("Search tasks"), q => setSearch(q.toLowerCase()), () => setSearch(""));
 
@@ -220,14 +224,62 @@ const TasksView = () => {
     );
   };
 
+  const goList = (id: string) => { navigate(`/tasks/${encodeURIComponent(id)}`); setListDrawer(false); };
+  const listPane = (
+    <Box sx={{ width: isMobile ? "100%" : 240, height: isMobile ? "100%" : undefined, flexShrink: 0, borderRight: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.paper", py: 1, display: "flex", flexDirection: "column", overflowY: "auto" }} role="navigation" aria-label={t("Task lists")}>
+      {SMART_LISTS.map(sl => {
+        const active = sl.id === listId;
+        const count = lists.reduce((sum, l) => sum + (tasks[l.id!] || []).filter(x => x.status !== "completed" && sl.match(x)).length, 0);
+        const Icon = sl.icon;
+        return (
+          <Box key={sl.id} role="link" tabIndex={0} aria-current={active ? "page" : undefined}
+            onClick={() => goList(sl.id)}
+            onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); goList(sl.id); } }}
+            sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}>
+            <Icon fontSize="small" sx={{ color: active ? "primary.main" : "text.secondary" }} />
+            <Typography variant="body2" noWrap sx={{ flex: 1 }}>{t(sl.label)}</Typography>
+            {count > 0 && <Typography variant="caption" color="text.secondary">{count}</Typography>}
+          </Box>
+        );
+      })}
+      <Divider sx={{ my: 0.5, mx: 2 }} />
+      {lists.map(l => {
+        const active = l.id === listId;
+        const isEditing = editingList?.id === l.id;
+        const count = (tasks[l.id!] || []).filter(x => x.status !== "completed").length;
+        return (
+          <Box key={l.id} role="link" tabIndex={isEditing ? -1 : 0} aria-current={active ? "page" : undefined}
+            onClick={() => goList(l.id!)}
+            onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); goList(l.id!); } }}
+            onContextMenu={e => { if (l.wellknownListName && l.wellknownListName !== "none") return; e.preventDefault(); setListMenu({ anchor: { top: e.clientY, left: e.clientX }, list: l }); }}
+            sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}>
+            <Box sx={{ color: active ? "primary.main" : "text.secondary", display: "flex" }}>{listIcon(l)}</Box>
+            {isEditing ? <InputBase autoFocus value={editingList!.value} onChange={e => setEditingList({ id: l.id!, value: e.target.value })} onKeyDown={onListKey} onBlur={commitList} onClick={e => e.stopPropagation()} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} /> :
+              <Typography variant="body2" noWrap sx={{ flex: 1 }}>{listName(l)}</Typography>}
+            {!isEditing && loaded[l.id!] && count > 0 && <Typography variant="caption" color="text.secondary">{count}</Typography>}
+          </Box>
+        );
+      })}
+      {editingList && !editingList.id && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5 }}>
+          <FormatListBulleted fontSize="small" sx={{ color: "text.secondary" }} />
+          <InputBase autoFocus placeholder={t("List name")} value={editingList.value} onChange={e => setEditingList({ value: e.target.value })} onKeyDown={onListKey} onBlur={commitList} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} />
+        </Box>
+      )}
+      <Box sx={{ flex: 1 }} />
+      <Divider />
+      <Button startIcon={<Add />} onClick={() => setEditingList({ value: "" })} sx={{ m: 1, justifyContent: "flex-start", color: "text.secondary" }}>{t("New list")}</Button>
+    </Box>
+  );
+
   const showMain = !isMobile || !taskId;
   const showDetail = Boolean(selectedTask) && (!isMobile || Boolean(taskId));
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <Box role="toolbar" aria-label={t("Task actions")} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, minHeight: 48, borderBottom: 1, borderColor: "divider", bgcolor: "background.paper" }}>
-        {!isMobile && <Tooltip title={t("Toggle lists")}><IconButton size="small" onClick={() => setListsVisible(!listsVisible)} aria-label={t("Toggle lists")}><MenuOpen /></IconButton></Tooltip>}
-        <Button variant="contained" startIcon={<Add />} onClick={() => setEditingList({ value: "" })} sx={{ mx: 1 }}>{t("New list")}</Button>
+        <Tooltip title={t("Toggle lists")}><IconButton size="small" onClick={() => isMobile ? setListDrawer(true) : setListsVisible(!listsVisible)} aria-label={t("Toggle lists")}><MenuOpen /></IconButton></Tooltip>
+        <Button variant="contained" startIcon={<Add />} onClick={() => { setEditingList({ value: "" }); if (isMobile) setListDrawer(true); }} sx={{ mx: 1 }}>{t("New list")}</Button>
         <Box sx={{ flex: 1 }} />
         <Tooltip title={showCompleted ? t("Hide completed tasks") : t("Show completed tasks")}>
           <IconButton size="small" onClick={() => dispatch(setShowCompleted(!showCompleted))} aria-label={showCompleted ? t("Hide completed tasks") : t("Show completed tasks")}>{showCompleted ? <VisibilityOutlined /> : <VisibilityOffOutlined />}</IconButton>
@@ -238,52 +290,8 @@ const TasksView = () => {
         </Menu>
       </Box>
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
-        {listsVisible && !isMobile && (
-          <Box sx={{ width: 240, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper", py: 1, display: "flex", flexDirection: "column" }} role="navigation" aria-label={t("Task lists")}>
-            {SMART_LISTS.map(sl => {
-              const active = sl.id === listId;
-              const count = lists.reduce((sum, l) => sum + (tasks[l.id!] || []).filter(x => x.status !== "completed" && sl.match(x)).length, 0);
-              const Icon = sl.icon;
-              return (
-                <Box key={sl.id} role="link" tabIndex={0} aria-current={active ? "page" : undefined}
-                  onClick={() => navigate(`/tasks/${sl.id}`)}
-                  onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); navigate(`/tasks/${sl.id}`); } }}
-                  sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}>
-                  <Icon fontSize="small" sx={{ color: active ? "primary.main" : "text.secondary" }} />
-                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>{t(sl.label)}</Typography>
-                  {count > 0 && <Typography variant="caption" color="text.secondary">{count}</Typography>}
-                </Box>
-              );
-            })}
-            <Divider sx={{ my: 0.5, mx: 2 }} />
-            {lists.map(l => {
-              const active = l.id === listId;
-              const isEditing = editingList?.id === l.id;
-              const count = (tasks[l.id!] || []).filter(x => x.status !== "completed").length;
-              return (
-                <Box key={l.id} role="link" tabIndex={isEditing ? -1 : 0} aria-current={active ? "page" : undefined}
-                  onClick={() => navigate(`/tasks/${encodeURIComponent(l.id!)}`)}
-                  onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); navigate(`/tasks/${encodeURIComponent(l.id!)}`); } }}
-                  onContextMenu={e => { if (l.wellknownListName && l.wellknownListName !== "none") return; e.preventDefault(); setListMenu({ anchor: { top: e.clientY, left: e.clientX }, list: l }); }}
-                  sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5, borderRadius: 1.5, cursor: "pointer", color: active ? "primary.main" : "text.primary", bgcolor: active ? (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "primary.main" + "1a") : "transparent", "&:hover": { bgcolor: active ? undefined : "action.hover" } }}>
-                  <Box sx={{ color: active ? "primary.main" : "text.secondary", display: "flex" }}>{listIcon(l)}</Box>
-                  {isEditing ? <InputBase autoFocus value={editingList!.value} onChange={e => setEditingList({ id: l.id!, value: e.target.value })} onKeyDown={onListKey} onBlur={commitList} onClick={e => e.stopPropagation()} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} /> :
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>{listName(l)}</Typography>}
-                  {!isEditing && loaded[l.id!] && count > 0 && <Typography variant="caption" color="text.secondary">{count}</Typography>}
-                </Box>
-              );
-            })}
-            {editingList && !editingList.id && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5 }}>
-                <FormatListBulleted fontSize="small" sx={{ color: "text.secondary" }} />
-                <InputBase autoFocus placeholder={t("List name")} value={editingList.value} onChange={e => setEditingList({ value: e.target.value })} onKeyDown={onListKey} onBlur={commitList} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} />
-              </Box>
-            )}
-            <Box sx={{ flex: 1 }} />
-            <Divider />
-            <Button startIcon={<Add />} onClick={() => setEditingList({ value: "" })} sx={{ m: 1, justifyContent: "flex-start", color: "text.secondary" }}>{t("New list")}</Button>
-          </Box>
-        )}
+        {listsVisible && !isMobile && listPane}
+        {isMobile && <Drawer open={listDrawer} onClose={() => setListDrawer(false)} PaperProps={{ sx: { width: 280 } }}>{listPane}</Drawer>}
         {showMain && (
           <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
             {(list || smart) && (

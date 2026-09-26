@@ -7,13 +7,14 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChecklistItem, TodoTask } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { addChecklistItem, deleteChecklistItem, deleteTask, updateChecklistItem, updateTask } from "../tasksSlice";
 import { dayjs, graphDateToDate } from "../../calendar/dates";
 import { buildRecurrence, dueDateValue, formatDateOnly, repeatKey, RepeatKey, taskCompletedDate, taskDueDate } from "../taskDates";
+import { taskNotesText } from "../taskNotes";
 import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
@@ -45,7 +46,8 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
   const dispatch = useTypeDispatch();
   const categories = useTypeSelector(state => state.mail.categories);
   const [title, setTitle] = useState(task.title || "");
-  const [notes, setNotes] = useState(task.body?.content || "");
+  const savedNotes = useMemo(() => taskNotesText(task.body), [task.body?.contentType, task.body?.content]);
+  const [notes, setNotes] = useState(savedNotes);
   const [newStep, setNewStep] = useState("");
   const [editingStep, setEditingStepState] = useState<{ id: string; value: string } | null>(null);
   // Mirrors editingStep so a blur after Enter/Escape cannot commit a second time
@@ -57,8 +59,8 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
 
   useEffect(() => {
     setTitle(task.title || "");
-    setNotes(task.body?.content || "");
-  }, [task.id, task.title, task.body?.content]);
+    setNotes(savedNotes);
+  }, [task.id, task.title, savedNotes]);
 
   const patch = (props: Partial<TodoTask>) => dispatch(updateTask({ listId, task: { id: task.id, ...props } }));
   const completed = task.status === "completed";
@@ -66,7 +68,8 @@ const TaskDetail = ({ listId, task, onClose, onDeleted }: TaskDetailProps) => {
   const doneSteps = steps.filter(s => s.isChecked).length;
 
   const commitTitle = () => { if (title.trim() && title.trim() !== task.title) patch({ title: title.trim() }); else setTitle(task.title || ""); };
-  const commitNotes = () => { if (notes !== (task.body?.content || "")) patch({ body: { contentType: "text", content: notes } }); };
+  // HTML bodies are edited as their text; only an actual edit replaces them
+  const commitNotes = () => { if (notes !== savedNotes) patch({ body: { contentType: "text", content: notes } }); };
 
   const addStep = () => {
     if (!newStep.trim()) return;

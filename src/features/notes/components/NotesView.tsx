@@ -39,7 +39,7 @@ const NotesView = () => {
   const navigate = useNavigate();
   const { noteId } = useParams<{ noteId?: string }>();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { notes, loaded, loading, colors, error } = useTypeSelector(state => state.notes);
+  const { notes, loaded, loading, colors, replaced, error } = useTypeSelector(state => state.notes);
   const [search, setSearch] = useState("");
   const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -50,9 +50,13 @@ const NotesView = () => {
   const pending = useRef<{ id: string; content: string } | null>(null);
   const notesRef = useRef(notes);
   notesRef.current = notes;
+  const noteIdRef = useRef(noteId);
+  noteIdRef.current = noteId ? decodeURIComponent(noteId) : undefined;
   const dark = theme.palette.mode === "dark";
 
-  const selectedId = noteId ? decodeURIComponent(noteId) : undefined;
+  // A note replaced while saving stays selected under its new id
+  const resolveId = (id: string) => replaced[id] || id;
+  const selectedId = noteId ? resolveId(decodeURIComponent(noteId)) : undefined;
   const selected = notes.find(n => n.id === selectedId);
 
   useEffect(() => { dispatch(loadNotes()); }, []);
@@ -61,20 +65,51 @@ const NotesView = () => {
 
   const shown = useMemo(() => search ? notes.filter(n => (n.bodyPreview || "").toLowerCase().includes(search) || (n.subject || "").toLowerCase().includes(search)) : notes, [notes, search]);
 
+  // Read once per note, or a save response would reset what's being typed
+  const editorSession = useRef<{ id: string; key: string; initial: string } | null>(null);
+  if (!selectedId) editorSession.current = null;
+  else if (selected?.id && editorSession.current?.id !== selected.id) {
+    const session = editorSession.current;
+    editorSession.current = session && replaced[session.id] === selected.id
+      ? { ...session, id: selected.id }
+      : { id: selected.id, key: selected.id, initial: selected.body?.content || "" };
+  }
+  const replacedRef = useRef(replaced);
+  replacedRef.current = replaced;
+  // Last saved content, to skip unchanged saves
+  const lastSaved = useRef<{ id: string; content: string } | null>(null);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
+
   // Pending edit goes to its own note, not the one shown now
-  const flush = async () => {
-    clearTimeout(timer.current);
-    timer.current = undefined;
+  const save = async () => {
     const edit = pending.current;
     if (!edit) return;
     pending.current = null;
+    const id = replacedRef.current[edit.id] || edit.id;
     const content = purify(edit.content);
-    const note = notesRef.current.find(n => n.id === edit.id);
-    if (!note || content === note.body?.content) { setDirty(false); return; }
+    const note = notesRef.current.find(n => n.id === id);
+    const saved = lastSaved.current?.id === id ? lastSaved.current.content : note?.body?.content;
+    if (!note || content === saved) { if (!pending.current) setDirty(false); return; }
+    lastSaved.current = { id, content };
     setSaving(true);
-    await dispatch(updateNote({ id: edit.id, content }));
+    const result = await dispatch(updateNote({ id, content }));
     setSaving(false);
+    if (updateNote.rejected.match(result)) lastSaved.current = null;
+    else if (updateNote.fulfilled.match(result) && result.payload.replacedId && result.payload.note.id) {
+      const newId = result.payload.note.id;
+      lastSaved.current = { id: newId, content };
+      if (noteIdRef.current === id) navigate(`/notes/${encodeURIComponent(newId)}`, { replace: true });
+    }
     if (!pending.current) setDirty(false);
+  };
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  // Serialized, or a note can get replaced twice
+  const flush = () => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    saveChain.current = saveChain.current.then(() => saveRef.current());
+    return saveChain.current;
   };
   const flushRef = useRef(flush);
   flushRef.current = flush;
@@ -168,10 +203,10 @@ const NotesView = () => {
                 {isMobile && <Box sx={{ p: 1 }}><IconButton onClick={() => navigate("/notes")} aria-label={t("Back")}><ArrowBack /></IconButton></Box>}
                 <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, "& .tox-tinymce": { border: "none !important", background: "transparent", flex: 1 }, "& .tox .tox-edit-area__iframe": { background: "transparent !important" }, "& .tox:not(.tox-tinymce-inline) .tox-editor-header": { background: "transparent", boxShadow: "none", borderBottom: "1px solid rgba(0,0,0,0.08)" }, "& .tox .tox-toolbar__primary": { background: "transparent" } }}>
                   <Editor
-                    key={selected.id}
+                    key={editorSession.current?.key}
                     tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
-                    initialValue={selected.body?.content || ""}
-                    onEditorChange={scheduleSave(selected.id!, selected.body?.content || "")}
+                    initialValue={editorSession.current?.initial}
+                    onEditorChange={scheduleSave(selected.id!, editorSession.current?.initial || "")}
                     onBlur={() => { flush(); }}
                     init={{
                       language: tinymceLanguage(i18n.language),

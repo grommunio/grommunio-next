@@ -34,6 +34,8 @@ export type NotesState = {
   loading: boolean;
   // Graph has no note color, kept locally per id
   colors: Record<string, NoteColor>;
+  // Non-drafts get saved as new notes: old id -> new id
+  replaced: Record<string, string>;
   error?: string;
 };
 
@@ -60,9 +62,27 @@ export const createNote = createAsyncThunk<Message, { content: string }, ThunkAp
   } catch (err) { dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" })); return rejectWithValue(errorMessage(err)); }
 });
 
-export const updateNote = createAsyncThunk<Message, { id: string; content: string }, ThunkApi>("notes/update", async ({ id, content }, { dispatch, rejectWithValue }) => {
+export type NoteSaved = { note: Message; replacedId?: string };
+
+export const updateNote = createAsyncThunk<NoteSaved, { id: string; content: string }, ThunkApi>("notes/update", async ({ id, content }, { dispatch, getState, rejectWithValue }) => {
+  const props: Message = { subject: noteSubject(content) || "Note", body: { contentType: "html", content } };
+  const existing = getState().notes.notes.find(n => n.id === id);
   try {
-    return await api.patchNote({ id, subject: noteSubject(content) || "Note", body: { contentType: "html", content } });
+    if (existing?.isDraft !== false) {
+      try {
+        return { note: await api.patchNote({ id, ...props }) };
+      } catch (err) {
+        if (!api.isNonDraftUpdateError(err)) throw err;
+      }
+    }
+    // Not a draft (created in Outlook?), replace it with a new draft
+    const note = await api.postNote({ ...props, categories: existing?.categories || undefined });
+    try {
+      await api.deleteNote(id);
+    } catch (err) {
+      dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
+    }
+    return { note, replacedId: id };
   } catch (err) { dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" })); return rejectWithValue(errorMessage(err)); }
 });
 
@@ -70,7 +90,7 @@ export const deleteNote = createAsyncThunk<string, string, ThunkApi>("notes/dele
   try { await api.deleteNote(id); return id; } catch (err) { dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" })); return rejectWithValue(errorMessage(err)); }
 });
 
-const initialState: NotesState = { notes: [], loaded: false, loading: false, colors: loadColors() };
+const initialState: NotesState = { notes: [], loaded: false, loading: false, colors: loadColors(), replaced: {} };
 
 const notesSlice = createSlice({
   name: "notes",
@@ -88,7 +108,18 @@ const notesSlice = createSlice({
       .addCase(loadNotes.rejected, (state, action) => { state.loading = false; state.error = action.payload || action.error.message || "Error"; })
       .addCase(createNote.fulfilled, (state, action) => { state.notes.unshift(action.payload); })
       .addCase(updateNote.fulfilled, (state, action) => {
-        state.notes = state.notes.map(n => n.id === action.payload.id ? { ...n, ...action.payload } : n);
+        const { note, replacedId } = action.payload;
+        if (replacedId && note.id) {
+          state.replaced[replacedId] = note.id;
+          state.notes = state.notes.map(n => n.id === replacedId ? note : n);
+          if (state.colors[replacedId]) {
+            state.colors[note.id] = state.colors[replacedId];
+            delete state.colors[replacedId];
+            window.localStorage.setItem(COLORS_KEY, JSON.stringify(state.colors));
+          }
+        } else {
+          state.notes = state.notes.map(n => n.id === note.id ? { ...n, ...note } : n);
+        }
         state.notes.sort((a, b) => (b.lastModifiedDateTime || "").localeCompare(a.lastModifiedDateTime || ""));
       })
       .addCase(deleteNote.fulfilled, (state, action) => {

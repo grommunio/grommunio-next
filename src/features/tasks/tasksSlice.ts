@@ -57,10 +57,23 @@ export const updateTask = createAsyncThunk<{ listId: string; task: TodoTask }, {
   const previous = getState().tasks.tasks[listId]?.find(t => t.id === task.id);
   dispatch(tasksSlice.actions.taskPatched({ listId, task }));
   try {
-    const updated = await api.patchTask(task, listId);
-    return { listId, task: { ...updated, checklistItems: previous?.checklistItems } };
+    // Steps are not part of the PATCH response; the store keeps its current ones
+    const { checklistItems, ...updated } = await api.patchTask(task, listId) as TodoTask & { checklistItems?: ChecklistItem[] };
+    void checklistItems;
+    // Completing a recurring task makes the server create the next occurrence
+    if (task.status === "completed" && previous?.status !== "completed" && (updated.recurrence || previous?.recurrence)) {
+      dispatch(loadTasks({ listId, force: true }));
+    }
+    return { listId, task: updated };
   } catch (err) {
-    if (previous) dispatch(tasksSlice.actions.taskPatched({ listId, task: previous }));
+    if (previous) {
+      // Roll back only the fields this update changed
+      const rollback: TodoTask = { id: task.id };
+      for (const key of Object.keys(task) as (keyof TodoTask)[]) {
+        if (key !== "id" && key !== "checklistItems") (rollback as Record<string, unknown>)[key] = previous[key] ?? null;
+      }
+      dispatch(tasksSlice.actions.taskPatched({ listId, task: rollback }));
+    }
     dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
     return rejectWithValue(errorMessage(err));
   }

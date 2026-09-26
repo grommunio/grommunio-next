@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contactsToCsv, contactsToVCard, csvToContacts, parseCsv } from "../vcard";
+import { contactsToCsv, contactsToVCard, csvToContacts, parseCsv, parseCsvDate } from "../vcard";
 
 describe("parseCsv", () => {
   it("handles quotes, embedded separators and line breaks", () => {
@@ -71,5 +71,27 @@ describe("exports", () => {
     expect(back.displayName).toBe("Alice Example");
     expect(back.emailAddresses?.[0].address).toBe("alice@example.com");
     expect(back.personalNotes).toBe("a;b,c");
+  });
+});
+
+describe("parseCsvDate", () => {
+  it("reads ISO, Outlook M/D/YYYY and D.M.YYYY birthdays", () => {
+    expect(parseCsvDate("1990-05-04")).toBe("1990-05-04");
+    expect(parseCsvDate("3/14/1980")).toBe("1980-03-14");
+    expect(parseCsvDate("14.03.1980")).toBe("1980-03-14");
+    expect(parseCsvDate("1.2.1975")).toBe("1975-02-01");
+  });
+  it("ignores Outlook's empty placeholder and invalid dates", () => {
+    expect(parseCsvDate("0/0/00")).toBeUndefined();
+    expect(parseCsvDate("")).toBeUndefined();
+    expect(parseCsvDate("14/3/1980")).toBeUndefined();
+    expect(parseCsvDate("31.02.1980")).toBeUndefined();
+    expect(parseCsvDate("someday")).toBeUndefined();
+  });
+  it("imports Outlook birthdays", () => {
+    const csv = "First Name,Birthday\nAlice,3/14/1980\nBob,0/0/00\n";
+    const [alice, bob] = csvToContacts(csv);
+    expect(alice.birthday).toBe("1980-03-14T00:00:00Z");
+    expect(bob.birthday).toBeUndefined();
   });
 });

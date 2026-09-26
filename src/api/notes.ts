@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2020-2024 grommunio GmbH
 
 import { MailFolder, Message } from "microsoft-graph";
-import { del, get, getAll, odataString, patch, post } from "./graph";
+import { ApiError, del, get, getAll, odataString, patch, post } from "./graph";
 
 // Exchange has no "notes" well-known folder, only grommunio does. Fall back to a
 // Notes folder by localized name, else create a hidden one.
@@ -44,7 +44,7 @@ const notesPath = async () => `/me/mailFolders/${await getNotesFolderId()}/messa
 
 export async function getNotes(): Promise<Message[]> {
   return getAll<Message>(await notesPath(), {
-    select: ["id", "subject", "body", "bodyPreview", "lastModifiedDateTime", "createdDateTime", "categories"],
+    select: ["id", "subject", "body", "bodyPreview", "lastModifiedDateTime", "createdDateTime", "categories", "isDraft"],
     orderby: "lastModifiedDateTime desc",
     top: 200,
   });
@@ -62,3 +62,11 @@ export async function patchNote(note: Message): Promise<Message> {
   const { id, ...props } = note;
   return patch<Message>(`${await notesPath()}/${id}`, props);
 }
+
+// Graph only updates body/subject of drafts, and Outlook notes aren't drafts
+export function isNonDraftUpdateError(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return false;
+  return /InvalidPropertyUpdateSentMessage|ErrorInvalidPropertySet/i.test(err.code || "")
+    || /isDraft|sent message|only.*draft/i.test(err.message);
+}
+

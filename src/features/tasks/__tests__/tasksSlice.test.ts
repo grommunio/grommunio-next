@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as api from "../../../api/tasks";
+import { taskNotesText } from "../taskNotes";
 import reducer, { addChecklistItem, createTask, deleteTask, loadTaskLists, loadTasks, setTaskSort, updateTask } from "../tasksSlice";
+
+vi.mock("../../../api/tasks", () => ({ patchTask: vi.fn(), getUserTasks: vi.fn(async () => []) }));
+const mocked = vi.mocked(api);
 
 describe("tasks reducer", () => {
   const initial = reducer(undefined, { type: "init" });
@@ -44,5 +49,63 @@ describe("tasks reducer", () => {
     const state = reducer(initial, setTaskSort("dueDate"));
     expect(state.sort).toBe("dueDate");
     expect(window.localStorage.getItem("tasks.sort")).toBe("dueDate");
+  });
+});
+
+describe("updateTask", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const setup = (task: any) => {
+    let state = { tasks: reducer(reducer(undefined, { type: "init" }), loadTasks.fulfilled({ listId: "L", tasks: [task] }, "r", { listId: "L" })) } as any;
+    const dispatch = vi.fn((action: any) => {
+      if (typeof action === "function") return action(dispatch, () => state, undefined);
+      if (action?.type) state = { tasks: reducer(state.tasks, action) };
+      return action;
+    });
+    return { dispatch, getState: () => state };
+  };
+
+  it("keeps steps added while the PATCH is in flight", async () => {
+    const { dispatch, getState } = setup({ id: "t1", title: "a", checklistItems: [{ id: "s1" }] });
+    let resolve: (t: any) => void = () => {};
+    mocked.patchTask.mockReturnValue(new Promise(r => { resolve = r; }));
+    const pending = updateTask({ listId: "L", task: { id: "t1", title: "b" } })(dispatch as any, getState, undefined);
+    dispatch(addChecklistItem.fulfilled({ listId: "L", taskId: "t1", item: { id: "s2" } }, "r", { listId: "L", taskId: "t1", displayName: "x" }));
+    resolve({ id: "t1", title: "b" });
+    await pending;
+    expect(getState().tasks.tasks.L[0].title).toBe("b");
+    expect(getState().tasks.tasks.L[0].checklistItems.map((s: any) => s.id)).toEqual(["s1", "s2"]);
+  });
+
+  it("rolls back only the patched fields", async () => {
+    const { dispatch, getState } = setup({ id: "t1", title: "a", importance: "normal", checklistItems: [] });
+    mocked.patchTask.mockRejectedValue(new Error("boom"));
+    const pending = updateTask({ listId: "L", task: { id: "t1", importance: "high" } })(dispatch as any, getState, undefined);
+    dispatch(addChecklistItem.fulfilled({ listId: "L", taskId: "t1", item: { id: "s2" } }, "r", { listId: "L", taskId: "t1", displayName: "x" }));
+    await pending;
+    expect(getState().tasks.tasks.L[0].importance).toBe("normal");
+    expect(getState().tasks.tasks.L[0].checklistItems).toHaveLength(1);
+  });
+
+  it("reloads the list after completing a recurring task", async () => {
+    const { dispatch, getState } = setup({ id: "t1", status: "notStarted", recurrence: { pattern: { type: "daily", interval: 1 } } });
+    mocked.patchTask.mockResolvedValue({ id: "t1", status: "completed" });
+    await updateTask({ listId: "L", task: { id: "t1", status: "completed" } })(dispatch as any, getState, undefined);
+    expect(mocked.getUserTasks).toHaveBeenCalledWith("L");
+  });
+
+  it("does not reload for non-recurring tasks", async () => {
+    const { dispatch, getState } = setup({ id: "t1", status: "notStarted" });
+    mocked.patchTask.mockResolvedValue({ id: "t1", status: "completed" });
+    await updateTask({ listId: "L", task: { id: "t1", status: "completed" } })(dispatch as any, getState, undefined);
+    expect(mocked.getUserTasks).not.toHaveBeenCalled();
+  });
+});
+
+describe("taskNotesText", () => {
+  it("returns text bodies unchanged and converts HTML bodies to text", () => {
+    expect(taskNotesText({ contentType: "text", content: "a <b>" })).toBe("a <b>");
+    expect(taskNotesText({ contentType: "html", content: "<html><head><style>p{}</style></head><body><p>One</p><p>Two<br>Three &amp; four</p><script>x()</script></body></html>" })).toBe("One\nTwo\nThree & four");
+    expect(taskNotesText(undefined)).toBe("");
   });
 });

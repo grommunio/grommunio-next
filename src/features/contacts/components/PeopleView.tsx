@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Box, Button, Divider, IconButton, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Box, Button, Divider, Drawer, IconButton, InputBase, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { Add, ContactPageOutlined, CreateNewFolderOutlined, DeleteOutline, DriveFileRenameOutline, Edit, EventOutlined, FileDownloadOutlined, FileUploadOutlined, FolderOutlined, KeyboardArrowDown, MailOutline, MenuOpen, MoreHoriz, PeopleAltOutlined } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { ChangeEvent, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +45,8 @@ const PeopleView = () => {
   const [folderMenu, setFolderMenu] = useState<{ anchor: { top: number; left: number }; folder: ContactFolder } | null>(null);
   const [editingFolder, setEditingFolder] = useState<{ id?: string; value: string } | null>(null);
   const [foldersVisible, setFoldersVisible] = useState(true);
+  // Mobile: the folder pane opens as a drawer
+  const [folderDrawer, setFolderDrawer] = useState(false);
   const [importing, setImporting] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
 
@@ -70,7 +72,14 @@ const PeopleView = () => {
     dispatch(loadContacts({ folderId, search: search || undefined }));
   }, [folderId, search]);
 
-  useGlobalSearch(t("Search people"), q => { dispatch(clearContactSearches()); setSearch(q); }, () => setSearch(""));
+  useGlobalSearch(t("Search people"), q => {
+    dispatch(clearContactSearches());
+    // The same query again does not change state, so reload it here
+    if (q && q === search) dispatch(loadContacts({ folderId, search: q, force: true }));
+    setSearch(q);
+  }, () => setSearch(""));
+
+  useEffect(() => { setFolderDrawer(false); }, [folderId]);
 
   const open = (contact: Contact) => navigate(`/contacts/${folderId}/${encodeURIComponent(contact.id!)}`);
 
@@ -159,7 +168,7 @@ const PeopleView = () => {
   const folderItem = (id: string, label: string, icon: JSX.Element, f?: ContactFolder, depth = 0) => {
     const active = folderId === id;
     const isEditing = f && editingFolder?.id === f.id;
-    const go = () => { dispatch(setContactSelection([])); navigate(`/contacts/${id}`); };
+    const go = () => { dispatch(setContactSelection([])); navigate(`/contacts/${id}`); setFolderDrawer(false); };
     return (
       <Box
         key={id}
@@ -179,17 +188,34 @@ const PeopleView = () => {
     );
   };
 
+  const folderPane = (
+    <Box component="nav" aria-label={t("Folders")} sx={{ width: isMobile ? "100%" : 232, height: isMobile ? "100%" : undefined, flexShrink: 0, borderRight: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.paper", py: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+      {folderItem(ALL_CONTACTS, t("All contacts"), <PeopleAltOutlined fontSize="small" />)}
+      {folderTree.map(({ folder: f, depth }) => folderItem(f.id!, f.displayName || "", <FolderOutlined fontSize="small" />, f, depth))}
+      {editingFolder && !editingFolder.id && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5 }}>
+          <FolderOutlined fontSize="small" sx={{ color: "text.secondary" }} />
+          <InputBase autoFocus placeholder={t("New folder")} value={editingFolder.value} onChange={e => setEditingFolder({ value: e.target.value })} onKeyDown={onFolderKey} onBlur={commitFolder} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} />
+        </Box>
+      )}
+      {foldersLoaded && folders.length === 0 && <Typography variant="caption" color="text.secondary" sx={{ px: 2.5, py: 1 }}>{t("No additional folders")}</Typography>}
+      <Box sx={{ flex: 1 }} />
+      <Divider />
+      <Button startIcon={<Add />} onClick={() => setEditingFolder({ value: "" })} sx={{ m: 1, justifyContent: "flex-start", color: "text.secondary" }}>{t("New folder")}</Button>
+    </Box>
+  );
+
   const showList = !isMobile || !contactId;
   const showCard = !isMobile || Boolean(contactId);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       <Box role="toolbar" aria-label={t("Contact actions")} sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, minHeight: 48, borderBottom: 1, borderColor: "divider", bgcolor: "background.paper" }}>
-        {!isMobile && <Tooltip title={t("Toggle folder pane")}><IconButton size="small" onClick={() => setFoldersVisible(!foldersVisible)} aria-label={t("Toggle folder pane")}><MenuOpen /></IconButton></Tooltip>}
+        <Tooltip title={t("Toggle folder pane")}><IconButton size="small" onClick={() => isMobile ? setFolderDrawer(true) : setFoldersVisible(!foldersVisible)} aria-label={t("Toggle folder pane")}><MenuOpen /></IconButton></Tooltip>
         <Button variant="contained" startIcon={<Add />} endIcon={<KeyboardArrowDown />} onClick={e => setNewMenu(e.currentTarget)} sx={{ mx: 1 }}>{t("New contact")}</Button>
         <Menu anchorEl={newMenu} open={Boolean(newMenu)} onClose={() => setNewMenu(null)}>
           <MenuItem onClick={() => { setNewMenu(null); setEditor({}); }}><ListItemIcon><ContactPageOutlined fontSize="small" /></ListItemIcon><ListItemText>{t("Contact")}</ListItemText></MenuItem>
-          <MenuItem onClick={() => { setNewMenu(null); setEditingFolder({ value: "" }); }}><ListItemIcon><CreateNewFolderOutlined fontSize="small" /></ListItemIcon><ListItemText>{t("Contact folder")}</ListItemText></MenuItem>
+          <MenuItem onClick={() => { setNewMenu(null); setEditingFolder({ value: "" }); if (isMobile) setFolderDrawer(true); }}><ListItemIcon><CreateNewFolderOutlined fontSize="small" /></ListItemIcon><ListItemText>{t("Contact folder")}</ListItemText></MenuItem>
         </Menu>
         <Divider orientation="vertical" flexItem sx={{ my: 1 }} />
         <Tooltip title={t("Edit")}><span><IconButton size="small" disabled={!selected || targetIds.length !== 1} onClick={() => selected && setEditor({ contact: selected })} aria-label={t("Edit")}><Edit /></IconButton></span></Tooltip>
@@ -208,22 +234,8 @@ const PeopleView = () => {
         <input ref={importInput} type="file" accept=".csv,text/csv" hidden onChange={handleImport} />
       </Box>
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
-        {foldersVisible && !isMobile && (
-          <Box sx={{ width: 232, flexShrink: 0, borderRight: 1, borderColor: "divider", bgcolor: "background.paper", py: 1, display: "flex", flexDirection: "column" }}>
-            {folderItem(ALL_CONTACTS, t("All contacts"), <PeopleAltOutlined fontSize="small" />)}
-            {folderTree.map(({ folder: f, depth }) => folderItem(f.id!, f.displayName || "", <FolderOutlined fontSize="small" />, f, depth))}
-            {editingFolder && !editingFolder.id && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 34, mx: 1, px: 1.5 }}>
-                <FolderOutlined fontSize="small" sx={{ color: "text.secondary" }} />
-                <InputBase autoFocus placeholder={t("New folder")} value={editingFolder.value} onChange={e => setEditingFolder({ value: e.target.value })} onKeyDown={onFolderKey} onBlur={commitFolder} sx={{ flex: 1, fontSize: 14, px: 0.5, border: 1, borderColor: "primary.main", borderRadius: 1 }} />
-              </Box>
-            )}
-            {foldersLoaded && folders.length === 0 && <Typography variant="caption" color="text.secondary" sx={{ px: 2.5, py: 1 }}>{t("No additional folders")}</Typography>}
-            <Box sx={{ flex: 1 }} />
-            <Divider />
-            <Button startIcon={<Add />} onClick={() => setEditingFolder({ value: "" })} sx={{ m: 1, justifyContent: "flex-start", color: "text.secondary" }}>{t("New folder")}</Button>
-          </Box>
-        )}
+        {foldersVisible && !isMobile && folderPane}
+        {isMobile && <Drawer open={folderDrawer} onClose={() => setFolderDrawer(false)} PaperProps={{ sx: { width: 280 } }}>{folderPane}</Drawer>}
         {showList && (
           <Box sx={{ width: isMobile ? "100%" : 340, flexShrink: 0, borderRight: isMobile ? 0 : 1, borderColor: "divider", bgcolor: "background.paper" }}>
             <ContactList
