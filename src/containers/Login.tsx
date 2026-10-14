@@ -10,6 +10,7 @@ import { getLangs } from "../utils";
 import { useAppContext } from "../azure/AppContext";
 import { useTypeDispatch, useTypeSelector } from "../store";
 import { setLanguage } from "../features/settings/settingsSlice";
+import { setExplicitLanguage } from "../features/settings/language";
 import { useThemeSettings } from "../components/ThemeContext";
 import getConfig from "../config";
 
@@ -42,6 +43,7 @@ const Login = () => {
   const handleLangChange = (lang: string) => () => {
     i18n.changeLanguage(lang);
     dispatch(setLanguage(lang));
+    setExplicitLanguage(lang);
     setLangsAnchor(null);
   };
 

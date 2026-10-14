@@ -8,6 +8,8 @@ import type { AuthenticationProvider } from '@microsoft/microsoft-graph-client';
 import { useDispatch } from 'react-redux';
 import { getUser } from '../api/user';
 import { initGraphClient, resetGraphClient } from '../api/utils';
+import { clearUserStorage } from '../features/session/storage';
+import { clearExplicitLanguage } from '../features/settings/language';
 import { setMe } from '../features/session/sessionSlice';
 import getConfig from '../config';
 import { MsalAuthenticationProvider } from './authProvider';
@@ -128,6 +130,9 @@ function useProvideAppContext(): AppContext {
     dispatch(setMe(null));
     setUser(undefined);
     resetGraphClient();
+    // The next user of this browser must not see this mailbox's data
+    clearUserStorage();
+    clearExplicitLanguage();
     const account = instance.getActiveAccount() || undefined;
     if (config.interactionType === 'popup') {
       await instance.logoutPopup({ account });

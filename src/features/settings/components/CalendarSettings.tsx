@@ -9,28 +9,37 @@ import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { updateCalendarPrefs } from "../../calendar/calendarSlice";
 import { saveWorkingHours } from "../settingsSlice";
 import { REMINDER_OPTIONS } from "../../../constants";
-import { browserTimeZone, dayjs } from "../../calendar/dates";
-import { Section } from "./GeneralSettings";
+import { dayjs } from "../../calendar/dates";
+import { MailboxSettingsStatus, Section, useMailboxSettingsReady } from "./GeneralSettings";
+import { buildWorkingHours, parseTimeOfDay, timeChoices } from "../workingHours";
 
 const DAYS: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 const DAY_INDEX: Record<DayOfWeek, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+// 23:59
+const DAY_END = 24 * 60 - 1;
+
+const timeLabel = (minutes: number) => dayjs().startOf("day").add(minutes, "minute").format("LT");
 
 export const CalendarSettings = () => {
   const { t } = useTranslation();
   const dispatch = useTypeDispatch();
   const prefs = useTypeSelector(state => state.calendar.prefs);
   const workingHours = useTypeSelector(state => state.settings.mailboxSettings.workingHours);
+  const mailboxTimeZone = useTypeSelector(state => state.settings.mailboxSettings.timeZone);
+  const ready = useMailboxSettingsReady();
   const [days, setDays] = useState<DayOfWeek[]>(prefs.workDays.map(d => DAYS[(d + 6) % 7]));
-  const [start, setStart] = useState(prefs.workDayStart);
-  const [end, setEnd] = useState(prefs.workDayEnd);
+  // Minutes after midnight
+  const [start, setStart] = useState(prefs.workDayStart * 60);
+  const [end, setEnd] = useState(Math.min(prefs.workDayEnd * 60, DAY_END));
 
   // Mailbox working hours win over the local defaults
   useEffect(() => {
     if (!workingHours) return;
     if (workingHours.daysOfWeek?.length) setDays(workingHours.daysOfWeek);
-    if (workingHours.startTime) setStart(parseInt(workingHours.startTime.slice(0, 2), 10));
-    if (workingHours.endTime) setEnd(parseInt(workingHours.endTime.slice(0, 2), 10));
+    const s = parseTimeOfDay(workingHours.startTime);
+    const e = parseTimeOfDay(workingHours.endTime);
+    if (s !== null) setStart(s);
+    if (e !== null) setEnd(e);
   }, [workingHours]);
 
   const validHours = end > start;
@@ -38,20 +47,15 @@ export const CalendarSettings = () => {
   const changeStart = (value: number) => {
     setStart(value);
     // The end must stay after the start
-    if (end <= value) setEnd(value + 1);
+    if (end <= value) setEnd(Math.min(value + 60, DAY_END));
   };
 
   const saveHours = async () => {
-    if (!validHours) return;
-    const result = await dispatch(saveWorkingHours({
-      daysOfWeek: days,
-      startTime: `${String(start).padStart(2, "0")}:00:00.0000000`,
-      endTime: `${String(end).padStart(2, "0")}:00:00.0000000`,
-      timeZone: { name: workingHours?.timeZone?.name || browserTimeZone() },
-    }));
+    if (!ready || !validHours) return;
+    const result = await dispatch(saveWorkingHours(buildWorkingHours(workingHours, days, start, end, mailboxTimeZone)));
     // Local prefs follow only once the server accepted the change
     if (saveWorkingHours.fulfilled.match(result)) {
-      dispatch(updateCalendarPrefs({ workDays: days.map(d => DAY_INDEX[d]), workDayStart: start, workDayEnd: end }));
+      dispatch(updateCalendarPrefs({ workDays: days.map(d => DAY_INDEX[d]), workDayStart: Math.floor(start / 60), workDayEnd: Math.min(24, Math.ceil(end / 60)) }));
     }
   };
 
@@ -70,19 +74,20 @@ export const CalendarSettings = () => {
       </Box>
     </Section>
     <Section title={t("Working hours")} description={t("Hours outside your working time are shaded in the calendar. The setting is also stored in your mailbox so others see when you are available.")}>
+      <MailboxSettingsStatus />
       <ToggleButtonGroup value={days} onChange={(_e, v: DayOfWeek[]) => v.length && setDays(v)} size="small" sx={{ mb: 2, flexWrap: "wrap" }} aria-label={t("Work days")}>
         {DAYS.map(d => <ToggleButton key={d} value={d} sx={{ width: 48 }}>{dayjs().day(DAY_INDEX[d]).format("dd")}</ToggleButton>)}
       </ToggleButtonGroup>
       <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
         <TextField select label={t("Start time")} value={start} onChange={e => changeStart(Number(e.target.value))} sx={{ width: 140 }}>
-          {HOURS.slice(0, -1).map(h => <MenuItem key={h} value={h}>{dayjs().hour(h).minute(0).format("LT")}</MenuItem>)}
+          {timeChoices(0, DAY_END - 29, [start]).map(m => <MenuItem key={m} value={m}>{timeLabel(m)}</MenuItem>)}
         </TextField>
         <Typography color="text.secondary">–</Typography>
         <TextField select label={t("End time")} value={end} onChange={e => setEnd(Number(e.target.value))} sx={{ width: 140 }}>
-          {HOURS.filter(h => h > start).map(h => <MenuItem key={h} value={h}>{dayjs().hour(h).minute(0).format("LT")}</MenuItem>)}
+          {timeChoices(start + 30, DAY_END, [end, DAY_END]).map(m => <MenuItem key={m} value={m}>{timeLabel(m)}</MenuItem>)}
         </TextField>
       </Box>
-      <Button variant="contained" onClick={saveHours} disabled={!validHours}>{t("Save")}</Button>
+      <Button variant="contained" onClick={saveHours} disabled={!ready || !validHours}>{t("Save")}</Button>
     </Section>
     <Section title={t("Events")}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 480 }}>

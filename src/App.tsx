@@ -14,6 +14,7 @@ import AlertStack from './components/AlertStack';
 import { useTypeDispatch, useTypeSelector } from './store';
 import { loadMailboxSettings, setLanguage } from './features/settings/settingsSlice';
 import { setDayjsLocale } from './features/calendar/dates';
+import { getExplicitLanguage, resolveLanguage } from './features/settings/language';
 
 function AppFrame() {
   const { i18n } = useTranslation();
@@ -24,14 +25,12 @@ function AppFrame() {
 
   useEffect(() => {
     const applyLanguage = async () => {
-      // Mailbox settings win over the locally stored preference
-      let lang = localStorage.getItem("lang");
+      // Mailbox language beats the cached one, unless picked at sign-in this session
+      let lang = getExplicitLanguage() || localStorage.getItem("lang");
       if (authenticated) {
         const result = await dispatch(loadMailboxSettings());
-        // The mailbox locale applies unless the user picked a language on the sign-in page
-        if (loadMailboxSettings.fulfilled.match(result) && result.payload.language?.locale && !lang) {
-          lang = result.payload.language.locale;
-        }
+        const locale = loadMailboxSettings.fulfilled.match(result) ? result.payload.language?.locale : undefined;
+        lang = resolveLanguage(getExplicitLanguage(), locale, lang);
       }
       if (lang) {
         // Load the dayjs locale first or dates render in the old language

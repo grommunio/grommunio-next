@@ -5,7 +5,7 @@ import { Alert, Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogConten
 import { Add, ArrowDownward, ArrowUpward, DeleteOutline, Edit, RuleOutlined } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Importance, MessageRule, Recipient } from "microsoft-graph";
+import type { Importance, MessageRule } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { createRule, deleteRule, loadRules, updateRule } from "../settingsSlice";
 import { loadFolders } from "../../mail/mailSlice";
@@ -15,72 +15,7 @@ import RecipientField from "../../mail/components/RecipientField";
 import { Section } from "./GeneralSettings";
 import EmptyState from "../../../components/common/EmptyState";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
-
-type RuleDraft = {
-  displayName: string;
-  isEnabled: boolean;
-  fromAddresses: Recipient[];
-  senderContains: string;
-  subjectContains: string;
-  bodyContains: string;
-  importance: Importance | "";
-  hasAttachments: boolean;
-  sentToMe: boolean;
-  moveToFolder: string;
-  copyToFolder: string;
-  markAsRead: boolean;
-  deleteMessage: boolean;
-  forwardTo: Recipient[];
-  assignCategories: string[];
-  markImportance: Importance | "";
-  stopProcessingRules: boolean;
-};
-
-const split = (s: string) => s.split(",").map(x => x.trim()).filter(Boolean);
-
-function toDraft(rule?: MessageRule): RuleDraft {
-  const c = rule?.conditions || {};
-  const a = rule?.actions || {};
-  return {
-    displayName: rule?.displayName || "",
-    isEnabled: rule?.isEnabled !== false,
-    fromAddresses: c.fromAddresses || [],
-    senderContains: (c.senderContains || []).join(", "),
-    subjectContains: (c.subjectContains || []).join(", "),
-    bodyContains: (c.bodyContains || []).join(", "),
-    importance: c.importance || "",
-    hasAttachments: Boolean(c.hasAttachments),
-    sentToMe: Boolean(c.sentToMe),
-    moveToFolder: a.moveToFolder || "",
-    copyToFolder: a.copyToFolder || "",
-    markAsRead: Boolean(a.markAsRead),
-    deleteMessage: Boolean(a.delete),
-    forwardTo: a.forwardTo || [],
-    assignCategories: a.assignCategories || [],
-    markImportance: a.markImportance || "",
-    stopProcessingRules: a.stopProcessingRules !== false,
-  };
-}
-
-function toRule(draft: RuleDraft, sequence: number): MessageRule {
-  const conditions: MessageRule["conditions"] = {};
-  if (draft.fromAddresses.length) conditions.fromAddresses = draft.fromAddresses.map(r => ({ emailAddress: { address: r.emailAddress?.address, name: r.emailAddress?.name || r.emailAddress?.address } }));
-  if (split(draft.senderContains).length) conditions.senderContains = split(draft.senderContains);
-  if (split(draft.subjectContains).length) conditions.subjectContains = split(draft.subjectContains);
-  if (split(draft.bodyContains).length) conditions.bodyContains = split(draft.bodyContains);
-  if (draft.importance) conditions.importance = draft.importance as Importance;
-  if (draft.hasAttachments) conditions.hasAttachments = true;
-  if (draft.sentToMe) conditions.sentToMe = true;
-  const actions: MessageRule["actions"] = { stopProcessingRules: draft.stopProcessingRules };
-  if (draft.moveToFolder) actions.moveToFolder = draft.moveToFolder;
-  if (draft.copyToFolder) actions.copyToFolder = draft.copyToFolder;
-  if (draft.markAsRead) actions.markAsRead = true;
-  if (draft.deleteMessage) actions.delete = true;
-  if (draft.forwardTo.length) actions.forwardTo = draft.forwardTo.map(r => ({ emailAddress: { address: r.emailAddress?.address, name: r.emailAddress?.name || r.emailAddress?.address } }));
-  if (draft.assignCategories.length) actions.assignCategories = draft.assignCategories;
-  if (draft.markImportance) actions.markImportance = draft.markImportance as Importance;
-  return { displayName: draft.displayName.trim(), sequence, isEnabled: draft.isEnabled, conditions, actions };
-}
+import { describeRule, draftHasAction, draftHasCondition, hasUnsupported, type RuleDraft, splitList as split, toDraft, toRule, unsupportedParts } from "../rules";
 
 const RuleEditor = ({ rule, sequence, onClose }: { rule?: MessageRule; sequence: number; onClose: () => void }) => {
   const { t } = useTranslation();
@@ -91,12 +26,13 @@ const RuleEditor = ({ rule, sequence, onClose }: { rule?: MessageRule; sequence:
   const [busy, setBusy] = useState(false);
   const set = <K extends keyof RuleDraft>(key: K, value: RuleDraft[K]) => setDraft({ ...draft, [key]: value });
 
-  const hasCondition = draft.fromAddresses.length || split(draft.senderContains).length || split(draft.subjectContains).length || split(draft.bodyContains).length || draft.importance || draft.hasAttachments || draft.sentToMe;
-  const hasAction = draft.moveToFolder || draft.copyToFolder || draft.markAsRead || draft.deleteMessage || draft.forwardTo.length || draft.assignCategories.length || draft.markImportance;
+  const hasCondition = draftHasCondition(draft, rule);
+  const hasAction = draftHasAction(draft, rule);
+  const unsupported = useMemo(() => unsupportedParts(rule), [rule]);
 
   const save = async () => {
     setBusy(true);
-    const payload = toRule(draft, rule?.sequence || sequence);
+    const payload = toRule(draft, rule?.sequence || sequence, rule);
     const result = rule?.id ? await dispatch(updateRule({ id: rule.id, rule: payload })) : await dispatch(createRule(payload));
     setBusy(false);
     if (createRule.fulfilled.match(result) || updateRule.fulfilled.match(result)) onClose();
@@ -106,6 +42,14 @@ const RuleEditor = ({ rule, sequence, onClose }: { rule?: MessageRule; sequence:
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{rule ? t("Edit rule") : t("New rule")}</DialogTitle>
       <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {hasUnsupported(unsupported) && (
+          <Alert severity="info">
+            {t("This rule has parts that can't be edited here. They are kept when you save.")}
+            {unsupported.conditions.length > 0 && <Box>{t("Conditions: {{list}}", { list: unsupported.conditions.join(", ") })}</Box>}
+            {unsupported.actions.length > 0 && <Box>{t("Actions: {{list}}", { list: unsupported.actions.join(", ") })}</Box>}
+            {unsupported.exceptions && <Box>{t("Exceptions")}</Box>}
+          </Alert>
+        )}
         <TextField label={t("Rule name")} value={draft.displayName} onChange={e => set("displayName", e.target.value)} autoFocus required />
         <Typography variant="subtitle2">{t("Apply to messages that match all of these conditions")}</Typography>
         <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, px: 1.5, py: 0.5 }}>
@@ -159,28 +103,6 @@ const RuleEditor = ({ rule, sequence, onClose }: { rule?: MessageRule; sequence:
     </Dialog>
   );
 };
-
-function describeRule(rule: MessageRule, folderName: (id: string) => string, t: (k: string, o?: any) => string): string {
-  const c = rule.conditions || {};
-  const a = rule.actions || {};
-  const conds: string[] = [];
-  if (c.fromAddresses?.length) conds.push(t("from {{list}}", { list: c.fromAddresses.map(r => r.emailAddress?.name || r.emailAddress?.address).join(", ") }));
-  if (c.senderContains?.length) conds.push(t("sender contains {{list}}", { list: c.senderContains.join(", ") }));
-  if (c.subjectContains?.length) conds.push(t("subject contains {{list}}", { list: c.subjectContains.join(", ") }));
-  if (c.bodyContains?.length) conds.push(t("body contains {{list}}", { list: c.bodyContains.join(", ") }));
-  if (c.importance) conds.push(t("importance is {{value}}", { value: c.importance }));
-  if (c.hasAttachments) conds.push(t("has attachments"));
-  if (c.sentToMe) conds.push(t("sent to me"));
-  const acts: string[] = [];
-  if (a.moveToFolder) acts.push(t("move to {{folder}}", { folder: folderName(a.moveToFolder) }));
-  if (a.copyToFolder) acts.push(t("copy to {{folder}}", { folder: folderName(a.copyToFolder) }));
-  if (a.forwardTo?.length) acts.push(t("forward to {{list}}", { list: a.forwardTo.map(r => r.emailAddress?.address).join(", ") }));
-  if (a.assignCategories?.length) acts.push(t("categorize as {{list}}", { list: a.assignCategories.join(", ") }));
-  if (a.markAsRead) acts.push(t("mark as read"));
-  if (a.markImportance) acts.push(t("mark importance {{value}}", { value: a.markImportance }));
-  if (a.delete) acts.push(t("delete"));
-  return `${conds.join(" · ") || t("all messages")} → ${acts.join(", ")}`;
-}
 
 export const RulesSettings = () => {
   const { t } = useTranslation();

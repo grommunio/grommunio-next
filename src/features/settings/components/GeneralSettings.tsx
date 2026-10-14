@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import { Autocomplete, Box, Button, Divider, FormControlLabel, MenuItem, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
+import { Alert, Autocomplete, Box, Button, Divider, FormControlLabel, MenuItem, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
 import { Check, DarkModeOutlined, LightModeOutlined, SettingsBrightnessOutlined } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +9,10 @@ import { useThemeSettings } from "../../../components/ThemeContext";
 import { ColorModePreference, THEME_COLORS } from "../../../theme";
 import { getLangs } from "../../../utils";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { loadTimeZones, saveMailboxSettings, setLanguage } from "../settingsSlice";
+import { loadMailboxSettings, loadTimeZones, saveMailboxSettings, setLanguage } from "../settingsSlice";
+import { timeZoneStandardOf } from "../../../api/settings";
+import { dateFormatOptions, formatExample, isValidFormat, timeFormatOptions } from "../formats";
+import { clearExplicitLanguage } from "../language";
 import { setDayjsLocale } from "../../calendar/dates";
 import { updatePrefs } from "../../mail/mailSlice";
 import { useAppContext } from "../../../azure/AppContext";
@@ -22,6 +25,24 @@ export const Section = ({ title, description, children }: { title: string; descr
     {children}
   </Box>
 );
+
+// Pages backed by mailbox settings must not save before they loaded
+export const useMailboxSettingsReady = () => useTypeSelector(state => state.settings.mailboxSettingsLoaded);
+
+export const MailboxSettingsStatus = () => {
+  const { t } = useTranslation();
+  const dispatch = useTypeDispatch();
+  const { mailboxSettingsLoaded, mailboxSettingsLoading, mailboxSettingsError } = useTypeSelector(state => state.settings);
+  if (mailboxSettingsLoaded) return null;
+  if (mailboxSettingsError && !mailboxSettingsLoading) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" size="small" onClick={() => dispatch(loadMailboxSettings())}>{t("Retry")}</Button>}>
+        {t("Your mailbox settings could not be loaded. Saving is disabled until they are loaded.")}
+      </Alert>
+    );
+  }
+  return <Alert severity="info" sx={{ mb: 2 }}>{t("Loading mailbox settings...")}</Alert>;
+};
 
 export const AppearanceSettings = () => {
   const { t } = useTranslation();
@@ -49,40 +70,47 @@ export const AppearanceSettings = () => {
   </>;
 };
 
-const DATE_FORMATS = ["dd.MM.yyyy", "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "d MMM yyyy"];
-const TIME_FORMATS = ["HH:mm", "h:mm tt"];
-
 export const LanguageTimeSettings = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useTypeDispatch();
-  const { language, mailboxSettings, timeZones } = useTypeSelector(state => state.settings);
+  const { language, mailboxSettings, timeZones, timeZoneStandard } = useTypeSelector(state => state.settings);
+  const ready = useMailboxSettingsReady();
   const [timeZone, setTimeZone] = useState(mailboxSettings.timeZone || "");
   const [dateFormat, setDateFormat] = useState(mailboxSettings.dateFormat || "");
   const [timeFormat, setTimeFormat] = useState(mailboxSettings.timeFormat || "");
+  const locale = mailboxSettings.language?.locale;
 
-  useEffect(() => { dispatch(loadTimeZones()); }, []);
+  // The list must use the naming standard of the mailbox value to match it
+  useEffect(() => { if (ready) dispatch(loadTimeZones(timeZoneStandardOf(mailboxSettings.timeZone))); }, [ready, mailboxSettings.timeZone]);
   useEffect(() => {
     setTimeZone(mailboxSettings.timeZone || "");
     setDateFormat(mailboxSettings.dateFormat || "");
     setTimeFormat(mailboxSettings.timeFormat || "");
   }, [mailboxSettings.timeZone, mailboxSettings.dateFormat, mailboxSettings.timeFormat]);
 
-  const handleLanguage = async (locale: string) => {
+  const handleLanguage = async (value: string) => {
     // Dates are formatted during render, so load the dayjs locale before switching
-    await setDayjsLocale(locale);
-    i18n.changeLanguage(locale);
-    dispatch(setLanguage(locale));
-    dispatch(saveMailboxSettings({ language: { locale } }));
+    await setDayjsLocale(value);
+    i18n.changeLanguage(value);
+    dispatch(setLanguage(value));
+    clearExplicitLanguage();
+    const result = await dispatch(saveMailboxSettings({ language: { locale: value } }));
+    // The server may adjust the formats to the new culture
+    if (saveMailboxSettings.fulfilled.match(result)) dispatch(loadMailboxSettings());
   };
 
-  // Only send what changed; empty values cannot be saved
+  // Only send what changed and what the mailbox culture accepts
   const changes = {
     ...(timeZone && timeZone !== mailboxSettings.timeZone ? { timeZone } : {}),
-    ...(dateFormat && dateFormat !== mailboxSettings.dateFormat ? { dateFormat } : {}),
-    ...(timeFormat && timeFormat !== mailboxSettings.timeFormat ? { timeFormat } : {}),
+    ...(dateFormat && dateFormat !== mailboxSettings.dateFormat && isValidFormat("date", locale, dateFormat) ? { dateFormat } : {}),
+    ...(timeFormat && timeFormat !== mailboxSettings.timeFormat && isValidFormat("time", locale, timeFormat) ? { timeFormat } : {}),
   };
   const dirty = Object.keys(changes).length > 0;
-  const zoneOptions = timeZones.length ? timeZones : (timeZone ? [{ alias: timeZone, displayName: timeZone }] : []);
+  const loadedZones = timeZoneStandard === timeZoneStandardOf(mailboxSettings.timeZone) ? timeZones : [];
+  // Keep the raw mailbox value selectable even if the list doesn't know it
+  const zoneOptions = timeZone && !loadedZones.some(z => z.alias === timeZone) ? [{ alias: timeZone, displayName: timeZone }, ...loadedZones] : loadedZones;
+  const dateOptions = dateFormatOptions(locale, mailboxSettings.dateFormat);
+  const timeOptions = timeFormatOptions(locale, mailboxSettings.timeFormat);
 
   return <>
     <Section title={t("Language")} description={t("Changes the language of the interface. The setting is stored in your mailbox.")}>
@@ -91,6 +119,7 @@ export const LanguageTimeSettings = () => {
       </TextField>
     </Section>
     <Section title={t("Time zone and formats")} description={t("Used by the server when it formats dates for you, e.g. in meeting invitations.")}>
+      <MailboxSettingsStatus />
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 480 }}>
         <Autocomplete
           options={zoneOptions}
@@ -99,20 +128,18 @@ export const LanguageTimeSettings = () => {
           onChange={(_e, v) => v && setTimeZone(v.alias)}
           renderInput={params => <TextField {...params} label={t("Time zone")} />}
           isOptionEqualToValue={(a, b) => a.alias === b.alias}
+          disabled={!ready}
         />
         <Box sx={{ display: "flex", gap: 2 }}>
-          <TextField select label={t("Date format")} value={dateFormat} onChange={e => setDateFormat(e.target.value)} sx={{ flex: 1 }}>
-            {!DATE_FORMATS.includes(dateFormat) && dateFormat && <MenuItem value={dateFormat}>{dateFormat}</MenuItem>}
-            {DATE_FORMATS.map(f => <MenuItem key={f} value={f}>{f}</MenuItem>)}
+          <TextField select label={t("Date format")} value={dateFormat} onChange={e => setDateFormat(e.target.value)} sx={{ flex: 1 }} disabled={!ready || dateOptions.length < 2}>
+            {dateOptions.map(f => <MenuItem key={f} value={f}>{formatExample(f)}</MenuItem>)}
           </TextField>
-          <TextField select label={t("Time format")} value={timeFormat} onChange={e => setTimeFormat(e.target.value)} sx={{ flex: 1 }}>
-            {!TIME_FORMATS.includes(timeFormat) && timeFormat && <MenuItem value={timeFormat}>{timeFormat}</MenuItem>}
-            <MenuItem value="HH:mm">{t("24-hour")} (14:30)</MenuItem>
-            <MenuItem value="h:mm tt">{t("12-hour")} (2:30 PM)</MenuItem>
+          <TextField select label={t("Time format")} value={timeFormat} onChange={e => setTimeFormat(e.target.value)} sx={{ flex: 1 }} disabled={!ready || timeOptions.length < 2}>
+            {timeOptions.map(f => <MenuItem key={f} value={f}>{formatExample(f)}</MenuItem>)}
           </TextField>
         </Box>
         <Box>
-          <Button variant="contained" disabled={!dirty} onClick={() => dispatch(saveMailboxSettings(changes))}>{t("Save")}</Button>
+          <Button variant="contained" disabled={!ready || !dirty} onClick={() => dispatch(saveMailboxSettings(changes))}>{t("Save")}</Button>
         </Box>
       </Box>
     </Section>

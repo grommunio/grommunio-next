@@ -7,7 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Editor } from "@tinymce/tinymce-react";
 import { useTheme } from "@mui/material/styles";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AutomaticRepliesSetting, DateTimeTimeZone, NullableOption } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
@@ -16,7 +16,8 @@ import { saveAutomaticReplies } from "../settingsSlice";
 import { TINYMCE_SCRIPT_SRC } from "../../../constants";
 import { purify, tinymceLanguage } from "../../mail/utils-compose";
 import { browserTimeZone, dayjs, Dayjs, graphDateToDate } from "../../calendar/dates";
-import { Section } from "./GeneralSettings";
+import { MailboxSettingsStatus, Section, useMailboxSettingsReady } from "./GeneralSettings";
+import { externalReplyMessage } from "../autoReplies";
 import type { ConversationOrder, ReadingPanePosition } from "../../mail/types";
 
 // Honours the returned timeZone; values without one are UTC
@@ -123,6 +124,7 @@ export const AutoRepliesSettings = () => {
   const theme = useTheme();
   const dispatch = useTypeDispatch();
   const current = useTypeSelector(state => state.settings.mailboxSettings.automaticRepliesSetting);
+  const ready = useMailboxSettingsReady();
   const [enabled, setEnabled] = useState(false);
   const [scheduled, setScheduled] = useState(false);
   const [start, setStart] = useState<Dayjs>(dayjs().add(1, "hour").startOf("hour"));
@@ -130,7 +132,8 @@ export const AutoRepliesSettings = () => {
   const [external, setExternal] = useState<"none" | "contactsOnly" | "all">("none");
   const [sameExternal, setSameExternal] = useState(true);
   const internalRef = useRef<any>(null);
-  const externalRef = useRef<any>(null);
+  // Kept in state: the external editor unmounts when hidden
+  const [externalEdited, setExternalEdited] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -141,9 +144,13 @@ export const AutoRepliesSettings = () => {
     if (current.scheduledEndDateTime?.dateTime) setEnd(fromGraphDate(current.scheduledEndDateTime));
     setExternal((current.externalAudience as typeof external) || "none");
     setSameExternal(!current.externalReplyMessage || current.externalReplyMessage === current.internalReplyMessage);
+    setExternalEdited(null);
   }, [current]);
 
   const validRange = !scheduled || end.isAfter(start);
+  const showExternalEditor = external !== "none" && !sameExternal;
+  // Snapshot on (re)mount: a changing initialValue would reset the editor while typing
+  const externalInitial = useMemo(() => externalEdited ?? current?.externalReplyMessage ?? "", [current, showExternalEditor]);
 
   const changeStart = (value: Dayjs) => {
     setStart(value);
@@ -152,9 +159,9 @@ export const AutoRepliesSettings = () => {
   };
 
   const save = async () => {
-    if (enabled && !validRange) return;
+    if (!ready || (enabled && !validRange)) return;
     const internal = internalRef.current ? purify(internalRef.current.getContent()) : current?.internalReplyMessage || "";
-    const externalMsg = sameExternal ? internal : externalRef.current ? purify(externalRef.current.getContent()) : current?.externalReplyMessage || "";
+    const externalMsg = externalReplyMessage(sameExternal, internal, externalEdited === null ? null : purify(externalEdited), current?.externalReplyMessage);
     const setting: AutomaticRepliesSetting = {
       status: !enabled ? "disabled" : scheduled ? "scheduled" : "alwaysEnabled",
       externalAudience: external,
@@ -183,6 +190,7 @@ export const AutoRepliesSettings = () => {
 
   return (
     <Section title={t("Automatic replies")} description={t("Let people know you are away. Replies are sent once per sender while automatic replies are on.")}>
+      <MailboxSettingsStatus />
       <FormControlLabel control={<Switch checked={enabled} onChange={e => setEnabled(e.target.checked)} />} label={t("Turn on automatic replies")} />
       <Box sx={{ opacity: enabled ? 1 : 0.5, display: "flex", flexDirection: "column", gap: 1.5, mt: 1 }}>
         <FormControlLabel disabled={disabled} control={<Checkbox checked={scheduled} onChange={e => setScheduled(e.target.checked)} />} label={t("Send replies only during a time period")} />
@@ -211,13 +219,13 @@ export const AutoRepliesSettings = () => {
           <FormControlLabel disabled={disabled} control={<Checkbox checked={sameExternal} onChange={e => setSameExternal(e.target.checked)} />} label={t("Use the same message for people outside my organization")} />
           {!sameExternal && (
             <Box sx={{ "& .tox-tinymce": { borderRadius: 1 } }}>
-              <Editor key={"e" + (current?.externalReplyMessage || "").length} tinymceScriptSrc={TINYMCE_SCRIPT_SRC} onInit={(_e, ed) => { externalRef.current = ed; }} initialValue={current?.externalReplyMessage || ""} init={editorInit} disabled={disabled} />
+              <Editor key={"e" + (current?.externalReplyMessage || "").length} tinymceScriptSrc={TINYMCE_SCRIPT_SRC} onEditorChange={value => setExternalEdited(value)} initialValue={externalInitial} init={editorInit} disabled={disabled} />
             </Box>
           )}
         </>}
       </Box>
       <Box sx={{ mt: 2 }}>
-        <Button variant="contained" onClick={save} disabled={busy || (enabled && !validRange)}>{t("Save")}</Button>
+        <Button variant="contained" onClick={save} disabled={!ready || busy || (enabled && !validRange)}>{t("Save")}</Button>
       </Box>
       <Box sx={{ display: "none" }}>{browserTimeZone()}</Box>
     </Section>

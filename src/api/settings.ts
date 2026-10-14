@@ -23,8 +23,13 @@ export async function patchWorkingHours(workingHours: WorkingHours): Promise<Mai
   return patch<MailboxSettings>("/me/mailboxSettings", { workingHours });
 }
 
-export async function getSupportedTimeZones(): Promise<Array<{ alias: string; displayName: string }>> {
-  const response = await get<{ value: Array<{ alias: string; displayName: string }> }>("/me/outlook/supportedTimeZones(TimeZoneStandard=microsoft.graph.timeZoneStandard'Iana')");
+export type TimeZoneStandard = "Windows" | "Iana";
+
+// Exchange mostly stores Windows names, IANA names contain a slash
+export const timeZoneStandardOf = (name?: string | null): TimeZoneStandard => name && name.includes("/") ? "Iana" : "Windows";
+
+export async function getSupportedTimeZones(standard: TimeZoneStandard = "Windows"): Promise<Array<{ alias: string; displayName: string }>> {
+  const response = await get<{ value: Array<{ alias: string; displayName: string }> }>(`/me/outlook/supportedTimeZones(TimeZoneStandard=microsoft.graph.timeZoneStandard'${standard}')`);
   return response.value;
 }
 

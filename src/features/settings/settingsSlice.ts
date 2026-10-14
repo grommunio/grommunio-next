@@ -5,6 +5,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { AutomaticRepliesSetting, MailboxSettings, MessageRule, WorkingHours } from "microsoft-graph";
 import type { RootState } from "../../store";
 import * as settingsApi from "../../api/settings";
+import type { TimeZoneStandard } from "../../api/settings";
 import * as rulesApi from "../../api/rules";
 import { ApiError } from "../../api/graph";
 import { pushAlertStack } from "../../features/alerts/alertsSlice";
@@ -17,15 +18,19 @@ export type SettingsState = {
   language: string;
   mailboxSettings: MailboxSettings;
   mailboxSettingsLoaded: boolean;
+  mailboxSettingsLoading: boolean;
+  // Mailbox pages must not save after a failed load
+  mailboxSettingsError: string | null;
   rules: MessageRule[];
   rulesLoaded: boolean;
   timeZones: Array<{ alias: string; displayName: string }>;
+  timeZoneStandard: TimeZoneStandard | null;
   languages: Array<{ locale: string; displayName: string }>;
 };
 
 export const loadMailboxSettings = createAsyncThunk<MailboxSettings, void, ThunkApi>("settings/loadMailbox", async (_a, { rejectWithValue }) => {
   try { return await settingsApi.getMailboxSettings(); } catch (err) { return rejectWithValue(errorMessage(err)); }
-});
+}, { condition: (_a, { getState }) => !getState().settings.mailboxSettingsLoading });
 
 // Toast keys, translated by AlertStack:
 // t("Settings saved")
@@ -54,9 +59,9 @@ export const saveWorkingHours = createAsyncThunk<MailboxSettings, WorkingHours, 
   } catch (err) { dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" })); return rejectWithValue(errorMessage(err)); }
 });
 
-export const loadTimeZones = createAsyncThunk<Array<{ alias: string; displayName: string }>, void, ThunkApi>("settings/loadTimeZones", async (_a, { rejectWithValue }) => {
-  try { return await settingsApi.getSupportedTimeZones(); } catch (err) { return rejectWithValue(errorMessage(err)); }
-}, { condition: (_a, { getState }) => getState().settings.timeZones.length === 0 });
+export const loadTimeZones = createAsyncThunk<Array<{ alias: string; displayName: string }>, TimeZoneStandard, ThunkApi>("settings/loadTimeZones", async (standard, { rejectWithValue }) => {
+  try { return await settingsApi.getSupportedTimeZones(standard); } catch (err) { return rejectWithValue(errorMessage(err)); }
+}, { condition: (standard, { getState }) => getState().settings.timeZoneStandard !== standard });
 
 export const loadRules = createAsyncThunk<MessageRule[], void, ThunkApi>("settings/loadRules", async (_a, { dispatch, rejectWithValue }) => {
   try { return await rulesApi.getMessageRules(); } catch (err) { dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" })); return rejectWithValue(errorMessage(err)); }
@@ -78,9 +83,12 @@ const initialState: SettingsState = {
   language: window.localStorage.getItem("lang") || "en-US",
   mailboxSettings: {},
   mailboxSettingsLoaded: false,
+  mailboxSettingsLoading: false,
+  mailboxSettingsError: null,
   rules: [],
   rulesLoaded: false,
   timeZones: [],
+  timeZoneStandard: null,
   languages: [],
 };
 
@@ -95,12 +103,24 @@ const settingsSlice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(loadMailboxSettings.fulfilled, (state, action) => { state.mailboxSettings = action.payload; state.mailboxSettingsLoaded = true; })
-      .addCase(loadMailboxSettings.rejected, state => { state.mailboxSettingsLoaded = true; })
+      .addCase(loadMailboxSettings.pending, state => { state.mailboxSettingsLoading = true; })
+      .addCase(loadMailboxSettings.fulfilled, (state, action) => {
+        state.mailboxSettings = action.payload;
+        state.mailboxSettingsLoaded = true;
+        state.mailboxSettingsLoading = false;
+        state.mailboxSettingsError = null;
+      })
+      // Not marked as loaded, so the next attempt loads again
+      .addCase(loadMailboxSettings.rejected, (state, action) => {
+        state.mailboxSettingsLoading = false;
+        state.mailboxSettingsError = action.payload || action.error.message || "Request failed";
+      })
       .addCase(saveMailboxSettings.fulfilled, (state, action) => { state.mailboxSettings = { ...state.mailboxSettings, ...action.payload }; })
       .addCase(saveAutomaticReplies.fulfilled, (state, action) => { state.mailboxSettings = { ...state.mailboxSettings, ...action.payload }; })
       .addCase(saveWorkingHours.fulfilled, (state, action) => { state.mailboxSettings = { ...state.mailboxSettings, ...action.payload }; })
+      .addCase(loadTimeZones.pending, (state, action) => { state.timeZoneStandard = action.meta.arg; })
       .addCase(loadTimeZones.fulfilled, (state, action) => { state.timeZones = action.payload; })
+      .addCase(loadTimeZones.rejected, state => { state.timeZoneStandard = null; })
       .addCase(loadRules.fulfilled, (state, action) => { state.rules = [...action.payload].sort((a, b) => (a.sequence || 0) - (b.sequence || 0)); state.rulesLoaded = true; })
       .addCase(createRule.fulfilled, (state, action) => { state.rules.push(action.payload); })
       .addCase(updateRule.fulfilled, (state, action) => { state.rules = state.rules.map(r => r.id === action.payload.id ? { ...r, ...action.payload } : r); })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import reducer, { createRule, deleteRule, loadMailboxSettings, loadRules, setLanguage, updateRule } from "../settingsSlice";
+import reducer, { createRule, deleteRule, loadMailboxSettings, loadRules, loadTimeZones, setLanguage, updateRule } from "../settingsSlice";
 
 describe("settings reducer", () => {
   const initial = reducer(undefined, { type: "init" });
@@ -14,6 +14,25 @@ describe("settings reducer", () => {
     const state = reducer(initial, loadMailboxSettings.fulfilled({ timeZone: "Europe/Berlin", language: { locale: "de-DE" } }, "req"));
     expect(state.mailboxSettings.timeZone).toBe("Europe/Berlin");
     expect(state.mailboxSettingsLoaded).toBe(true);
+  });
+
+  it("does not mark failed mailbox settings as loaded, so they are loaded again", () => {
+    let state = reducer(initial, loadMailboxSettings.pending("req"));
+    expect(state.mailboxSettingsLoading).toBe(true);
+    state = reducer(state, loadMailboxSettings.rejected(null, "req", undefined, "Network error"));
+    expect(state.mailboxSettingsLoaded).toBe(false);
+    expect(state.mailboxSettingsLoading).toBe(false);
+    expect(state.mailboxSettingsError).toBe("Network error");
+    state = reducer(state, loadMailboxSettings.fulfilled({ timeZone: "UTC" }, "req"));
+    expect(state.mailboxSettingsLoaded).toBe(true);
+    expect(state.mailboxSettingsError).toBeNull();
+  });
+
+  it("remembers the time zone naming standard", () => {
+    let state = reducer(initial, loadTimeZones.pending("req", "Windows"));
+    expect(state.timeZoneStandard).toBe("Windows");
+    state = reducer(state, loadTimeZones.rejected(null, "req", "Windows"));
+    expect(state.timeZoneStandard).toBeNull();
   });
 
   it("keeps rules in sequence order", () => {

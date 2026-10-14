@@ -9,12 +9,17 @@ import { Provider } from 'react-redux';
 import store from './store';
 import i18n from './i18n';
 import AppThemeProvider from './components/ThemeContext';
-import makeLoadableComponent from './lazy';
+import makeLoadableComponent, { reloadOnce } from './lazy';
 import AppLoader from './components/AppLoader';
 import { loadConfig } from './config';
 import { createMsalInstance } from './azure/msal';
 
 const AsyncApp = makeLoadableComponent(() => import("./App"), <AppLoader />);
+
+// After a deploy an old preloaded chunk is gone: reload once
+window.addEventListener('vite:preloadError', event => {
+  if (reloadOnce()) event.preventDefault();
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

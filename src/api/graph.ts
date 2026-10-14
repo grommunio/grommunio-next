@@ -54,19 +54,26 @@ function safeParse(s: string) {
 
 const joinList = (v?: string[] | string) => Array.isArray(v) ? v.join(",") : v;
 
+// The SDK joins query values into the URL as is, so &, #, + or % would break it
+const encodeList = (v?: string[] | string) => {
+  const list = Array.isArray(v) ? v : v ? v.split(",") : [];
+  return list.map(item => encodeURIComponent(item.trim())).filter(Boolean).join(",") || undefined;
+};
+
 // Inner quotes and backslashes get a backslash
 export const quoteSearch = (text: string) => `"${text.replace(/[\\"]/g, "\\$&")}"`;
 
 export function request(path: string, options: QueryOptions = {}) {
   let req = client().api(path);
-  const select = joinList(options.select);
+  const select = encodeList(options.select);
+  // $expand can hold nested options with commas
   const expand = joinList(options.expand);
-  const orderby = joinList(options.orderby);
+  const orderby = encodeList(options.orderby);
   if (select) req = req.select(select);
-  if (expand) req = req.expand(expand);
-  if (options.filter) req = req.filter(options.filter);
+  if (expand) req = req.expand(encodeURIComponent(expand));
+  if (options.filter) req = req.filter(encodeURIComponent(options.filter));
   if (orderby) req = req.orderby(orderby);
-  // The SDK does not encode query values, so &, # or + would break the URL
+  // Encode exactly once here, callers pass raw text
   if (options.search) req = req.search(encodeURIComponent(options.search));
   if (options.top !== undefined) req = req.top(options.top);
   if (options.skip !== undefined) req = req.skip(options.skip);
@@ -127,9 +134,9 @@ export async function getPage<T>(path: string, options?: QueryOptions): Promise<
   return toPage<T>(response);
 }
 
-/** Follows a @odata.nextLink */
-export async function getNextPage<T>(nextLink: string): Promise<Page<T>> {
-  const response: PageCollection = await get(nextLink);
+// Pass the headers of the first request (Prefer) again
+export async function getNextPage<T>(nextLink: string, headers?: Record<string, string>): Promise<Page<T>> {
+  const response: PageCollection = await get(nextLink, headers ? { headers } : undefined);
   return toPage<T>(response);
 }
 
@@ -147,10 +154,11 @@ export async function getAll<T>(path: string, options?: QueryOptions, limit = 50
   const result: T[] = [];
   try {
     const response: PageCollection = await request(path, options).get();
+    // Without requestOptions later pages lose headers like Prefer
     const iterator = new PageIterator(client(), response, (item: T) => {
       result.push(item);
       return result.length < limit;
-    });
+    }, options?.headers ? { headers: options.headers } : undefined);
     await iterator.iterate();
   } catch (err) {
     throw normalizeError(err);
@@ -174,7 +182,34 @@ export type BatchResponse<T = any> = {
   headers?: Record<string, string>;
 };
 
-// 20 requests per $batch call, failures only show up in each item's status
+const RETRYABLE = new Set([429, 503, 504]);
+const MAX_RETRY_WAIT = 10;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export function retryDelay(responses: BatchResponse[]): number {
+  const seconds = responses.map(r => {
+    const h = r.headers || {};
+    const key = Object.keys(h).find(k => k.toLowerCase() === "retry-after");
+    const value = key !== undefined ? Number(h[key]) : NaN;
+    return Number.isFinite(value) && value >= 0 ? value : 1;
+  });
+  return Math.min(Math.max(0, ...seconds), MAX_RETRY_WAIT);
+}
+
+async function postBatch<T>(chunk: BatchRequest[]): Promise<Map<string, BatchResponse<T>>> {
+  try {
+    const response = await client().api("/$batch").post({ requests: chunk });
+    const byId = new Map<string, BatchResponse<T>>();
+    (response.responses || []).forEach((r: BatchResponse<T>) => byId.set(r.id, r));
+    return byId;
+  } catch (err) {
+    throw normalizeError(err);
+  }
+}
+
+// 20 requests per $batch call. Throttled items (429/503/504) get one retry
+// after Retry-After, failures only show up in each item's status.
 export async function batch<T = any>(requests: BatchRequest[]): Promise<BatchResponse<T>[]> {
   const results: BatchResponse<T>[] = [];
   for (let i = 0; i < requests.length; i += 20) {
@@ -182,14 +217,20 @@ export async function batch<T = any>(requests: BatchRequest[]): Promise<BatchRes
       ...r,
       headers: r.body ? { "Content-Type": "application/json", ...(r.headers || {}) } : r.headers,
     }));
-    try {
-      const response = await client().api("/$batch").post({ requests: chunk });
-      const byId = new Map<string, BatchResponse<T>>();
-      (response.responses || []).forEach((r: BatchResponse<T>) => byId.set(r.id, r));
-      chunk.forEach(r => results.push(byId.get(r.id) || { id: r.id, status: 0 }));
-    } catch (err) {
-      throw normalizeError(err);
+    const byId = await postBatch<T>(chunk);
+    const throttled = chunk.map(r => byId.get(r.id)).filter((r): r is BatchResponse<T> => !!r && RETRYABLE.has(r.status));
+    if (throttled.length) {
+      await sleep(retryDelay(throttled) * 1000);
+      const ids = new Set(throttled.map(r => r.id));
+      // Dependencies outside the retry set have already completed
+      const retry = chunk.filter(r => ids.has(r.id)).map(r => {
+        const dependsOn = r.dependsOn?.filter(d => ids.has(d));
+        return { ...r, dependsOn: dependsOn?.length ? dependsOn : undefined };
+      });
+      const second = await postBatch<T>(retry);
+      second.forEach((r, id) => byId.set(id, r));
     }
+    chunk.forEach(r => results.push(byId.get(r.id) || { id: r.id, status: 0 }));
   }
   return results;
 }
