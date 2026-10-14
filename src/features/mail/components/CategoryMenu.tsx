@@ -9,6 +9,7 @@ import type { OutlookCategory } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { createCategory, deleteCategory, updateCategory } from "../mailSlice";
 import { CATEGORY_PRESETS, presetColor } from "../categories";
+import { focusFirstItem } from "./MoveToMenu";
 
 type CategoryMenuProps = {
   anchorEl: HTMLElement | null;
@@ -58,22 +59,29 @@ const CategoryMenu = ({ anchorEl, anchorPosition, open, onClose, applied, onTogg
     >
       {categories.length > 8 && (
         <Box sx={{ px: 1.5, pb: 1 }} onKeyDown={e => e.stopPropagation()}>
-          <InputBase autoFocus fullWidth placeholder={t("Search categories")} value={filter} onChange={e => setFilter(e.target.value)} sx={{ px: 1, py: 0.25, borderRadius: 1, border: 1, borderColor: "divider", fontSize: 14 }} />
+          <InputBase
+            autoFocus
+            fullWidth
+            placeholder={t("Search categories")}
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            onKeyDown={e => { if (e.key === "ArrowDown") { e.preventDefault(); focusFirstItem(e.currentTarget); } }}
+            inputProps={{ "aria-label": t("Search categories") }}
+            sx={{ px: 1, py: 0.25, borderRadius: 1, border: 1, borderColor: "divider", fontSize: 14 }} />
         </Box>
       )}
-      <Box sx={{ overflowY: "auto", maxHeight: 280 }}>
-        {visible.map(category => {
-          const active = applied.includes(category.displayName || "");
-          return (
-            <MenuItem key={category.id} onClick={() => onToggle(category)}>
-              <ListItemIcon><ColorDot color={presetColor(category.color)} /></ListItemIcon>
-              <ListItemText primaryTypographyProps={{ noWrap: true }}>{category.displayName}</ListItemText>
-              {active && <Check fontSize="small" />}
-            </MenuItem>
-          );
-        })}
-        {categories.length === 0 && <Typography variant="body2" sx={{ px: 2, py: 1, color: "text.secondary" }}>{t("No categories yet")}</Typography>}
-      </Box>
+      {/* Items must be direct children of the menu list for arrow-key navigation */}
+      {visible.map(category => {
+        const active = applied.includes(category.displayName || "");
+        return (
+          <MenuItem key={category.id} onClick={() => onToggle(category)} aria-checked={active} role="menuitemcheckbox">
+            <ListItemIcon><ColorDot color={presetColor(category.color)} /></ListItemIcon>
+            <ListItemText primaryTypographyProps={{ noWrap: true }}>{category.displayName}</ListItemText>
+            {active && <Check fontSize="small" />}
+          </MenuItem>
+        );
+      })}
+      {categories.length === 0 && <Typography variant="body2" sx={{ px: 2, py: 1, color: "text.secondary" }}>{t("No categories yet")}</Typography>}
       <Divider />
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1.5, py: 0.5 }} onKeyDown={e => e.stopPropagation()}>
         <IconButton size="small" onClick={() => setNewColor(CATEGORY_PRESETS[(CATEGORY_PRESETS.findIndex(p => p.preset === newColor) + 1) % CATEGORY_PRESETS.length].preset)} aria-label={t("Change color")}>

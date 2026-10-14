@@ -61,6 +61,8 @@ const MessageListItem = memo(function MessageListItem({
   const address = showRecipients ? "" : senderAddress(message);
   const date = formatListDate(message.receivedDateTime || message.sentDateTime || message.lastModifiedDateTime);
   const stop = (fn: () => void) => (e: MouseEvent) => { e.stopPropagation(); fn(); };
+  // Controls inside rows are tabbable only in the tab-stop row (roving tabindex)
+  const innerTab = tabStop ? 0 : -1;
 
   return (
     <Box
@@ -101,7 +103,7 @@ const MessageListItem = memo(function MessageListItem({
         sx={{ width: showAvatar ? 36 : 24, display: "flex", justifyContent: "center", alignItems: "center", alignSelf: compact ? "center" : "flex-start", mt: compact ? 0 : 0.25, flexShrink: 0 }}
       >
         {selectionMode ? (
-          <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(message)} sx={{ p: 0.5 }} inputProps={{ "aria-label": t("Select message") }} />
+          <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(message)} sx={{ p: 0.5 }} inputProps={{ "aria-label": t("Select message"), tabIndex: innerTab }} />
         ) : showAvatar ? (
           <Box sx={{ position: "relative", "&:hover .avatar, &:focus-within .avatar": { opacity: 0 }, "&:hover .avatar-check, &:focus-within .avatar-check": { opacity: 1 } }}>
             <Box className="avatar" sx={{ transition: "opacity .1s" }}>
@@ -114,11 +116,11 @@ const MessageListItem = memo(function MessageListItem({
               onClick={e => e.stopPropagation()}
               onChange={() => onCheck(message)}
               sx={{ position: "absolute", inset: 0, opacity: 0, p: 0.5, transition: "opacity .1s" }}
-              inputProps={{ "aria-label": t("Select message") }}
+              inputProps={{ "aria-label": t("Select message"), tabIndex: innerTab }}
             />
           </Box>
         ) : (
-          <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(message)} sx={{ p: 0.5, opacity: checked ? 1 : 0.4 }} inputProps={{ "aria-label": t("Select message") }} />
+          <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(message)} sx={{ p: 0.5, opacity: checked ? 1 : 0.4 }} inputProps={{ "aria-label": t("Select message"), tabIndex: innerTab }} />
         )}
       </Box>
 
@@ -168,20 +170,20 @@ const MessageListItem = memo(function MessageListItem({
           bgcolor: "background.paper", borderRadius: 1, boxShadow: 1, px: 0.25,
         }}
       >
-        <Tooltip title={t("Delete")}><IconButton size="small" onClick={stop(() => onDelete(message))} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
-        <Tooltip title={t("Archive")}><IconButton size="small" onClick={stop(() => onArchive(message))} aria-label={t("Archive")}><ArchiveOutlined fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title={t("Delete")}><IconButton size="small" tabIndex={innerTab} onClick={stop(() => onDelete(message))} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title={t("Archive")}><IconButton size="small" tabIndex={innerTab} onClick={stop(() => onArchive(message))} aria-label={t("Archive")}><ArchiveOutlined fontSize="small" /></IconButton></Tooltip>
         <Tooltip title={unread ? t("Mark as read") : t("Mark as unread")}>
-          <IconButton size="small" onClick={stop(() => onToggleRead(message))} aria-label={unread ? t("Mark as read") : t("Mark as unread")}>
+          <IconButton size="small" tabIndex={innerTab} onClick={stop(() => onToggleRead(message))} aria-label={unread ? t("Mark as read") : t("Mark as unread")}>
             {unread ? <DraftsOutlined fontSize="small" /> : <MailOutline fontSize="small" />}
           </IconButton>
         </Tooltip>
         <Tooltip title={flagged ? t("Clear flag") : t("Flag")}>
-          <IconButton size="small" onClick={stop(() => onToggleFlag(message))} aria-label={flagged ? t("Clear flag") : t("Flag")}>
+          <IconButton size="small" tabIndex={innerTab} onClick={stop(() => onToggleFlag(message))} aria-label={flagged ? t("Clear flag") : t("Flag")}>
             {flagged ? <Flag fontSize="small" color="error" /> : <FlagOutlined fontSize="small" />}
           </IconButton>
         </Tooltip>
         <Tooltip title={pinned ? t("Unpin") : t("Pin")}>
-          <IconButton size="small" onClick={stop(() => onTogglePin(message))} aria-label={pinned ? t("Unpin") : t("Pin")}>
+          <IconButton size="small" tabIndex={innerTab} onClick={stop(() => onTogglePin(message))} aria-label={pinned ? t("Unpin") : t("Pin")}>
             {pinned ? <PushPin fontSize="small" color="primary" /> : <PushPinOutlined fontSize="small" />}
           </IconButton>
         </Tooltip>

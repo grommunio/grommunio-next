@@ -6,7 +6,7 @@ import { Attachment, FileAttachment, Message, OutlookCategory } from "microsoft-
 import { fileToBase64 } from "../utils";
 import { MessageCategory, MessageListParams } from "../types/messages";
 import { SCROLL_ITEMS } from "../constants";
-import { ApiError, batch, BatchResponse, client, del, get, getAll, getNextPage, getPage, normalizeError, odataString, Page, patch, post, quoteSearch, request } from "./graph";
+import { ApiError, batch, BatchRequest, BatchResponse, client, del, get, getAll, getNextPage, getPage, normalizeError, odataString, Page, patch, post, quoteSearch, request } from "./graph";
 
 // List view only, the body is loaded on demand
 export const MESSAGE_LIST_SELECT = [
@@ -190,8 +190,55 @@ export async function patchMessage(message: Message, specificProps?: Partial<Mes
   return patch<Message>('/me/messages/' + message.id, specificProps || message);
 }
 
+const RETRYABLE = new Set([429, 503, 504]);
+const MAX_RETRIES = 3;
+const BATCH_SIZE = 20;
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function retryAfter(headers?: Record<string, string>): number {
+  const value = headers && Object.entries(headers).find(([k]) => k.toLowerCase() === "retry-after")?.[1];
+  const seconds = Number(value);
+  return value !== undefined && Number.isFinite(seconds) && seconds >= 0 ? seconds : 1;
+}
+
+// A failed chunk only marks its own requests failed (status 0).
+// 429/503/504 get retried after Retry-After.
+export async function messageBatch<T = any>(requests: BatchRequest[]): Promise<BatchResponse<T>[]> {
+  const results = new Map<string, BatchResponse<T>>();
+  let pending = requests;
+  let wait = 0;
+  for (let attempt = 0; pending.length && attempt <= MAX_RETRIES; attempt++) {
+    if (attempt) await sleep(Math.min(wait, 10) * 1000);
+    const retry: BatchRequest[] = [];
+    wait = 0;
+    for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+      const chunk = pending.slice(i, i + BATCH_SIZE);
+      try {
+        const responses = await batch<T>(chunk);
+        const byId = new Map(responses.map(r => [r.id, r]));
+        chunk.forEach(request => {
+          const response = byId.get(request.id) || { id: request.id, status: 0 };
+          results.set(request.id, response);
+          if (RETRYABLE.has(response.status)) {
+            retry.push(request);
+            wait = Math.max(wait, retryAfter(response.headers));
+          }
+        });
+      } catch (err) {
+        chunk.forEach(request => results.set(request.id, { id: request.id, status: 0 }));
+        if (err instanceof ApiError && RETRYABLE.has(err.status)) {
+          retry.push(...chunk);
+          wait = Math.max(wait, 1);
+        }
+      }
+    }
+    pending = retry;
+  }
+  return requests.map(r => results.get(r.id) || { id: r.id, status: 0 });
+}
+
 export async function patchMessages(ids: string[], props: Partial<Message>): Promise<BatchResponse<Message>[]> {
-  return batch<Message>(ids.map((id, i) => ({ id: String(i), method: "PATCH", url: `/me/messages/${id}`, body: props })));
+  return messageBatch<Message>(ids.map((id, i) => ({ id: String(i), method: "PATCH", url: `/me/messages/${id}`, body: props })));
 }
 
 export async function deleteMessage(id: string, force = false): Promise<void> {
@@ -203,7 +250,7 @@ export async function deleteMessage(id: string, force = false): Promise<void> {
 }
 
 export async function deleteMessages(ids: string[], permanent: boolean): Promise<BatchResponse[]> {
-  return batch(ids.map((id, i) => permanent ?
+  return messageBatch(ids.map((id, i) => permanent ?
     ({ id: String(i), method: "DELETE" as const, url: `/me/messages/${id}` }) :
     ({ id: String(i), method: "POST" as const, url: `/me/messages/${id}/move`, body: { destinationId: "deleteditems" } })));
 }
@@ -213,7 +260,7 @@ export async function moveMessage(id: string, destinationId: string): Promise<Me
 }
 
 export async function moveMessages(ids: string[], destinationId: string): Promise<BatchResponse<Message>[]> {
-  return batch<Message>(ids.map((id, i) => ({ id: String(i), method: "POST", url: `/me/messages/${id}/move`, body: { destinationId } })));
+  return messageBatch<Message>(ids.map((id, i) => ({ id: String(i), method: "POST", url: `/me/messages/${id}/move`, body: { destinationId } })));
 }
 
 export async function copyMessage(id: string, destinationId: string): Promise<Message> {
@@ -221,7 +268,7 @@ export async function copyMessage(id: string, destinationId: string): Promise<Me
 }
 
 export async function copyMessages(ids: string[], destinationId: string): Promise<BatchResponse<Message>[]> {
-  return batch<Message>(ids.map((id, i) => ({ id: String(i), method: "POST", url: `/me/messages/${id}/copy`, body: { destinationId } })));
+  return messageBatch<Message>(ids.map((id, i) => ({ id: String(i), method: "POST", url: `/me/messages/${id}/copy`, body: { destinationId } })));
 }
 
 export async function mailCategories(): Promise<OutlookCategory[]> {

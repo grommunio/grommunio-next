@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import type { Message } from "microsoft-graph";
 import mailReducer, {
-  composeClosed, createComposeState, deleteMessages, emptyFolder, loadFolders, loadMessages, moveMessages, requestDelete,
+  composeClosed, createComposeState, deleteMessages, emptyFolder, loadFolders, loadMessages, messagesRemoved, moveMessages, requestDelete,
   saveDraft, sendCompose, setSelection, syncFolder, updateMessages, updatePrefs,
 } from "../mailSlice";
 import alertsReducer from "../../alerts/alertsSlice";
@@ -26,9 +26,11 @@ vi.mock("../../../api/messages", () => ({
   deleteMessage: vi.fn(),
   getAttachments: vi.fn(),
   getMessage: vi.fn(),
+  getMessagesPage: vi.fn(),
 }));
 vi.mock("../../../api/folders", () => ({
   getMailFolders: vi.fn(),
+  getChildFolders: vi.fn(),
   emptyFolder: vi.fn(),
 }));
 
@@ -206,8 +208,8 @@ describe("syncFolder", () => {
 
   it("syncs Focused/Other lists by inference classification", async () => {
     const store = makeStore();
-    store.dispatch(loadMessages.pending("f", { folderId: "inbox", filter: "focused" }));
-    store.dispatch(loadMessages.fulfilled({ key: "folder:inbox", messages: [msg("x", "inbox", { inferenceClassification: "focused" })] }, "f", { folderId: "inbox", filter: "focused" }));
+    store.dispatch(loadMessages.pending("f", { folderId: "inbox", inference: "focused" }));
+    store.dispatch(loadMessages.fulfilled({ key: "folder:inbox", messages: [msg("x", "inbox", { inferenceClassification: "focused" })] }, "f", { folderId: "inbox", inference: "focused" }));
     api.getMessagesDelta.mockResolvedValueOnce({ value: [], removed: [], deltaLink: "d1" });
     await run(store, syncFolder("inbox"));
     api.getMessagesDelta.mockResolvedValueOnce({
@@ -231,6 +233,94 @@ describe("syncFolder", () => {
     await run(store, syncFolder("inbox"));
     expect(store.getState().mail.sync.inbox.deltaLink).toBe("fresh");
     expect(store.getState().mail.newArrivals).toEqual([]);
+  });
+
+  const recentUnread = (id: string, folder: string) => msg(id, folder, { isRead: false, receivedDateTime: new Date().toISOString() });
+
+  it("does not bring back messages removed while the sync was in flight", async () => {
+    const store = makeStore();
+    loadList(store, "inbox", [recentUnread("a", "inbox")]);
+    api.getMessagesDelta.mockResolvedValueOnce({ value: [], removed: [], deltaLink: "d1" });
+    await run(store, syncFolder("inbox"));
+    let resolve: (r: Awaited<ReturnType<typeof api.getMessagesDelta>>) => void = () => undefined;
+    api.getMessagesDelta.mockReturnValueOnce(new Promise(r => { resolve = r; }));
+    const sync = run(store, syncFolder("inbox"));
+    store.dispatch(messagesRemoved(["a"]));
+    resolve({ value: [recentUnread("a", "inbox")], removed: [], deltaLink: "d2" });
+    await sync;
+    expect(store.getState().mail.lists["folder:inbox"].ids).toEqual([]);
+    expect(store.getState().mail.newArrivals).toEqual([]);
+  });
+
+  it("announces new mail only in the inbox and not for messages the user moved there", async () => {
+    const store = makeStore();
+    api.getMessagesDelta.mockResolvedValue({ value: [], removed: [], deltaLink: "d1" });
+    await run(store, syncFolder("other"));
+    await run(store, syncFolder("inbox"));
+    api.moveMessages.mockResolvedValue([{ id: "0", status: 201, body: { id: "moved" } }]);
+    await run(store, moveMessages({ ids: ["x"], destinationId: "inbox", silent: true }));
+    api.getMessagesDelta.mockResolvedValue({ value: [recentUnread("junk", "other"), recentUnread("moved", "inbox")], removed: [], deltaLink: "d2" });
+    await run(store, syncFolder("other"));
+    await run(store, syncFolder("inbox"));
+    expect(store.getState().mail.newArrivals).toEqual([]);
+  });
+});
+
+describe("undo and partial failures", () => {
+  it("reloads the source list when undo moves unknown messages back", async () => {
+    const store = makeStore();
+    loadList(store, "inbox", [msg("b", "inbox")]);
+    api.moveMessages.mockResolvedValue([{ id: "0", status: 201, body: { id: "a3" } }]);
+    api.getMessagesPage.mockResolvedValue({ value: [msg("a3", "inbox"), msg("b", "inbox")] });
+    await run(store, moveMessages({ ids: ["a2"], destinationId: "inbox", silent: true }));
+    expect(api.getMessagesPage).toHaveBeenCalledWith("inbox", expect.anything());
+    await vi.waitFor(() => expect(store.getState().mail.lists["folder:inbox"].ids).toEqual(["a3", "b"]));
+  });
+
+  it("only rolls back the half of a delete that failed", async () => {
+    const store = makeStore();
+    loadList(store, "inbox", [msg("b", "inbox")]);
+    store.dispatch({ type: "mail/messagesReceived", payload: [msg("a", "deleted")] });
+    api.deleteMessages.mockImplementation(async (ids: string[], permanent: boolean) => {
+      if (permanent) throw new Error("offline");
+      return ids.map((_id, i) => ({ id: String(i), status: 201, body: { id: "x" + i } }));
+    });
+    await run(store, deleteMessages({ ids: ["a", "b"] }));
+    const mail = store.getState().mail;
+    expect(mail.messages.a).toBeDefined();
+    expect(mail.messages.b).toBeUndefined();
+    expect(mail.lists["folder:inbox"].ids).toEqual([]);
+    expect(store.getState().alerts.stack.at(-1)).toMatchObject({ severity: "error", params: { failed: 1, count: 2 } });
+  });
+});
+
+describe("folders", () => {
+  it("refreshes subfolders below the second level", async () => {
+    const store = makeStore();
+    const deep: ExtendedMailFolder[] = [{ id: "inbox", displayName: "Inbox", wellKnownName: "inbox", childFolders: [
+      { id: "l2", displayName: "L2", wellKnownName: "custom", parentFolderId: "inbox", childFolders: [
+        { id: "l3", displayName: "L3", wellKnownName: "custom", parentFolderId: "l2", unreadItemCount: 1 },
+      ] },
+    ] }];
+    store.dispatch(loadFolders.fulfilled(deep, "deep"));
+    folderApi.getMailFolders.mockResolvedValue({ value: [{ ...deep[0], childFolders: [{ id: "l2", displayName: "L2", wellKnownName: "custom", parentFolderId: "inbox" }] }], count: 1 });
+    folderApi.getChildFolders.mockResolvedValue([{ id: "l3", displayName: "L3", wellKnownName: "custom", parentFolderId: "l2", unreadItemCount: 7 }]);
+    await run(store, loadFolders());
+    expect(folderApi.getChildFolders).toHaveBeenCalledWith("l2");
+    expect(store.getState().mail.folders[0].childFolders![0].childFolders![0].unreadItemCount).toBe(7);
+  });
+
+  it("empties folders inside Deleted Items permanently", async () => {
+    const store = makeStore();
+    store.dispatch(loadFolders.fulfilled([...FOLDERS.filter(f => f.id !== "deleted"),
+      { id: "deleted", displayName: "Deleted Items", wellKnownName: "deleteditems", childFolders: [
+        { id: "old", displayName: "Old", wellKnownName: "custom", parentFolderId: "deleted", childFolders: [] },
+      ] }], "tree"));
+    folderApi.emptyFolder.mockResolvedValue(0);
+    await run(store, emptyFolder("old"));
+    expect(folderApi.emptyFolder).toHaveBeenCalledWith("old", true);
+    await run(store, emptyFolder("other"));
+    expect(folderApi.emptyFolder).toHaveBeenLastCalledWith("other", false);
   });
 });
 

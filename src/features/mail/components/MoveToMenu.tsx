@@ -21,6 +21,10 @@ type MoveToMenuProps = {
   title?: string;
 };
 
+export function focusFirstItem(from: HTMLElement) {
+  from.closest<HTMLElement>("[role='menu']")?.querySelector<HTMLElement>("[role^='menuitem']:not([aria-disabled='true'])")?.focus();
+}
+
 const MoveToMenu = ({ anchorEl, anchorPosition, open, onClose, onSelect, onNewFolder, excludeId, title }: MoveToMenuProps) => {
   const { t } = useTranslation();
   const folders = useTypeSelector(selectFlatFolders);
@@ -58,20 +62,20 @@ const MoveToMenu = ({ anchorEl, anchorPosition, open, onClose, onSelect, onNewFo
           onKeyDown={e => {
             if (e.key === "Enter" && filtered[0]) { onSelect(filtered[0]); handleClose(); }
             if (e.key === "Escape") handleClose();
+            if (e.key === "ArrowDown") { e.preventDefault(); focusFirstItem(e.currentTarget); }
           }}
           sx={{ px: 1, py: 0.25, borderRadius: 1, border: 1, borderColor: "divider", fontSize: 14 }}
           inputProps={{ "aria-label": t("Search folders") }}
         />
       </Box>
-      <Box sx={{ overflowY: "auto", maxHeight: 300 }}>
-        {filtered.map(folder => (
-          <MenuItem key={folder.id} onClick={() => { onSelect(folder); handleClose(); }} sx={{ pl: 2 + folder.depth * 1.5 }}>
-            <ListItemIcon><FolderOutlined fontSize="small" /></ListItemIcon>
-            <ListItemText primaryTypographyProps={{ noWrap: true }}>{folderLabel(folder, t)}</ListItemText>
-          </MenuItem>
-        ))}
-        {filtered.length === 0 && <Typography variant="body2" sx={{ px: 2, py: 1, color: "text.secondary" }}>{t("No folders found")}</Typography>}
-      </Box>
+      {/* Items must be direct children of the menu list for arrow-key navigation */}
+      {filtered.map(folder => (
+        <MenuItem key={folder.id} onClick={() => { onSelect(folder); handleClose(); }} sx={{ pl: 2 + folder.depth * 1.5 }}>
+          <ListItemIcon><FolderOutlined fontSize="small" /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ noWrap: true }}>{folderLabel(folder, t)}</ListItemText>
+        </MenuItem>
+      ))}
+      {filtered.length === 0 && <Typography variant="body2" sx={{ px: 2, py: 1, color: "text.secondary" }}>{t("No folders found")}</Typography>}
       {onNewFolder && query.trim() && filtered.length === 0 ? [
         <Divider key="divider" />,
         <MenuItem key="create" onClick={() => { onNewFolder(query.trim()); handleClose(); }}>

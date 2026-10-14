@@ -11,7 +11,8 @@ import { ApiError } from "../../api/graph";
 import { pushAlertStack } from "../../features/alerts/alertsSlice";
 import { COMMON_FOLDER_ORDER, SCROLL_ITEMS } from "../../constants";
 import {
-  ComposeDraft, ComposeMode, ComposeState, DeleteRequest, MailFilter, MailPrefs, MailSort, MailState, MessageList,
+  ComposeDraft, ComposeMode, ComposeState, DeleteRequest, Inference, MailFilter, MailPrefs, MailSort, MailSortField, MailState,
+  MessageList,
 } from "./types";
 import {
   loadExpanded, loadFavorites, loadPinned, loadPrefs, saveExpanded, saveFavorites, savePinned, savePrefs,
@@ -24,6 +25,31 @@ export const listKey = (folderId: string | undefined, search?: string) =>
 
 function emptyList(key: string, folderId: string | undefined, search: string | undefined, filter: MailFilter, sort: MailSort): MessageList {
   return { key, folderId, search, filter, sort, ids: [], loading: false, loadingMore: false, loaded: false };
+}
+
+const ID_LOG_LIMIT = 500;
+function logIds(log: string[], ids: string[]) {
+  log.push(...ids);
+  if (log.length > ID_LOG_LIMIT) log.splice(0, log.length - ID_LOG_LIMIT);
+}
+
+const SKIP = /([?&](?:\$|%24)skip=)(\d+)/i;
+
+const skipOf = (link?: string) => Number(link?.match(SKIP)?.[2] || 0);
+
+// Graph pages by offset, so removals/additions in the loaded window shift the next page
+export function shiftNextLink(link: string | undefined, delta: number): string | undefined {
+  if (!link || !delta) return link;
+  return link.replace(SKIP, (_m, prefix: string, n: string) => prefix + Math.max(0, Number(n) + delta));
+}
+
+export function isInsideFolder(folders: ExtendedMailFolder[], folder: ExtendedMailFolder | undefined, ancestorId: string | null | undefined): boolean {
+  let parentId = folder?.parentFolderId;
+  for (let depth = 0; parentId && ancestorId && depth < 50; depth++) {
+    if (parentId === ancestorId) return true;
+    parentId = findFolder(folders, parentId)?.parentFolderId;
+  }
+  return false;
 }
 
 function sortFolders(folders: ExtendedMailFolder[]): ExtendedMailFolder[] {
@@ -61,16 +87,27 @@ function removeFolder(folders: ExtendedMailFolder[], id: string): ExtendedMailFo
     .map(f => ({ ...f, childFolders: f.childFolders ? removeFolder(f.childFolders, id) : f.childFolders }));
 }
 
-export function filterToOData(filter: MailFilter, ownAddress?: string): string | undefined {
+function userFilterToOData(filter: MailFilter, ownAddress?: string): string | undefined {
   switch (filter) {
   case "unread": return "isRead eq false";
   case "flagged": return "flag/flagStatus eq 'flagged'";
   case "attachments": return "hasAttachments eq true";
-  case "focused": return "inferenceClassification eq 'focused'";
-  case "other": return "inferenceClassification eq 'other'";
   case "tome": return ownAddress ? `toRecipients/any(r: r/emailAddress/address eq '${ownAddress.replace(/'/g, "''")}')` : undefined;
   default: return undefined;
   }
+}
+
+export function filterToOData(filter: MailFilter, ownAddress?: string, inference?: Inference): string | undefined {
+  const parts = [inference ? `inferenceClassification eq '${inference}'` : undefined, userFilterToOData(filter, ownAddress)].filter(Boolean);
+  return parts.length ? parts.join(" and ") : undefined;
+}
+
+// Graph only sorts filtered lists by date
+export const canSortBy = (list: Pick<MessageList, "filter" | "inference">, field: MailSortField) =>
+  field === "receivedDateTime" || (list.filter === "all" && !list.inference);
+
+export function effectiveSort(list: Pick<MessageList, "filter" | "inference" | "sort">): MailSort {
+  return canSortBy(list, list.sort.field) ? list.sort : DEFAULT_SORT;
 }
 
 export function sortToOData(sort: MailSort): string {
@@ -84,15 +121,17 @@ export function sortToOData(sort: MailSort): string {
 }
 
 // Graph wants every $orderby property in $filter too, so filtered lists sort by date
-function buildListParams(list: Pick<MessageList, "filter" | "sort" | "search">, ownAddress?: string) {
-  const filter = filterToOData(list.filter, ownAddress);
+// with a receivedDateTime anchor. The list stores that sort so the UI shows it.
+export function buildListParams(list: Pick<MessageList, "filter" | "inference" | "sort" | "search">, ownAddress?: string) {
   if (list.search) {
     return { search: list.search, filter: undefined, orderby: undefined };
   }
+  const filter = filterToOData(list.filter, ownAddress, list.inference);
+  const sort = effectiveSort(list);
   if (filter) {
-    return { filter: `receivedDateTime ge 1970-01-01T00:00:00Z and ${filter}`, orderby: `receivedDateTime ${list.sort.direction}` };
+    return { filter: `receivedDateTime ge 1970-01-01T00:00:00Z and ${filter}`, orderby: `receivedDateTime ${sort.direction}` };
   }
-  return { filter: undefined, orderby: sortToOData(list.sort) };
+  return { filter: undefined, orderby: sortToOData(sort) };
 }
 
 const errorMessage = (err: unknown) => err instanceof ApiError || err instanceof Error ? err.message : String(err);
@@ -112,12 +151,38 @@ const alertError = (err: unknown) => pushAlertStack(err instanceof MailError ?
 
 type ThunkApi = { state: RootState; rejectValue: string };
 
+// Refetch subtrees loaded on demand so counts stay current. Failed ones keep the old children.
+async function refreshLoadedSubtrees(fresh: ExtendedMailFolder[], old: ExtendedMailFolder[]): Promise<ExtendedMailFolder[]> {
+  return Promise.all(fresh.map(async folder => {
+    const before = old.find(f => f.id === folder.id);
+    if (!before?.childFolders?.length) return folder;
+    let children = folder.childFolders;
+    if (!children) {
+      try {
+        children = await foldersApi.getChildFolders(folder.id!);
+      } catch {
+        return folder;
+      }
+    }
+    return { ...folder, childFolders: await refreshLoadedSubtrees(children, before.childFolders) };
+  }));
+}
+
+function keepLoadedChildren(fresh: ExtendedMailFolder[], old: ExtendedMailFolder[]): ExtendedMailFolder[] {
+  return fresh.map(folder => {
+    const before = old.find(f => f.id === folder.id);
+    if (!before) return folder;
+    if (!folder.childFolders) return before.childFolders?.length ? { ...folder, childFolders: before.childFolders } : folder;
+    return { ...folder, childFolders: keepLoadedChildren(folder.childFolders, before.childFolders || []) };
+  });
+}
+
 export const loadFolders = createAsyncThunk<ExtendedMailFolder[], void, ThunkApi>(
   "mail/loadFolders",
-  async (_arg, { rejectWithValue }) => {
+  async (_arg, { getState, rejectWithValue }) => {
     try {
       const { value } = await foldersApi.getMailFolders();
-      return value;
+      return await refreshLoadedSubtrees(value, getState().mail.folders);
     } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
@@ -204,8 +269,11 @@ export const emptyFolder = createAsyncThunk<string, string, ThunkApi>(
   "mail/emptyFolder",
   async (id, { dispatch, getState, rejectWithValue }) => {
     try {
-      const folder = findFolder(getState().mail.folders, id);
-      await foldersApi.emptyFolder(id, folder?.wellKnownName === "deleteditems" || folder?.wellKnownName === "junkemail");
+      const folders = getState().mail.folders;
+      const folder = findFolder(folders, id);
+      const permanent = folder?.wellKnownName === "deleteditems" || folder?.wellKnownName === "junkemail" ||
+        isInsideFolder(folders, folder, findWellKnownFolder(folders, "deleteditems")?.id);
+      await foldersApi.emptyFolder(id, permanent);
       dispatch(loadFolders());
       return id;
     } catch (err) {
@@ -219,9 +287,14 @@ type LoadMessagesArg = {
   folderId?: string;
   search?: string;
   filter?: MailFilter;
+  // null turns Focused Inbox off, undefined keeps the list's
+  inference?: Inference | null;
   sort?: MailSort;
   force?: boolean;
 };
+
+const argInference = (arg: LoadMessagesArg, list?: MessageList) =>
+  arg.inference === undefined ? list?.inference : arg.inference ?? undefined;
 
 export const loadMessages = createAsyncThunk<{ key: string; messages: Message[]; nextLink?: string; total?: number }, LoadMessagesArg, ThunkApi>(
   "mail/loadMessages",
@@ -230,9 +303,10 @@ export const loadMessages = createAsyncThunk<{ key: string; messages: Message[];
     const state = getState();
     const existing = state.mail.lists[key];
     const filter = arg.filter ?? existing?.filter ?? "all";
+    const inference = argInference(arg, existing);
     const sort = arg.sort ?? existing?.sort ?? DEFAULT_SORT;
     try {
-      const params = buildListParams({ filter, sort, search: arg.search }, state.session.me.mail || undefined);
+      const params = buildListParams({ filter, inference, sort, search: arg.search }, state.session.me.mail || undefined);
       const page = arg.search && !arg.folderId ?
         await messagesApi.searchMessages(arg.search) :
         await messagesApi.getMessagesPage(arg.folderId || "inbox", { ...params, top: SCROLL_ITEMS });
@@ -245,7 +319,8 @@ export const loadMessages = createAsyncThunk<{ key: string; messages: Message[];
     condition: (arg, { getState }) => {
       const list = getState().mail.lists[listKey(arg.folderId, arg.search)];
       if (!list) return true;
-      const sameParams = (arg.filter ?? list.filter) === list.filter && (arg.sort ?? list.sort) === list.sort;
+      const sameParams = (arg.filter ?? list.filter) === list.filter && (arg.sort ?? list.sort) === list.sort &&
+        argInference(arg, list) === list.inference;
       // A newer request wins, the old result is dropped via requestId
       if (list.loading) return Boolean(arg.force) || !sameParams;
       return arg.force || !list.loaded || !sameParams;
@@ -253,14 +328,14 @@ export const loadMessages = createAsyncThunk<{ key: string; messages: Message[];
   },
 );
 
-export const loadMoreMessages = createAsyncThunk<{ key: string; messages: Message[]; nextLink?: string; requestId?: string }, string, ThunkApi>(
+export const loadMoreMessages = createAsyncThunk<{ key: string; messages: Message[]; nextLink?: string; requested?: string; requestId?: string }, string, ThunkApi>(
   "mail/loadMoreMessages",
   async (key, { getState, rejectWithValue }) => {
     const list = getState().mail.lists[key];
     if (!list?.nextLink) return { key, messages: [], nextLink: undefined, requestId: list?.requestId };
     try {
       const page = await messagesApi.getMessagesNextPage(list.nextLink);
-      return { key, messages: page.value, nextLink: page.nextLink, requestId: list.requestId };
+      return { key, messages: page.value, nextLink: page.nextLink, requested: list.nextLink, requestId: list.requestId };
     } catch (err) {
       return rejectWithValue(errorMessage(err));
     }
@@ -299,12 +374,17 @@ export const syncFolder = createAsyncThunk<SyncResult, string, ThunkApi>(
       if (!sync?.deltaLink || result.reset) {
         return { folderId, added: [], changed: [], removed: [], arrivals: [], deltaLink: result.deltaLink, initial: true };
       }
-      const known = getState().mail.messages;
-      const added = result.value.filter(m => m.id && !known[m.id]);
+      // Read after the request, the user may have moved or deleted messages meanwhile
+      const { messages: known, removedIds, movedIds, folders } = getState().mail;
+      const removed = new Set(removedIds);
+      const moved = new Set(movedIds);
+      const added = result.value.filter(m => m.id && !known[m.id] && !removed.has(m.id));
       const changed = result.value.filter(m => m.id && known[m.id]);
       const threshold = (sync.since || 0) - ARRIVAL_MARGIN;
-      const arrivals = added
-        .filter(m => !m.isRead && !m.isDraft && new Date(m.receivedDateTime || 0).getTime() >= threshold)
+      // Only announce inbox mail, like Outlook
+      const isInbox = folderId === "inbox" || folderId === findWellKnownFolder(folders, "inbox")?.id;
+      const arrivals = !isInbox ? [] : added
+        .filter(m => !m.isRead && !m.isDraft && !moved.has(m.id!) && new Date(m.receivedDateTime || 0).getTime() >= threshold)
         .map(m => m.id!);
       if (result.value.length || result.removed.length) dispatch(loadFolders());
       return { folderId, added, changed, removed: result.removed, arrivals, deltaLink: result.deltaLink, initial: false };
@@ -404,6 +484,15 @@ function snapshotLists(state: RootState, ids: string[]): ListSnapshot[] {
 
 const sourceFolders = (messages: Message[]) => Array.from(new Set(messages.map(m => m.parentFolderId).filter(Boolean) as string[]));
 
+// Moved messages aren't inserted into the target list. Unknown ones (undo) are
+// reloaded right away, otherwise the list reloads when shown.
+function refreshDestination(dispatch: (action: any) => unknown, state: RootState, folderId: string, unknownMoved: boolean) {
+  const list = state.mail.lists[listKey(folderId)];
+  if (!list?.loaded) return;
+  if (unknownMoved) dispatch(loadMessages({ folderId, force: true }));
+  else dispatch(mailSlice.actions.listsInvalidated([list.key]));
+}
+
 export const moveMessages = createAsyncThunk<{ ids: string[]; destinationId: string }, { ids: string[]; destinationId: string; silent?: boolean }, ThunkApi>(
   "mail/moveMessages",
   async ({ ids, destinationId, silent }, { dispatch, getState, rejectWithValue }) => {
@@ -417,6 +506,9 @@ export const moveMessages = createAsyncThunk<{ ids: string[]; destinationId: str
     try {
       const responses = await messagesApi.moveMessages(ids, destinationId);
       const failedIds = ids.filter((_id, i) => isFailed(responses[i]));
+      const newIds = responses.filter(r => !isFailed(r)).map(r => r.body?.id).filter(Boolean) as string[];
+      dispatch(mailSlice.actions.messagesMoved(newIds));
+      refreshDestination(dispatch, getState(), destinationId, originals.length < ids.length);
       if (failedIds.length) {
         dispatch(mailSlice.actions.messagesRestored({ messages: originals.filter(m => failedIds.includes(m.id!)), lists }));
         dispatch(loadFolders());
@@ -485,10 +577,12 @@ export const deleteMessages = createAsyncThunk<string[], { ids: string[]; perman
     const lists = snapshotLists(state, ids);
     dispatch(mailSlice.actions.messagesRemoved(ids));
     try {
-      const [hardResponses, softResponses] = await Promise.all([
+      // One half failing must not roll back the other
+      const settled = await Promise.allSettled([
         hardIds.length ? messagesApi.deleteMessages(hardIds, true) : Promise.resolve([]),
         softIds.length ? messagesApi.deleteMessages(softIds, false) : Promise.resolve([]),
       ]);
+      const [hardResponses, softResponses] = settled.map(r => r.status === "fulfilled" ? r.value : []);
       const failedIds = [
         ...hardIds.filter((_id, i) => isFailed(hardResponses[i])),
         ...softIds.filter((_id, i) => isFailed(softResponses[i])),
@@ -846,6 +940,8 @@ const initialState: MailState = {
   newArrivals: [],
   sync: {},
   conversations: {},
+  removedIds: [],
+  movedIds: [],
   deleteConfirm: null,
 };
 
@@ -863,13 +959,16 @@ function removeFromLists(state: MailState, ids: string[]) {
   Object.values(state.lists).forEach(list => {
     const before = list.ids.length;
     list.ids = list.ids.filter(id => !set.has(id));
-    if (list.total !== undefined) list.total = Math.max(0, list.total - (before - list.ids.length));
+    const removed = before - list.ids.length;
+    if (list.total !== undefined) list.total = Math.max(0, list.total - removed);
+    list.nextLink = shiftNextLink(list.nextLink, -removed);
   });
   state.selection = state.selection.filter(id => !set.has(id));
 }
 
 function forgetMessages(state: MailState, ids: string[]) {
   removeFromLists(state, ids);
+  logIds(state.removedIds, ids);
   ids.forEach(id => {
     delete state.messages[id];
     delete state.loadedDetails[id];
@@ -882,16 +981,17 @@ const time = (m?: Message) => new Date(m?.receivedDateTime || 0).getTime();
 // Inserts matches that fall into the loaded window, drops ones that no longer
 // match, like mail moved between Focused and Other.
 function applySyncToList(state: MailState, list: MessageList, added: Message[], changed: Message[]): number {
-  const syncable = list.filter === "all" || list.filter === "focused" || list.filter === "other";
-  if (!syncable) return 0;
-  const matches = (m: Message) => list.filter === "all" || m.inferenceClassification === list.filter;
+  if (list.filter !== "all") return 0;
+  const matches = (m: Message) => !list.inference || m.inferenceClassification === list.inference;
   const byDate = list.sort.field === "receivedDateTime";
   const desc = list.sort.direction === "desc";
   let inserted = 0;
 
   // Changed messages whose classification no longer matches leave the list
   const leaving = new Set(changed.filter(m => !matches(m)).map(m => m.id!));
+  const before = list.ids.length;
   if (leaving.size) list.ids = list.ids.filter(id => !leaving.has(id));
+  const left = before - list.ids.length;
 
   const candidates = [...added, ...(byDate ? changed : [])].filter(m => m.id && matches(m) && !list.ids.includes(m.id));
   candidates.forEach(m => {
@@ -911,7 +1011,8 @@ function applySyncToList(state: MailState, list: MessageList, added: Message[], 
     }
     inserted++;
   });
-  return inserted - leaving.size;
+  list.nextLink = shiftNextLink(list.nextLink, inserted - left);
+  return inserted - left;
 }
 
 const mailSlice = createSlice({
@@ -929,9 +1030,16 @@ const mailSlice = createSlice({
     messagesRemoved(state, action: PayloadAction<string[]>) {
       forgetMessages(state, action.payload);
     },
+    messagesMoved(state, action: PayloadAction<string[]>) {
+      logIds(state.movedIds, action.payload);
+    },
+    listsInvalidated(state, action: PayloadAction<string[]>) {
+      action.payload.forEach(key => { if (state.lists[key]) state.lists[key].loaded = false; });
+    },
     messagesRestored(state, action: PayloadAction<{ messages: Message[]; lists: ListSnapshot[] }>) {
       mergeMessages(state, action.payload.messages);
       const restore = new Set(action.payload.messages.map(m => m.id));
+      state.removedIds = state.removedIds.filter(id => !restore.has(id));
       action.payload.lists.forEach(snapshot => {
         const list = state.lists[snapshot.key];
         // A reload in between already shows the server state
@@ -942,6 +1050,7 @@ const mailSlice = createSlice({
         const restored = kept.filter(id => !current.has(id)).length;
         list.ids = [...list.ids.filter(id => !before.has(id)), ...kept];
         if (list.total !== undefined) list.total += restored;
+        list.nextLink = shiftNextLink(list.nextLink, restored);
       });
     },
     setSelection(state, action: PayloadAction<string[]>) {
@@ -959,13 +1068,14 @@ const mailSlice = createSlice({
       const list = state.lists[action.payload.key];
       if (list) {
         list.filter = action.payload.filter;
+        list.sort = effectiveSort(list);
         list.loaded = false;
       }
     },
     setListSort(state, action: PayloadAction<{ key: string; sort: MailSort }>) {
       const list = state.lists[action.payload.key];
       if (list) {
-        list.sort = action.payload.sort;
+        list.sort = effectiveSort({ ...list, sort: action.payload.sort });
         list.loaded = false;
       }
     },
@@ -1020,19 +1130,8 @@ const mailSlice = createSlice({
     builder
       .addCase(loadFolders.pending, state => { state.foldersLoading = true; state.foldersError = undefined; })
       .addCase(loadFolders.fulfilled, (state, action) => {
-        // Preserve deeper levels that were loaded on demand
-        const previous = state.folders;
-        const merged = action.payload.map(folder => {
-          const old = findFolder(previous, folder.id || undefined);
-          return {
-            ...folder,
-            childFolders: (folder.childFolders || []).map(child => {
-              const oldChild = old ? findFolder(old.childFolders || [], child.id || undefined) : undefined;
-              return oldChild?.childFolders?.length && !child.childFolders?.length ? { ...child, childFolders: oldChild.childFolders } : child;
-            }),
-          };
-        });
-        state.folders = sortFolders(merged);
+        // Deeper levels are refreshed by the thunk; keep them where that failed
+        state.folders = sortFolders(keepLoadedChildren(action.payload, state.folders));
         state.foldersLoading = false;
         state.foldersLoaded = true;
       })
@@ -1079,14 +1178,17 @@ const mailSlice = createSlice({
           list.total = 0;
           list.nextLink = undefined;
         }
-        state.folders = mapFolders(state.folders, f => f.id === action.payload ? { ...f, unreadItemCount: 0, totalItemCount: 0 } : f);
+        state.folders = mapFolders(state.folders, f => f.id === action.payload ?
+          { ...f, unreadItemCount: 0, totalItemCount: 0, childFolderCount: 0, childFolders: [] } : f);
       })
       .addCase(loadMessages.pending, (state, action) => {
         const key = listKey(action.meta.arg.folderId, action.meta.arg.search);
         const existing = state.lists[key];
         const list = existing || emptyList(key, action.meta.arg.folderId, action.meta.arg.search, action.meta.arg.filter || "all", action.meta.arg.sort || DEFAULT_SORT);
         if (action.meta.arg.filter) list.filter = action.meta.arg.filter;
+        if (action.meta.arg.inference !== undefined) list.inference = action.meta.arg.inference ?? undefined;
         if (action.meta.arg.sort) list.sort = action.meta.arg.sort;
+        list.sort = effectiveSort(list);
         list.loading = true;
         list.error = undefined;
         list.requestId = action.meta.requestId;
@@ -1096,8 +1198,10 @@ const mailSlice = createSlice({
         const list = state.lists[action.payload.key];
         // Drop results of a superseded request
         if (!list || list.requestId !== action.meta.requestId) return;
-        mergeMessages(state, action.payload.messages);
-        list.ids = action.payload.messages.map(m => m.id!).filter(Boolean);
+        const removed = new Set(state.removedIds);
+        const messages = action.payload.messages.filter(m => m.id && !removed.has(m.id));
+        mergeMessages(state, messages);
+        list.ids = messages.map(m => m.id!);
         list.nextLink = action.payload.nextLink;
         list.total = action.payload.total;
         list.loading = false;
@@ -1122,10 +1226,14 @@ const mailSlice = createSlice({
         if (!list) return;
         list.loadingMore = false;
         if (list.requestId !== action.payload.requestId) return;
-        mergeMessages(state, action.payload.messages);
+        // Messages removed while the page was loading stay out
+        const removed = new Set(state.removedIds);
+        const messages = action.payload.messages.filter(m => m.id && !removed.has(m.id));
+        mergeMessages(state, messages);
         const known = new Set(list.ids);
-        action.payload.messages.forEach(m => { if (m.id && !known.has(m.id)) list.ids.push(m.id); });
-        list.nextLink = action.payload.nextLink;
+        messages.forEach(m => { if (!known.has(m.id!)) list.ids.push(m.id!); });
+        // Removals and insertions during the request shifted the offset too
+        list.nextLink = shiftNextLink(action.payload.nextLink, skipOf(list.nextLink) - skipOf(action.payload.requested));
       })
       .addCase(loadMoreMessages.rejected, (state, action) => {
         const list = state.lists[action.meta.arg];
@@ -1138,10 +1246,12 @@ const mailSlice = createSlice({
         if (state.sync[action.meta.arg]) state.sync[action.meta.arg].syncing = false;
       })
       .addCase(syncFolder.fulfilled, (state, action) => {
-        const { folderId, added, changed, removed, arrivals, deltaLink, initial } = action.payload;
+        const { folderId, changed, removed, arrivals, deltaLink, initial } = action.payload;
         state.sync[folderId] = { deltaLink, since: Date.now(), syncing: false };
         state.lastSync = Date.now();
         if (initial) return;
+        const removedIds = new Set(state.removedIds);
+        const added = action.payload.added.filter(m => !removedIds.has(m.id!));
         mergeMessages(state, [...added, ...changed]);
         if (removed.length) forgetMessages(state, removed);
         const list = state.lists[listKey(folderId)];
@@ -1149,7 +1259,7 @@ const mailSlice = createSlice({
           const delta = applySyncToList(state, list, added, changed);
           if (list.total !== undefined) list.total = Math.max(0, list.total + delta);
         }
-        state.newArrivals.push(...arrivals.filter(id => !state.newArrivals.includes(id)));
+        state.newArrivals.push(...arrivals.filter(id => !state.newArrivals.includes(id) && !removedIds.has(id)));
       })
       .addCase(loadMessageDetails.pending, (state, action) => {
         state.loadingDetails[action.meta.arg] = true;
@@ -1243,7 +1353,7 @@ const mailSlice = createSlice({
 });
 
 export const {
-  messagesReceived, messagesPatched, messagesRemoved, messagesRestored, setSelection, toggleSelection, clearSelection,
+  messagesReceived, messagesPatched, messagesRemoved, messagesMoved, listsInvalidated, messagesRestored, setSelection, toggleSelection, clearSelection,
   setListFilter, setListSort, clearSearchLists, togglePinned, toggleFolderExpanded, toggleFavoriteFolder,
   updatePrefs, composeMinimized, composeClosed, clearNewArrivals, adjustUnreadCount, deleteConfirmRequested, deleteConfirmClosed,
 } = mailSlice.actions;

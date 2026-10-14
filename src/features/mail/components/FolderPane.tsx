@@ -15,7 +15,7 @@ import type { ExtendedMailFolder, WellKnownFolderName } from "../../../types/mes
 import { RootState, useTypeDispatch, useTypeSelector } from "../../../store";
 import {
   createFolder, deleteFolder, emptyFolder, loadChildFolders, markFolderRead, renameFolder, toggleFavoriteFolder,
-  toggleFolderExpanded, moveMessages, findWellKnownFolder,
+  toggleFolderExpanded, moveMessages, findWellKnownFolder, isInsideFolder,
 } from "../mailSlice";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
@@ -172,6 +172,23 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
       const ids = (JSON.parse(data) as string[]).filter(id => messages[id]?.parentFolderId !== folder.id);
       if (ids.length) dispatch(moveMessages({ ids, destinationId: folder.id! }));
     } catch { /* ignore */ }
+  };
+
+  const confirmText = () => {
+    if (!confirm) return "";
+    const name = folderLabel(confirm.folder, t);
+    const deletedItems = findWellKnownFolder(folders, "deleteditems")?.id;
+    if (confirm.type === "delete") {
+      // Folders inside Deleted Items are gone, not moved
+      return isInsideFolder(folders, confirm.folder, deletedItems) ?
+        t("The folder \"{{name}}\" and all its messages will be deleted permanently.", { name }) + " " + t("This cannot be undone.") :
+        t("The folder \"{{name}}\" and all its messages will be moved to Deleted Items.", { name });
+    }
+    const permanent = confirm.folder.wellKnownName === "deleteditems" || confirm.folder.wellKnownName === "junkemail" ||
+      isInsideFolder(folders, confirm.folder, deletedItems);
+    return permanent ?
+      t("All messages and subfolders in \"{{name}}\" will be deleted permanently.", { name }) + " " + t("This cannot be undone.") :
+      t("All messages and subfolders in \"{{name}}\" will be moved to Deleted Items.", { name });
   };
 
   const handleDeleteFolder = async (folder: ExtendedMailFolder) => {
@@ -378,9 +395,7 @@ const FolderPane = ({ selectedId, onSelect }: FolderPaneProps) => {
       <ConfirmDialog
         open={Boolean(confirm)}
         title={confirm?.type === "delete" ? t("Delete folder") : t("Empty folder")}
-        description={confirm?.type === "delete" ?
-          t("The folder \"{{name}}\" and all its messages will be moved to Deleted Items.", { name: confirm?.folder.displayName }) :
-          t("All messages in \"{{name}}\" will be deleted.", { name: confirm ? folderLabel(confirm.folder, t) : "" })}
+        description={confirmText()}
         confirmLabel={confirm?.type === "delete" ? t("Delete") : t("Empty")}
         destructive
         onConfirm={() => {

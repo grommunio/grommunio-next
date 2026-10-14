@@ -4,7 +4,9 @@
 import type { Attachment, Importance, Message, OutlookCategory, Recipient } from "microsoft-graph";
 import type { ExtendedMailFolder } from "../../types/messages";
 
-export type MailFilter = "all" | "unread" | "flagged" | "attachments" | "tome" | "focused" | "other";
+export type MailFilter = "all" | "unread" | "flagged" | "attachments" | "tome";
+
+export type Inference = "focused" | "other";
 
 export type MailSortField = "receivedDateTime" | "from" | "subject" | "importance" | "hasAttachments";
 
@@ -18,6 +20,8 @@ export type MessageList = {
   folderId?: string;
   search?: string;
   filter: MailFilter;
+  inference?: Inference;
+  // Graph can't combine other sorts with a filter
   sort: MailSort;
   ids: string[];
   nextLink?: string;
@@ -124,5 +128,9 @@ export type MailState = {
   // Kept across list reloads
   sync: Record<string, FolderSyncState>;
   conversations: Record<string, ConversationLoadState>;
+  // An in-flight sync must not bring these back
+  removedIds: string[];
+  // Never announced as new mail
+  movedIds: string[];
   deleteConfirm: DeleteRequest | null;
 };

@@ -149,6 +149,16 @@ export async function markFolderAsRead(folderId: string): Promise<number> {
 
 // Deleted Items gets purged, anything else is moved there first
 export async function emptyFolder(folderId: string, permanent: boolean): Promise<number> {
+  const done = await deleteAllMessages(folderId, permanent);
+  const children = await getAll<{ id: string }>(`/me/mailFolders/${folderId}/childFolders`, { select: "id", top: 100 });
+  if (children.length) {
+    const failed = await runBatch(children.map((child, i) => ({ id: String(i), method: "DELETE" as const, url: `/me/mailFolders/${child.id}` })));
+    if (failed > 0) throw new ApiError("Some messages could not be processed", 0, "PartialFailure");
+  }
+  return done;
+}
+
+function deleteAllMessages(folderId: string, permanent: boolean): Promise<number> {
   return forAllMessages(folderId, undefined, (id, i) => permanent ? ({
     id: String(i),
     method: "DELETE" as const,

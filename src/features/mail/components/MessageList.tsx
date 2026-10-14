@@ -13,7 +13,7 @@ import ConversationListItem, { ConversationAction } from "./ConversationListItem
 import EmptyState from "../../../components/common/EmptyState";
 import { dateGroup, DateGroup } from "../utils";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { updatePrefs } from "../mailSlice";
+import { canSortBy, updatePrefs } from "../mailSlice";
 import { ConversationGroup, conversationViewApplies, ListRow } from "../conversations";
 
 type MessageListProps = {
@@ -95,6 +95,8 @@ const MessageList = ({
 
   const filter = list?.filter || "all";
   const sort = list?.sort || { field: "receivedDateTime", direction: "desc" };
+  // Graph cannot combine other sorts with a filter or the Focused Inbox tab
+  const sortable = (field: MailSortField) => !list || canSortBy(list, field);
   const selectionMode = selection.length > 0;
   const allChecked = messages.length > 0 && selection.length === messages.length;
   const showRecipients = folder?.wellKnownName === "sentitems" || folder?.wellKnownName === "drafts" || folder?.wellKnownName === "outbox";
@@ -244,7 +246,7 @@ const MessageList = ({
         {!isSearch && <>
           <Tooltip title={t("Filter")}>
             <Button size="small" color={filter === "all" ? "inherit" : "primary"} startIcon={<FilterList />} onClick={e => setFilterAnchor(e.currentTarget)} sx={{ minWidth: 0, px: 1, textTransform: "none" }}>
-              {t(FILTERS.find(f => f.value === filter)?.label || (filter === "focused" || filter === "other" ? "All" : "Filter"))}
+              {t(FILTERS.find(f => f.value === filter)?.label || "Filter")}
             </Button>
           </Tooltip>
           <Tooltip title={t("Sort")}>
@@ -357,11 +359,21 @@ const MessageList = ({
       </Menu>
       <Menu anchorEl={sortAnchor} open={Boolean(sortAnchor)} onClose={() => setSortAnchor(null)}>
         {SORTS.map(s => (
-          <MenuItem key={s.value} selected={sort.field === s.value} onClick={() => { onSort({ field: s.value, direction: s.value === "receivedDateTime" ? "desc" : "asc" }); setSortAnchor(null); }}>
+          <MenuItem
+            key={s.value}
+            selected={sort.field === s.value}
+            disabled={!sortable(s.value)}
+            onClick={() => { onSort({ field: s.value, direction: s.value === "receivedDateTime" ? "desc" : "asc" }); setSortAnchor(null); }}
+          >
             <ListItemIcon>{sort.field === s.value && <Check fontSize="small" />}</ListItemIcon>
             <ListItemText>{t(s.label)}</ListItemText>
           </MenuItem>
         ))}
+        {!sortable("from") && (
+          <Typography variant="caption" component="li" sx={{ display: "block", px: 2, py: 0.5, maxWidth: 240, color: "text.secondary" }}>
+            {t("Filtered lists can only be sorted by date")}
+          </Typography>
+        )}
         <Divider />
         <MenuItem onClick={() => { onSort({ ...sort, direction: sort.direction === "asc" ? "desc" : "asc" }); setSortAnchor(null); }}>
           <ListItemIcon>{sort.direction === "asc" ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}</ListItemIcon>

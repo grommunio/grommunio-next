@@ -37,7 +37,7 @@ import {
 } from "../mailSlice";
 import { getMailFolder } from "../../../api/folders";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
-import type { MailFilter, MailSort } from "../types";
+import type { Inference, MailFilter, MailSort } from "../types";
 import type { ExtendedMailFolder, WellKnownFolderName } from "../../../types/messages";
 
 const SYNC_INTERVAL = 30000;
@@ -45,8 +45,6 @@ const HIDDEN_SYNC_INTERVAL = 120000;
 
 const WELL_KNOWN: WellKnownFolderName[] = ["inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive", "outbox"];
 
-
-const isFocusFilter = (filter?: MailFilter) => filter === "focused" || filter === "other";
 
 // Plural forms used by the delete confirmation:
 // t("{{count}} messages will be deleted permanently_one")
@@ -79,7 +77,8 @@ const MailView = () => {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   // Picked from the rows of an expanded conversation
   const [childSelected, setChildSelected] = useState(false);
-  const [bodyHtml, setBodyHtml] = useState("");
+  // Tagged with the message id so a stale body never gets printed
+  const [body, setBody] = useState<{ id: string; html: string } | null>(null);
   const [composeFullscreen, setComposeFullscreen] = useState(false);
   const [folderDrawer, setFolderDrawer] = useState(false);
 
@@ -144,16 +143,12 @@ const MailView = () => {
     }
   }, [location.state]);
 
-  // Load the list for the current folder / search
-  const effectiveFilter: MailFilter | undefined = folder?.wellKnownName === "inbox" && prefs.focusedInbox && !search ? focusedTab : undefined;
-  const listFilter = useRef<MailFilter | undefined>();
-  listFilter.current = list?.filter;
+  // Focused/Other tab is kept apart from the user's filter so both apply
+  const inference: Inference | null = folder?.wellKnownName === "inbox" && prefs.focusedInbox && !search ? focusedTab : null;
   useEffect(() => {
     if (!folder?.id && !search) return;
-    // Turning Focused Inbox off must not keep the inbox on "focused"/"other"
-    const filter = effectiveFilter ?? (isFocusFilter(listFilter.current) ? "all" : undefined);
-    dispatch(loadMessages({ folderId: folder?.id, search: search || undefined, filter }));
-  }, [folder?.id, search, effectiveFilter]);
+    dispatch(loadMessages({ folderId: folder?.id, search: search || undefined, inference: search ? undefined : inference }));
+  }, [folder?.id, search, inference]);
 
   // The inbox is synced app-wide by useBackgroundMailSync
   const syncIds = useMemo(() => (!search && folder?.id && folder.id !== inboxId ? [folder.id] : []), [folder?.id, inboxId, search]);
@@ -193,6 +188,13 @@ const MailView = () => {
   // Only on selection change so "mark as unread" sticks
   useMarkAsRead(selectedMessage?.id && !conversationPane ? [selectedMessage.id] : [], selectedMessage?.id);
 
+  // The body callback fires after the open message rendered; tag it with that message
+  const openId = useRef(messageId);
+  openId.current = messageId;
+  const handleBodyHtml = useCallback((html: string) => {
+    if (openId.current) setBody({ id: openId.current, html });
+  }, []);
+
   const resetSearch = () => {
     setSearch("");
     setQuery("");
@@ -200,6 +202,8 @@ const MailView = () => {
 
   useGlobalSearch(t("Search mail"), q => {
     dispatch(clearSearchLists());
+    // The same query does not change the key, so the load effect would not run again
+    if (q && q === search) dispatch(loadMessages({ folderId: folder?.id, search: q, force: true }));
     setSearch(q);
   }, () => setSearch(""));
 
@@ -427,7 +431,7 @@ const MailView = () => {
           currentFolderId={folder?.id || undefined}
           onMore={(anchor, id, html) => setMore({ anchor, id, bodyHtml: html })}
           onBack={isMobile || prefs.readingPane === "off" ? () => folder && navigate(`/mail/${folderSlug(folder)}`) : undefined}
-          onBodyHtml={setBodyHtml}
+          onBodyHtml={handleBodyHtml}
         />
       ) : selectedMessage ? (
         <MessageView
@@ -437,7 +441,7 @@ const MailView = () => {
           onForward={replyActions.forward}
           onMore={anchor => setMore({ anchor, id: selectedMessage.id! })}
           onBack={isMobile || prefs.readingPane === "off" ? () => folder && navigate(`/mail/${folderSlug(folder)}`) : undefined}
-          onBodyHtml={setBodyHtml}
+          onBodyHtml={handleBodyHtml}
         />
       ) : messageId && selectedLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress size={28} /></Box>
@@ -448,6 +452,8 @@ const MailView = () => {
   );
 
   const deleteCount = deleteConfirm?.ids.length || 0;
+  // Only when the action targets the message this body belongs to
+  const bodyFor = (ids: string[]) => ids.length === 1 && body?.id === ids[0] ? body.html : undefined;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
@@ -456,7 +462,7 @@ const MailView = () => {
         replyIds={replyIds}
         onNewMessage={() => dispatch(startCompose({ mode: "new" }))}
         onToggleFolders={() => isMobile ? setFolderDrawer(true) : dispatch(updatePrefs({ folderPaneVisible: !prefs.folderPaneVisible }))}
-        bodyHtml={bodyHtml}
+        bodyHtml={bodyFor(targetIds)}
       />
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {showFolderPane && (
@@ -528,14 +534,14 @@ const MailView = () => {
         anchorPosition={contextMenu?.position}
         open={Boolean(contextMenu)}
         onClose={() => setContextMenu(null)}
-        bodyHtml={contextMenu?.ids.length === 1 && contextMenu.ids[0] === messageId ? bodyHtml : undefined}
+        bodyHtml={bodyFor(contextMenu?.ids || [])}
       />
       <MessageActionsMenu
         ids={more ? [more.id] : []}
         anchorEl={more?.anchor}
         open={Boolean(more)}
         onClose={() => setMore(null)}
-        bodyHtml={more?.bodyHtml ?? bodyHtml}
+        bodyHtml={more?.bodyHtml ?? bodyFor(more ? [more.id] : [])}
         compact
       />
       <ConfirmDialog

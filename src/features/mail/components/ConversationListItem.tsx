@@ -50,8 +50,10 @@ const ConversationListItem = memo(function ConversationListItem({
   const date = formatListDate(latest.receivedDateTime || latest.sentDateTime || latest.lastModifiedDateTime);
   const allCategories = useMemo(() => Array.from(new Set(group.messages.flatMap(m => m.categories || []))), [group.messages]);
   const stop = (fn: () => void) => (e: MouseEvent) => { e.stopPropagation(); fn(); };
+  // Controls inside rows are tabbable only in the tab-stop row (roving tabindex)
+  const innerTab = tabStop ? 0 : -1;
   const checkbox = (sx: object) => (
-    <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(group)} sx={sx} inputProps={{ "aria-label": t("Select conversation") }} />
+    <Checkbox size="small" checked={checked} onClick={e => e.stopPropagation()} onChange={() => onCheck(group)} sx={sx} inputProps={{ "aria-label": t("Select conversation"), tabIndex: innerTab }} />
   );
 
   return (
@@ -157,15 +159,15 @@ const ConversationListItem = memo(function ConversationListItem({
           bgcolor: "background.paper", borderRadius: 1, boxShadow: 1, px: 0.25,
         }}
       >
-        <Tooltip title={t("Delete")}><IconButton size="small" onClick={stop(() => onAction(group, "delete"))} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
-        <Tooltip title={t("Archive")}><IconButton size="small" onClick={stop(() => onAction(group, "archive"))} aria-label={t("Archive")}><ArchiveOutlined fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title={t("Delete")}><IconButton size="small" tabIndex={innerTab} onClick={stop(() => onAction(group, "delete"))} aria-label={t("Delete")}><DeleteOutline fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title={t("Archive")}><IconButton size="small" tabIndex={innerTab} onClick={stop(() => onAction(group, "archive"))} aria-label={t("Archive")}><ArchiveOutlined fontSize="small" /></IconButton></Tooltip>
         <Tooltip title={unread ? t("Mark as read") : t("Mark as unread")}>
-          <IconButton size="small" onClick={stop(() => onAction(group, "read"))} aria-label={unread ? t("Mark as read") : t("Mark as unread")}>
+          <IconButton size="small" tabIndex={innerTab} onClick={stop(() => onAction(group, "read"))} aria-label={unread ? t("Mark as read") : t("Mark as unread")}>
             {unread ? <DraftsOutlined fontSize="small" /> : <MailOutline fontSize="small" />}
           </IconButton>
         </Tooltip>
         <Tooltip title={group.flagged ? t("Clear flag") : t("Flag")}>
-          <IconButton size="small" onClick={stop(() => onAction(group, "flag"))} aria-label={group.flagged ? t("Clear flag") : t("Flag")}>
+          <IconButton size="small" tabIndex={innerTab} onClick={stop(() => onAction(group, "flag"))} aria-label={group.flagged ? t("Clear flag") : t("Flag")}>
             {group.flagged ? <Flag fontSize="small" color="error" /> : <FlagOutlined fontSize="small" />}
           </IconButton>
         </Tooltip>
