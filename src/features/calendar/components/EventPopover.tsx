@@ -6,13 +6,14 @@ import { ArrowDropDown, Check, CheckBox, CheckBoxOutlineBlank, Close, DeleteOutl
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { deleteEvent, refreshEvents, respondToEvent } from "../calendarSlice";
-import { safeHttpUrl } from "../eventUtils";
+import { deleteEvent, DeleteMode, refreshEvents, respondToEvent } from "../calendarSlice";
+import { deleteModeFor, safeHttpUrl } from "../eventUtils";
 import { EventReponseType } from "../../../types/calendar";
 import { formatEventRange } from "../dates";
 import type { CalendarEvent } from "../types";
 import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
+import DeclineDeleteDialog from "./DeclineDeleteDialog";
 
 type EventPopoverProps = {
   event: CalendarEvent;
@@ -26,6 +27,8 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
   const dispatch = useTypeDispatch();
   const calendar = useTypeSelector(state => state.calendar.calendars.find(c => c.id === event.calendarId));
   const categories = useTypeSelector(state => state.mail.categories);
+  // The prop is a snapshot from the click; the store has the latest response
+  const liveResponse = useTypeSelector(state => state.calendar.events[event.calendarId]?.find(e => e.id === event.id)?.responseStatus?.response);
   const [scopeMenu, setScopeMenu] = useState<{ anchor: HTMLElement; action: "edit" | "delete" } | null>(null);
   const [confirm, setConfirm] = useState<"occurrence" | "series" | null>(null);
   const [rsvpMenu, setRsvpMenu] = useState<HTMLElement | null>(null);
@@ -37,9 +40,10 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
   const recurring = event.type === "occurrence" || event.type === "exception" || event.type === "seriesMaster";
   const readOnly = Boolean(event.readOnly);
   const isOrganizer = event.isOrganizer !== false && !readOnly;
-  const response = event.responseStatus?.response;
+  const response = liveResponse ?? event.responseStatus?.response;
   const attendees = event.attendees || [];
   const hasAttendees = attendees.length > 0;
+  const deleteMode = deleteModeFor(event);
   const joinUrl = safeHttpUrl(event.onlineMeeting?.joinUrl || event.onlineMeetingUrl);
 
   const withScope = (action: "edit" | "delete") => (e: React.MouseEvent<HTMLElement>) => {
@@ -55,17 +59,20 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
     else setConfirm(scope);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (mode: DeleteMode, message?: string) => {
     const id = confirm === "series" && event.seriesMasterId ? event.seriesMasterId : event.id!;
-    const result = await dispatch(deleteEvent({ id, notify: isOrganizer && hasAttendees }));
+    const result = await dispatch(deleteEvent({ id, mode, comment: message || undefined }));
     if (deleteEvent.fulfilled.match(result)) onClose();
   };
 
   const respond = async (type: EventReponseType) => {
     const series = respondToSeries && Boolean(event.seriesMasterId);
     const result = await dispatch(respondToEvent({ id: series ? event.seriesMasterId! : event.id!, response: type, comment: comment.trim() || undefined, sendResponse }));
+    if (!respondToEvent.fulfilled.match(result)) return;
+    setComment("");
+    setShowComment(false);
     // Declines refresh on their own; series responses change every occurrence
-    if (respondToEvent.fulfilled.match(result) && series && type !== EventReponseType.decline) dispatch(refreshEvents());
+    if (series && type !== EventReponseType.decline) dispatch(refreshEvents());
   };
 
   return (
@@ -163,13 +170,20 @@ const EventPopover = ({ event, anchorPosition, onClose, onEdit }: EventPopoverPr
         <MenuItem onClick={() => chooseScope("occurrence")}>{scopeMenu?.action === "edit" ? t("This event") : t("Delete this event")}</MenuItem>
         <MenuItem onClick={() => chooseScope("series")}>{scopeMenu?.action === "edit" ? t("All events in the series") : t("Delete all events in the series")}</MenuItem>
       </Menu>
+      <DeclineDeleteDialog
+        open={Boolean(confirm) && deleteMode === "decline"}
+        series={confirm === "series"}
+        onDecline={message => handleDelete("decline", message)}
+        onDeleteSilently={() => handleDelete("delete")}
+        onClose={() => setConfirm(null)}
+      />
       <ConfirmDialog
-        open={Boolean(confirm)}
+        open={Boolean(confirm) && deleteMode !== "decline"}
         title={hasAttendees && isOrganizer ? t("Cancel meeting") : t("Delete event")}
         description={hasAttendees && isOrganizer ? t("A cancellation will be sent to all attendees.") : confirm === "series" ? t("All occurrences of this series will be deleted.") : t("This event will be deleted.")}
         confirmLabel={hasAttendees && isOrganizer ? t("Cancel meeting") : t("Delete")}
         destructive
-        onConfirm={handleDelete}
+        onConfirm={() => handleDelete(deleteMode)}
         onClose={() => setConfirm(null)}
       />
     </Popover>

@@ -123,11 +123,13 @@ export const loadEvents = createAsyncThunk<{ start: string; end: string; byCalen
   },
 );
 
+export const ALREADY_OPEN = "This calendar is already open";
+
 export const addSharedCalendar = createAsyncThunk<SharedCalendarRef, { address: string; name?: string }, ThunkApi>(
   "calendar/addSharedCalendar",
   async ({ address, name }, { dispatch, getState, rejectWithValue }) => {
     const normalized = address.trim().toLowerCase();
-    if (getState().calendar.shared.some(r => r.address === normalized)) return rejectWithValue("This calendar is already open");
+    if (getState().calendar.shared.some(r => r.address === normalized)) return rejectWithValue(ALREADY_OPEN);
     try {
       await api.getSharedCalendar(normalized);
       return { address: normalized, name: name || normalized };
@@ -160,46 +162,80 @@ export const loadEventDetails = createAsyncThunk<Event, string, ThunkApi>(
   },
 );
 
-export const createEvent = createAsyncThunk<Event, { event: Event; calendarId?: string; files?: File[] }, ThunkApi>(
+export type AttachmentFailure = { index: number; name: string; error: string };
+export type SavedEvent = { event: Event; failed: AttachmentFailure[] };
+
+// One failed upload doesn't stop the others
+async function uploadFiles(eventId: string, files: File[] = []): Promise<AttachmentFailure[]> {
+  const failed: AttachmentFailure[] = [];
+  for (const [index, file] of files.entries()) {
+    try {
+      await api.addEventFileAttachment(eventId, file);
+    } catch (err) {
+      failed.push({ index, name: file.name, error: errorMessage(err) });
+    }
+  }
+  return failed;
+}
+
+const attachmentWarning = (failed: AttachmentFailure[]) => pushAlertStack({
+  message: "The event was saved, but these attachments could not be added: {{files}}",
+  params: { files: failed.map(f => f.name).join(", ") },
+  severity: "warning",
+});
+// t("The event was saved, but these attachments could not be added: {{files}}")
+// t("The file is too large")
+
+// Don't reject on attachment failures, the event exists and a retry must PATCH it
+export const createEvent = createAsyncThunk<SavedEvent, { event: Event; calendarId?: string; files?: File[] }, ThunkApi>(
   "calendar/createEvent",
   async ({ event, calendarId, files }, { dispatch, rejectWithValue }) => {
+    let created: Event;
     try {
-      const created = await api.postEvent(event, calendarId);
-      for (const file of files || []) {
-        await api.addEventFileAttachment(created.id!, file);
-      }
-      dispatch(pushAlertStack({ message: event.attendees?.length ? "Invitation sent" : "Event saved", severity: "success" }));
-      return created;
+      created = await api.postEvent(event, calendarId, browserTimeZone());
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
       return rejectWithValue(errorMessage(err));
     }
+    const failed = await uploadFiles(created.id!, files);
+    if (failed.length) dispatch(attachmentWarning(failed));
+    else dispatch(pushAlertStack({ message: event.attendees?.length ? "Invitation sent" : "Event saved", severity: "success" }));
+    return { event: created, failed };
   },
 );
 
-export const updateEvent = createAsyncThunk<Event, { event: Event; files?: File[]; silent?: boolean }, ThunkApi>(
+// Id only: skip the PATCH, just upload
+export const updateEvent = createAsyncThunk<SavedEvent, { event: Event; files?: File[]; silent?: boolean }, ThunkApi>(
   "calendar/updateEvent",
   async ({ event, files, silent }, { dispatch, rejectWithValue }) => {
+    let updated: Event;
     try {
-      const updated = await api.patchEvent(event);
-      for (const file of files || []) {
-        await api.addEventFileAttachment(updated.id!, file);
-      }
-      if (!silent) dispatch(pushAlertStack({ message: "Event saved", severity: "success" }));
-      return updated;
+      const { id, ...props } = event;
+      updated = Object.keys(props).length ? await api.patchEvent(event, browserTimeZone()) : { id };
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
       return rejectWithValue(errorMessage(err));
     }
+    const failed = await uploadFiles(event.id!, files);
+    if (failed.length) dispatch(attachmentWarning(failed));
+    else if (!silent) dispatch(pushAlertStack({ message: "Event saved", severity: "success" }));
+    return { event: updated, failed };
   },
 );
 
-export const deleteEvent = createAsyncThunk<string, { id: string; comment?: string; notify?: boolean }, ThunkApi>(
+// cancel notifies attendees, decline answers the organizer, delete is silent
+export type DeleteMode = "cancel" | "decline" | "delete";
+
+export const deleteEvent = createAsyncThunk<string, { id: string; comment?: string; mode?: DeleteMode }, ThunkApi>(
   "calendar/deleteEvent",
-  async ({ id, comment, notify }, { dispatch, rejectWithValue }) => {
+  async ({ id, comment, mode = "delete" }, { dispatch, rejectWithValue }) => {
     try {
-      if (notify) await api.cancelEvent(id, comment);
-      else await api.deleteEvent(id);
+      if (mode === "cancel") await api.cancelEvent(id, comment);
+      else if (mode === "decline") {
+        await api.respondToEvent(id, EventReponseType.decline, { comment, sendResponse: true });
+        // The server usually removes declined meetings already
+        await api.deleteEvent(id).catch(() => undefined);
+      } else await api.deleteEvent(id);
       return id;
     } catch (err) {
       dispatch(pushAlertStack({ message: errorMessage(err), severity: "error" }));
@@ -398,12 +434,12 @@ const calendarSlice = createSlice({
       })
       .addCase(createEvent.fulfilled, (state, action) => {
         const calendarId = action.meta.arg.calendarId || state.calendars.find(c => c.isDefaultCalendar)?.id || state.visibleCalendarIds[0];
-        if (calendarId && state.events[calendarId] && !action.payload.recurrence) {
-          state.events[calendarId].push(action.payload);
+        if (calendarId && state.events[calendarId] && !action.payload.event.recurrence) {
+          state.events[calendarId].push(action.payload.event);
         }
       })
       .addCase(updateEvent.fulfilled, (state, action) => {
-        replaceEvent(state, action.payload);
+        replaceEvent(state, action.payload.event);
       })
       .addCase(deleteEvent.fulfilled, (state, action) => {
         Object.keys(state.events).forEach(calendarId => {

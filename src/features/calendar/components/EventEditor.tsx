@@ -19,8 +19,8 @@ import { ChangeEvent, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next";
 import type { Attachment, Attendee, Event, FileAttachment, PatternedRecurrence, Recipient, Sensitivity } from "microsoft-graph";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
-import { createEvent, deleteEvent, loadEventDetails, refreshEvents, updateEvent } from "../calendarSlice";
-import { alignRecurrence, toExclusiveAllDayEnd, toInclusiveAllDayEnd } from "../eventUtils";
+import { createEvent, deleteEvent, DeleteMode, loadEventDetails, refreshEvents, updateEvent } from "../calendarSlice";
+import { alignRecurrence, attendeePatch, deleteModeFor, isWritableCalendar, toExclusiveAllDayEnd, toInclusiveAllDayEnd } from "../eventUtils";
 import { dateToGraphDate, dayjs, Dayjs, graphDateToDate, roundToStep } from "../dates";
 import RecipientField from "../../mail/components/RecipientField";
 import AttachmentList from "../../mail/components/AttachmentList";
@@ -32,6 +32,7 @@ import { purify, tinymceLanguage } from "../../mail/utils-compose";
 import { deleteEventAttachment, eventAttachments, getEventAttachmentContent } from "../../../api/calendar";
 import { presetColor } from "../../mail/categories";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
+import DeclineDeleteDialog from "./DeclineDeleteDialog";
 import type { CalendarEvent } from "../types";
 
 // All-day end is exclusive, like in Graph
@@ -57,13 +58,18 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
   const dispatch = useTypeDispatch();
-  const calendars = useTypeSelector(state => state.calendar.calendars);
+  const allCalendars = useTypeSelector(state => state.calendar.calendars);
   const details = useTypeSelector(state => target.mode === "edit" ? state.calendar.details[target.scope === "series" && target.event.seriesMasterId ? target.event.seriesMasterId : target.event.id!] : undefined);
   const categories = useTypeSelector(state => state.mail.categories);
   const me = useTypeSelector(state => state.session.me);
   const prefs = useTypeSelector(state => state.calendar.prefs);
   const editorRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // New events only go to own writable calendars; editing shows the event's calendar
+  const calendars = useMemo(() => target.mode === "create" ? allCalendars.filter(isWritableCalendar) : allCalendars, [allCalendars, target.mode]);
+  const defaultCalendarId = (target.mode === "create" && target.calendarId && calendars.some(c => c.id === target.calendarId) ? target.calendarId : undefined) ||
+    calendars.find(c => c.isDefaultCalendar)?.id || calendars[0]?.id || "";
 
   const editing = target.mode === "edit";
   const editId = editing ? (target.scope === "series" && target.event.seriesMasterId ? target.event.seriesMasterId : target.event.id!) : undefined;
@@ -96,6 +102,10 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [initialised, setInitialised] = useState(false);
+  // Event saved with partly failed attachments, a retry PATCHes it
+  const [createdId, setCreatedId] = useState<string>();
+  // Form state of the last partial save, skips a needless PATCH on retry
+  const savedSnapshot = useRef<string | null>(null);
   const initRef = useRef(false);
   const initialRecurrence = useRef<PatternedRecurrence | null>(null);
   const initialLocation = useRef("");
@@ -106,9 +116,11 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
   const recurrenceEditable = target.mode === "create" || target.scope === "series" ||
     (target.event.type !== "occurrence" && target.event.type !== "exception");
 
+  const savedId = editId || createdId;
+
   useEffect(() => {
-    if (editing && editId) eventAttachments({ id: editId }).then(setAttachments).catch(() => undefined);
-  }, [editing, editId]);
+    if (savedId) eventAttachments({ id: savedId }).then(setAttachments).catch(() => undefined);
+  }, [savedId]);
 
   // Init once: from the target when creating, from fresh details when editing
   useEffect(() => {
@@ -126,7 +138,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
       }
       setAllDay(Boolean(target.allDay));
       setAttendees(target.attendees || []);
-      setCalendarId(target.calendarId || calendars.find(c => c.isDefaultCalendar)?.id || calendars[0]?.id || "");
+      setCalendarId(defaultCalendarId);
       setInitialised(true);
       return;
     }
@@ -139,14 +151,12 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
       applyEvent(loadEventDetails.fulfilled.match(result) ? result.payload : fallback);
     });
     return () => { cancelled = true; };
-  }, [target, editId, dispatch, prefs.defaultDuration, calendars]);
+  }, [target, editId, dispatch, prefs.defaultDuration, defaultCalendarId]);
 
   // Default calendar for new events, also when calendars arrive late
   useEffect(() => {
-    if (target.mode === "create" && !calendarId && calendars.length) {
-      setCalendarId(calendars.find(c => c.isDefaultCalendar)?.id || calendars[0].id || "");
-    }
-  }, [target.mode, calendarId, calendars]);
+    if (target.mode === "create" && !calendarId && defaultCalendarId) setCalendarId(defaultCalendarId);
+  }, [target.mode, calendarId, defaultCalendarId]);
 
   const applyEvent = (ev: Event) => {
     if (target.mode !== "edit") return;
@@ -241,21 +251,36 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
     setBusy(true);
     const event = buildEvent();
     if (!recurrenceEditable) delete event.recurrence;
-    const result = editing ?
-      await dispatch(updateEvent({ event: { ...event, id: editId }, files })) :
-      await dispatch(createEvent({ event, calendarId: calendarId || undefined, files }));
+    const unchanged = savedSnapshot.current === formSnapshot && !editorRef.current?.isDirty?.();
+    const result = !isOrganizer ?
+      // Attendees may only change their own properties
+      await dispatch(updateEvent({ event: { ...attendeePatch(event), id: editId } })) :
+      savedId ?
+        await dispatch(updateEvent({ event: unchanged ? { id: savedId } : { ...event, id: savedId }, files })) :
+        await dispatch(createEvent({ event, calendarId: calendarId || undefined, files }));
     setBusy(false);
-    if (createEvent.fulfilled.match(result) || updateEvent.fulfilled.match(result)) {
-      // Occurrences of a series are only expanded by the server
-      if (event.recurrence !== undefined || (target.mode === "edit" && target.scope === "series")) dispatch(refreshEvents());
+    if (!createEvent.fulfilled.match(result) && !updateEvent.fulfilled.match(result)) return;
+    // Occurrences of a series are only expanded by the server
+    if (isOrganizer && (event.recurrence !== undefined || (target.mode === "edit" && target.scope === "series"))) dispatch(refreshEvents());
+    const { event: saved, failed } = result.payload;
+    if (!failed.length) {
       onClose();
+      return;
     }
+    // Keep the dialog open with just the failed files, the event is saved
+    if (!savedId && saved.id) setCreatedId(saved.id);
+    else if (savedId) eventAttachments({ id: savedId }).then(setAttachments).catch(() => undefined);
+    savedSnapshot.current = formSnapshot;
+    editorRef.current?.setDirty?.(false);
+    setFiles(files.filter((_f, i) => failed.some(f => f.index === i)));
   };
 
-  const handleDelete = async () => {
-    if (!editId) return;
+  const deleteMode: DeleteMode = isOrganizer ? (cancelsMeeting ? "cancel" : "delete") : deleteModeFor(source || {});
+
+  const handleDelete = async (mode: DeleteMode = deleteMode, comment?: string) => {
+    if (!savedId) return;
     setBusy(true);
-    const result = await dispatch(deleteEvent({ id: editId, notify: cancelsMeeting }));
+    const result = await dispatch(deleteEvent({ id: savedId, mode, comment: comment || undefined }));
     setBusy(false);
     if (deleteEvent.fulfilled.match(result)) onClose();
   };
@@ -266,28 +291,29 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
   };
 
   const removeAttachment = async (attachment: Attachment) => {
-    if (!editId) return;
-    await deleteEventAttachment(editId, attachment.id!);
+    if (!savedId) return;
+    await deleteEventAttachment(savedId, attachment.id!);
     setAttachments(attachments.filter(a => a.id !== attachment.id));
   };
 
   const fetchContent = async (attachment: Attachment) => {
-    return (attachment as FileAttachment).contentBytes ? attachment as FileAttachment : getEventAttachmentContent(editId!, attachment.id!);
+    return (attachment as FileAttachment).contentBytes ? attachment as FileAttachment : getEventAttachmentContent(savedId!, attachment.id!);
   };
 
   const pendingAttachments: Attachment[] = useMemo(() => files.map((f, i) => ({ id: `pending-${i}`, name: f.name, size: f.size, contentType: f.type })), [files]);
 
   const title = editing ? (target.scope === "series" ? t("Edit series") : t("Edit event")) : t("New event");
 
-  const snapshot = JSON.stringify([subject, start.valueOf(), end.valueOf(), allDay, location, attendees, optional, recurrence, reminder,
-    showAs, sensitivity, selectedCategories, responseRequested, hideAttendees, onlineMeeting, files.length]);
+  const formSnapshot = JSON.stringify([subject, start.valueOf(), end.valueOf(), allDay, location, attendees, optional, recurrence, reminder,
+    showAs, sensitivity, selectedCategories, responseRequested, hideAttendees, onlineMeeting]);
+  const snapshot = `${formSnapshot}|${files.length}`;
   useEffect(() => {
     if (initialised && initialSnapshot.current === null) initialSnapshot.current = snapshot;
   }, [initialised, snapshot]);
 
   // Confirm before discarding unsaved changes
   const requestClose = () => {
-    const dirty = initialised && isOrganizer && (snapshot !== initialSnapshot.current || Boolean(editorRef.current?.isDirty?.()));
+    const dirty = initialised && (snapshot !== initialSnapshot.current || Boolean(editorRef.current?.isDirty?.()));
     if (dirty) setConfirmDiscard(true);
     else onClose();
   };
@@ -296,12 +322,10 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
     <Dialog open onClose={requestClose} aria-labelledby={titleId} maxWidth="md" fullWidth PaperProps={{ sx: { height: "min(860px, 95vh)" } }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}>
         <Typography id={titleId} component="h2" variant="subtitle1" sx={{ fontWeight: 600, mr: 1 }}>{title}</Typography>
-        {isOrganizer && (
-          <Button variant="contained" startIcon={busy ? <CircularProgress size={16} color="inherit" /> : <Check />} onClick={handleSave} disabled={busy || !initialised || !subject.trim()}>
-            {hasAttendees ? t("Send") : t("Save")}
-          </Button>
-        )}
-        {editing && (
+        <Button variant="contained" startIcon={busy ? <CircularProgress size={16} color="inherit" /> : <Check />} onClick={handleSave} disabled={busy || !initialised || (isOrganizer && !subject.trim())}>
+          {isOrganizer && hasAttendees ? t("Send") : t("Save")}
+        </Button>
+        {savedId && (
           <Button color="error" startIcon={<EventBusy />} onClick={() => setConfirmDelete(true)} disabled={busy}>
             {cancelsMeeting ? t("Cancel meeting") : t("Delete")}
           </Button>
@@ -336,7 +360,7 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
                   size="small"
                   value={calendarId}
                   onChange={e => setCalendarId(e.target.value)}
-                  disabled={editing}
+                  disabled={Boolean(savedId)}
                   sx={{ minWidth: 180 }}
                   inputProps={{ "aria-label": t("Calendar") }}
                 >
@@ -427,11 +451,11 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <AttachFile sx={{ color: "text.secondary" }} />
-                <Button size="small" onClick={() => fileInputRef.current?.click()}>{t("Attach file")}</Button>
+                <Button size="small" onClick={() => fileInputRef.current?.click()} disabled={!isOrganizer}>{t("Attach file")}</Button>
                 <input ref={fileInputRef} type="file" hidden multiple onChange={handleFiles} />
                 <Box sx={{ flex: 1 }}>
                   <AttachmentList dense attachments={[...attachments, ...pendingAttachments]} fetchContent={fetchContent}
-                    onRemove={a => a.id?.startsWith("pending-") ? setFiles(files.filter((_f, i) => `pending-${i}` !== a.id)) : removeAttachment(a)} />
+                    onRemove={isOrganizer ? (a => a.id?.startsWith("pending-") ? setFiles(files.filter((_f, i) => `pending-${i}` !== a.id)) : removeAttachment(a)) : undefined} />
                 </Box>
               </Box>
             </Box>
@@ -488,13 +512,20 @@ const EventEditor = ({ target, onClose }: EventEditorProps) => {
         onConfirm={onClose}
         onClose={() => setConfirmDiscard(false)}
       />
+      <DeclineDeleteDialog
+        open={confirmDelete && deleteMode === "decline"}
+        series={editing && target.scope === "series"}
+        onDecline={comment => handleDelete("decline", comment)}
+        onDeleteSilently={() => handleDelete("delete")}
+        onClose={() => setConfirmDelete(false)}
+      />
       <ConfirmDialog
-        open={confirmDelete}
+        open={confirmDelete && deleteMode !== "decline"}
         title={cancelsMeeting ? t("Cancel meeting") : t("Delete event")}
         description={cancelsMeeting ? t("A cancellation will be sent to all attendees.") : (editing && target.scope === "series" ? t("All occurrences of this series will be deleted.") : t("This event will be deleted."))}
         confirmLabel={cancelsMeeting ? t("Cancel meeting") : t("Delete")}
         destructive
-        onConfirm={handleDelete}
+        onConfirm={() => handleDelete()}
         onClose={() => setConfirmDelete(false)}
       />
     </Dialog>

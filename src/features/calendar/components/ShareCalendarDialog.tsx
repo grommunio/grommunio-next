@@ -11,21 +11,7 @@ import PersonAvatar from "../../../components/common/PersonAvatar";
 import { isValidEmail } from "../../mail/utils";
 import { useTypeDispatch, useTypeSelector } from "../../../store";
 import { pushAlertStack } from "../../../features/alerts/alertsSlice";
-import { sameDomain } from "../eventUtils";
-
-// Dynamic translation keys, picked up by scripts/extractTranslations.py:
-// t("Can view when I'm busy")
-// t("Can view titles and locations")
-// t("Can view all details")
-// t("Can edit")
-// t("Delegate")
-const ROLES: Array<{ value: CalendarRoleType; label: string }> = [
-  { value: "freeBusyRead", label: "Can view when I'm busy" },
-  { value: "limitedRead", label: "Can view titles and locations" },
-  { value: "read", label: "Can view all details" },
-  { value: "write", label: "Can edit" },
-  { value: "delegateWithoutPrivateEventAccess", label: "Delegate" },
-];
+import { INVITE_ROLES, roleOptions, sameDomain } from "../eventUtils";
 
 type ShareCalendarDialogProps = {
   calendar: Calendar;
@@ -69,6 +55,7 @@ const ShareCalendarDialog = ({ calendar, onClose }: ShareCalendarDialogProps) =>
   };
 
   const handleRole = async (permission: CalendarPermission, newRole: CalendarRoleType) => {
+    if (newRole === permission.role || newRole === "custom") return;
     try {
       await updateCalendarPermission(calendar.id!, permission.id!, newRole);
       setPermissions(permissions.map(p => p.id === permission.id ? { ...p, role: newRole } : p));
@@ -85,6 +72,8 @@ const ShareCalendarDialog = ({ calendar, onClose }: ShareCalendarDialogProps) =>
       dispatch(pushAlertStack({ message: err.message, severity: "error" }));
     }
   };
+
+  const sortedPermissions = [...permissions].sort((a, b) => Number(Boolean(a.emailAddress?.address)) - Number(Boolean(b.emailAddress?.address)));
 
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
@@ -103,16 +92,17 @@ const ShareCalendarDialog = ({ calendar, onClose }: ShareCalendarDialogProps) =>
             sx={{ flex: 1 }}
           />
           <TextField select value={role} onChange={e => setRole(e.target.value as CalendarRoleType)} sx={{ minWidth: 200 }} label={t("Permission")}>
-            {ROLES.map(r => <MenuItem key={r.value} value={r.value}>{t(r.label)}</MenuItem>)}
+            {INVITE_ROLES.map(r => <MenuItem key={r.value} value={r.value}>{t(r.label)}</MenuItem>)}
           </TextField>
           <Button variant="contained" onClick={handleAdd} disabled={busy || !isValidEmail(email)}>{t("Share")}</Button>
         </Box>
         <Typography variant="subtitle2" gutterBottom>{t("People with access")}</Typography>
         {loading ? <CircularProgress size={24} /> : permissions.length === 0 ? (
           <Typography variant="body2" color="text.secondary">{t("This calendar is not shared with anyone.")}</Typography>
-        ) : permissions.map(permission => {
+        ) : sortedPermissions.map(permission => {
           const address = permission.emailAddress?.address || "";
-          const name = permission.emailAddress?.name || address || t("My organization");
+          // The organization-wide entry has no address
+          const name = address ? (permission.emailAddress?.name || address) : t("My organization");
           return (
             <Box key={permission.id} sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 1, borderBottom: 1, borderColor: "divider" }}>
               <PersonAvatar name={name} email={address} size={32} />
@@ -128,8 +118,8 @@ const ShareCalendarDialog = ({ calendar, onClose }: ShareCalendarDialogProps) =>
                 disabled={permission.isRemovable === false && !permission.allowedRoles?.length}
                 sx={{ minWidth: 200 }}
               >
-                {(permission.allowedRoles?.length ? ROLES.filter(r => permission.allowedRoles!.includes(r.value)) : ROLES).map(r => (
-                  <MenuItem key={r.value} value={r.value}>{t(r.label)}</MenuItem>
+                {roleOptions(permission).map(r => (
+                  <MenuItem key={r.value} value={r.value} disabled={r.disabled}>{t(r.label)}</MenuItem>
                 ))}
               </TextField>
               <Tooltip title={t("Remove")}>

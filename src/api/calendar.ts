@@ -17,6 +17,9 @@ export const EVENT_SELECT = [
 
 const eventsBase = (calendarId?: string) => calendarId ? `/me/calendars/${calendarId}/events` : "/me/events";
 
+// Otherwise Graph returns start/end in UTC
+export const timeZoneHeaders = (timeZone?: string) => timeZone ? { Prefer: `outlook.timezone="${timeZone}"` } : undefined;
+
 // Graph expands recurring series for us
 export async function getCalendarView(calendarId: string | undefined, start: string, end: string, timeZone?: string): Promise<Event[]> {
   const base = calendarId ? `/me/calendars/${calendarId}/calendarView` : "/me/calendarView";
@@ -25,7 +28,8 @@ export async function getCalendarView(calendarId: string | undefined, start: str
     select: EVENT_SELECT,
     orderby: "start/dateTime",
     top: 250,
-    headers: timeZone ? { Prefer: `outlook.timezone="${timeZone}"` } : undefined,
+    // getAll keeps these on every nextLink page
+    headers: timeZoneHeaders(timeZone),
   });
 }
 
@@ -40,7 +44,8 @@ export async function getSharedCalendarView(address: string, start: string, end:
     select: EVENT_SELECT,
     orderby: "start/dateTime",
     top: 250,
-    headers: timeZone ? { Prefer: `outlook.timezone="${timeZone}"` } : undefined,
+    // getAll keeps these on every nextLink page
+    headers: timeZoneHeaders(timeZone),
   });
 }
 
@@ -51,9 +56,7 @@ export async function getEvents(calendarId?: string | undefined): Promise<Event[
 }
 
 export async function getEvent(eventId: string, timeZone?: string): Promise<Event> {
-  return get<Event>(`/me/events/${eventId}`, {
-    headers: timeZone ? { Prefer: `outlook.timezone="${timeZone}"` } : undefined,
-  });
+  return get<Event>(`/me/events/${eventId}`, { headers: timeZoneHeaders(timeZone) });
 }
 
 export async function eventAttachments(event: Event): Promise<Attachment[]> {
@@ -77,13 +80,13 @@ export async function getRecurringEventInstances(event: Event, calendarId?: stri
   return response.value;
 }
 
-export async function postEvent(newEvent: Event, calendarId: string | undefined): Promise<Event> {
-  return post<Event>(eventsBase(calendarId), newEvent);
+export async function postEvent(newEvent: Event, calendarId: string | undefined, timeZone?: string): Promise<Event> {
+  return post<Event>(eventsBase(calendarId), newEvent, { headers: timeZoneHeaders(timeZone) });
 }
 
-export async function patchEvent(event: Event): Promise<Event> {
+export async function patchEvent(event: Event, timeZone?: string): Promise<Event> {
   const { id, ...props } = event;
-  return patch<Event>("/me/events/" + id, props);
+  return patch<Event>("/me/events/" + id, props, { headers: timeZoneHeaders(timeZone) });
 }
 
 export async function deleteEvent(eventId: string): Promise<void> {
@@ -123,13 +126,41 @@ export async function uploadAttachment(eventId: string, attachment: Attachment):
   return post<Attachment>(`/me/events/${eventId}/attachments`, attachment);
 }
 
+// Over 3 MB needs an upload session (150 MB max)
+export const SMALL_ATTACHMENT_LIMIT = 3 * 1024 * 1024;
+export const MAX_ATTACHMENT_SIZE = 150 * 1024 * 1024;
+const UPLOAD_CHUNK = 4 * 1024 * 1024;
+
 export async function addEventFileAttachment(eventId: string, file: File): Promise<Attachment> {
-  return uploadAttachment(eventId, {
-    "@odata.type": "#microsoft.graph.fileAttachment",
-    name: file.name,
-    contentType: file.type || "application/octet-stream",
-    contentBytes: (await fileToBase64(file)).split("base64,")[1],
-  } as Attachment);
+  if (file.size > MAX_ATTACHMENT_SIZE) throw new Error("The file is too large");
+  const contentType = file.type || "application/octet-stream";
+  if (file.size <= SMALL_ATTACHMENT_LIMIT) {
+    return uploadAttachment(eventId, {
+      "@odata.type": "#microsoft.graph.fileAttachment",
+      name: file.name,
+      contentType,
+      contentBytes: (await fileToBase64(file)).split("base64,")[1],
+    } as Attachment);
+  }
+  const session = await post<{ uploadUrl: string }>(`/me/events/${eventId}/attachments/createUploadSession`, {
+    AttachmentItem: { attachmentType: "file", name: file.name, size: file.size, contentType },
+  });
+  try {
+    for (let offset = 0; offset < file.size; offset += UPLOAD_CHUNK) {
+      const end = Math.min(offset + UPLOAD_CHUNK, file.size);
+      // Pre-authenticated URL: no Authorization header
+      const response = await fetch(session.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/octet-stream", "Content-Range": `bytes ${offset}-${end - 1}/${file.size}` },
+        body: file.slice(offset, end),
+      });
+      if (!response.ok) throw new Error(`Upload failed with status ${response.status}`);
+    }
+  } catch (err) {
+    await fetch(session.uploadUrl, { method: "DELETE" }).catch(() => undefined);
+    throw err;
+  }
+  return { name: file.name, size: file.size, contentType };
 }
 
 export async function getEventAttachmentContent(eventId: string, attachmentId: string): Promise<FileAttachment> {

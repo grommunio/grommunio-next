@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // SPDX-FileCopyrightText: 2024 grommunio GmbH
 
-import type { DayOfWeek, PatternedRecurrence, WeekIndex } from "microsoft-graph";
+import type { Calendar, CalendarPermission, CalendarRoleType, DayOfWeek, Event, PatternedRecurrence, WeekIndex } from "microsoft-graph";
 import { dayjs, Dayjs } from "./dates";
+import { isSharedCalendarId } from "./prefs";
 
 export const WEEKDAYS: DayOfWeek[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 export const WEEK_INDEX: WeekIndex[] = ["first", "second", "third", "fourth", "last"];
@@ -86,4 +87,56 @@ export function availabilityRanges(view: string): Array<{ from: number; to: numb
     else ranges.push({ from: i, to: i + 1, code });
   }
   return ranges;
+}
+
+export const isWritableCalendar = (calendar: Calendar) => Boolean(calendar.id) && !isSharedCalendarId(calendar.id) && calendar.canEdit !== false;
+
+// Organizers cancel, attendees decline, like Outlook
+export function deleteModeFor(event: Event, hasAttendees = (event.attendees?.length || 0) > 0): "cancel" | "decline" | "delete" {
+  if (event.isOrganizer !== false) return hasAttendees ? "cancel" : "delete";
+  return event.responseStatus?.response === "declined" ? "delete" : "decline";
+}
+
+export const ATTENDEE_FIELDS = ["isReminderOn", "reminderMinutesBeforeStart", "showAs", "categories", "sensitivity"] as const;
+
+export function attendeePatch(event: Event): Event {
+  const result: Event = {};
+  ATTENDEE_FIELDS.forEach(key => {
+    if (event[key] !== undefined) (result as Record<string, unknown>)[key] = event[key];
+  });
+  return result;
+}
+
+// Dynamic translation keys, picked up by scripts/extractTranslations.py:
+// t("Not shared")
+// t("Can view when I'm busy")
+// t("Can view titles and locations")
+// t("Can view all details")
+// t("Can edit")
+// t("Delegate")
+// t("Delegate, can view private events")
+// t("Custom")
+export const SHARE_ROLES: Array<{ value: CalendarRoleType; label: string }> = [
+  { value: "none", label: "Not shared" },
+  { value: "freeBusyRead", label: "Can view when I'm busy" },
+  { value: "limitedRead", label: "Can view titles and locations" },
+  { value: "read", label: "Can view all details" },
+  { value: "write", label: "Can edit" },
+  { value: "delegateWithoutPrivateEventAccess", label: "Delegate" },
+  { value: "delegateWithPrivateEventAccess", label: "Delegate, can view private events" },
+  { value: "custom", label: "Custom" },
+];
+
+export const INVITE_ROLES = SHARE_ROLES.filter(r => r.value !== "none" && r.value !== "custom");
+
+// "custom" can be shown but never picked
+export function roleOptions(permission: CalendarPermission): Array<{ value: CalendarRoleType; label: string; disabled?: boolean }> {
+  const current = permission.role || undefined;
+  const allowed = permission.allowedRoles?.length ? permission.allowedRoles : INVITE_ROLES.map(r => r.value);
+  const options = SHARE_ROLES
+    .filter(r => r.value === current || (allowed.includes(r.value) && r.value !== "custom"))
+    .map(r => r.value === "custom" ? { ...r, disabled: true } : r);
+  // Unknown roles stay visible instead of rendering an empty select
+  if (current && !options.some(r => r.value === current)) options.push({ value: current, label: current, disabled: true });
+  return options;
 }
